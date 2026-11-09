@@ -1,10 +1,9 @@
 import type { H3Event } from 'h3'
 import type { LinkCheckRequest, LinkCheckResponse, LinkCheckResult } from '#shared/types/link-check'
 import { getHeader } from 'h3'
-import { ofetch } from 'ofetch'
 import { toErrorMessage } from '#shared/utils/error'
 import { listLinks } from './link-store'
-import { isPublicHttpUrl } from './public-url'
+import { fetchPublicHttpUrl, isPublicHttpUrl } from './public-url'
 
 const SAFE_FORWARDED_HEADERS = ['accept-language', 'user-agent'] as const
 
@@ -41,12 +40,10 @@ async function checkLink(
   }
 
   try {
-    const response = await ofetch.raw(link.url, {
+    const response = await fetchPublicHttpUrl(link.url, {
       method: 'GET',
       headers,
-      timeout: timeoutSeconds * 1000,
-      ignoreResponseError: true,
-      responseType: 'stream',
+      signal: AbortSignal.timeout(timeoutSeconds * 1000),
     })
     const status = response.status
 

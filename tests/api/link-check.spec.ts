@@ -98,6 +98,36 @@ describe('/api/link/check', { concurrent: false }, () => {
     }
   })
 
+  it('reports a redirect to a private address as a failed check without requesting it', async () => {
+    const slug = uniqueSlug(0)
+    expect((await postJson('/api/link/create', { slug, url: 'https://redirector.test/start' })).status).toBe(201)
+    const requested: string[] = []
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = input instanceof Request ? input.url : String(input)
+      requested.push(url)
+      return new Response(null, { status: 302, headers: { Location: 'http://127.0.0.1/admin' } })
+    })
+
+    try {
+      let cursor: string | undefined
+      let result
+      for (let pageCount = 0; pageCount < 100 && !result; pageCount++) {
+        const page = await (await postJson('/api/link/check', { cursor, limit: 10, timeout: 1 })).json() as LinkCheckResponse
+        result = page.results.find(item => item.slug === slug)
+        if (page.list_complete)
+          break
+        cursor = page.cursor
+      }
+
+      expect(result).toMatchObject({ slug, status: 0, ok: false })
+      expect(requested.filter(url => url.includes('127.0.0.1'))).toEqual([])
+    }
+    finally {
+      fetchSpy.mockRestore()
+      await deleteStoredLinks([slug])
+    }
+  })
+
   it('rejects client-provided link targets and limits pages to 10', async () => {
     expect((await postJson('/api/link/check', {
       links: [{ slug: 'client-target', url: 'https://example.com' }],

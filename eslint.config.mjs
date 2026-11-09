@@ -19,6 +19,18 @@ export default withNuxt(antfu(
     },
   },
   {
+    // AGENTS.md: server code must never import app code; move shared code to shared/**.
+    files: ['server/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: ['@/*', '~/*', '~~/app/*', '@@/app/*', '**/app/*'],
+          message: 'server/** must not import app/**; use #shared/... instead.',
+        }],
+      }],
+    },
+  },
+  {
     plugins: {
       'better-tailwindcss': eslintPluginBetterTailwindcss,
     },

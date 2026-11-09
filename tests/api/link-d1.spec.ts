@@ -4,6 +4,7 @@ import { env } from 'cloudflare:workers'
 import { count, eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { linkMigrationRuns, links, linkTags, linkTombstones, tags } from '../../server/database/schema'
+import { LINK_PASSWORD_HASH_PREFIX } from '../../shared/utils/link-password'
 import { clearLinkMigrationState, db, deleteStoredLinks, fetch, fetchWithAuth, getD1Link, getStoredLink, postJson, putJson, setLinkStoreD1Mode } from '../utils'
 
 const createdSlugs = new Set<string>()
@@ -290,6 +291,22 @@ describe('d1 link integration', () => {
     const query = await fetchWithAuth(`/api/link/query?slug=${link.slug}`)
     expect(query.status).toBe(200)
     expect(await query.json()).toMatchObject({ tags: ['legacy-tag'] })
+  })
+
+  it('hashes legacy plaintext passwords when migrating them to D1', async () => {
+    await clearLinkMigrationState()
+    const password = 'legacy-secret123'
+    const link = makeLink(undefined, { password })
+    await putKvLink(link)
+
+    await runMigration(false)
+
+    const stored = await getD1Link(link.slug)
+    expect(stored?.password?.startsWith(LINK_PASSWORD_HASH_PREFIX), stored?.password ?? undefined).toBe(true)
+    const wrong = await fetch(`/${link.slug}`, { redirect: 'manual', headers: { 'x-link-password': 'wrong-password' } })
+    expect(wrong.status).toBe(403)
+    const unlocked = await fetch(`/${link.slug}`, { redirect: 'manual', headers: { 'x-link-password': password } })
+    expect(unlocked.status).toBe(301)
   })
 
   it('keeps a legacy KV link on a reserved slug readable and editable', async () => {

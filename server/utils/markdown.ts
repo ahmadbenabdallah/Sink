@@ -1,5 +1,6 @@
 import type { H3Event } from 'h3'
 import { getHeader } from 'h3'
+import { fetchPublicHttpUrl } from './public-url'
 
 const MAX_RESPONSE_BYTES = 256 * 1024
 const MAX_MARKDOWN_LENGTH = 4096
@@ -51,7 +52,7 @@ export async function fetchPageMarkdown(event: H3Event, url: string, AI: Ai): Pr
     if (acceptLanguage)
       headers.set('Accept-Language', acceptLanguage)
 
-    const response = await fetch(target, { headers, signal: controller.signal })
+    const response = await fetchPublicHttpUrl(target.toString(), { headers, signal: controller.signal })
     if (!response.ok)
       throw new Error(`HTTP ${response.status}`)
 
