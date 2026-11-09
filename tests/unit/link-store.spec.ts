@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   putLinkCache: vi.fn(),
 }))
 
+vi.mock('#shared/utils/link-password', async () => import('../../shared/utils/link-password'))
+
 vi.mock('../../server/services/link-store/d1', () => ({
   d1CountLinks: vi.fn(),
   d1CreateLink: vi.fn(),

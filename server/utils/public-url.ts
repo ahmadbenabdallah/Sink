@@ -18,6 +18,45 @@ export function isPublicHttpUrl(url: string): boolean {
   }
 }
 
+const MAX_REDIRECTS = 5
+
+/**
+ * fetch() for user-supplied URLs: follows redirects manually so every hop must
+ * pass isPublicHttpUrl. Mirrors the Fetch spec redirect rules (303, or 301/302
+ * after POST, become a bodyless GET; Authorization is dropped across origins).
+ * ponytail: literal-IP checks only, no DNS resolution — Workers cannot route to
+ * private networks; resolve via DoH here if Sink ever runs outside Workers.
+ */
+export async function fetchPublicHttpUrl(url: string, init: RequestInit = {}): Promise<Response> {
+  let target = url
+  let request: RequestInit = { ...init, headers: new Headers(init.headers) }
+
+  for (let redirects = 0; ; redirects++) {
+    if (!isPublicHttpUrl(target))
+      throw new Error('URL is not allowed for server-side fetching')
+
+    const response = await fetch(target, { ...request, redirect: 'manual' })
+    const location = response.headers.get('location')
+    if (response.status < 300 || response.status >= 400 || !location)
+      return response
+
+    await response.body?.cancel()
+    if (redirects === MAX_REDIRECTS)
+      throw new Error('Too many redirects')
+
+    const next = new URL(location, target)
+    const headers = new Headers(request.headers)
+    if (next.origin !== new URL(target).origin)
+      headers.delete('authorization')
+    const method = (request.method ?? 'GET').toUpperCase()
+    const toGet = response.status === 303
+      ? method !== 'GET' && method !== 'HEAD'
+      : (response.status === 301 || response.status === 302) && method === 'POST'
+    request = toGet ? { ...request, method: 'GET', body: undefined, headers } : { ...request, headers }
+    target = next.toString()
+  }
+}
+
 function isBlockedIp(hostname: string): boolean {
   if (hostname.includes(':'))
     return isBlockedIpv6(hostname)
