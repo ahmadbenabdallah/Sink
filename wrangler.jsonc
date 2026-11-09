@@ -27,7 +27,7 @@
   },
 
   // CLI deploy (pnpm deploy:worker / deploy:config) rewrites them into gitignored wrangler.deploy.jsonc.
-  // Prefer setting DEPLOY_* in .env or Workers Builds / Pages variables — do not hardcode production IDs here.
+  // Prefer setting DEPLOY_* in .env or Workers Builds / Pages variables — do not hardcode
   "analytics_engine_datasets": [
     {
       "binding": "ANALYTICS",
