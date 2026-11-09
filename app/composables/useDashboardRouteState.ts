@@ -125,11 +125,7 @@ export function useDashboardLinksRouteState() {
   let applyingRoute = false
 
   function currentQuery() {
-    return serializeLinksQuery({
-      status: store.status,
-      sort: store.sortBy,
-      tag: store.tag,
-    })
+    return serializeLinksQuery(store.routeState)
   }
 
   watch(

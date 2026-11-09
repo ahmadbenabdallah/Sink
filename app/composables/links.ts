@@ -2,7 +2,7 @@ import type { Link, LinkUpdateType } from '@/types'
 import type { DashboardLinkStatus } from '@/types/dashboard-links'
 import type { DashboardLinkSort, LinksQueryState } from '@/utils/dashboard-query'
 import { createEventHook, tryOnScopeDispose } from '@vueuse/core'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { defineStore } from '#imports'
 
 export interface LinkUpdateEvent {
@@ -40,6 +40,12 @@ export const useDashboardLinksStore = defineStore('dashboard-links', () => {
     return off
   }
 
+  const routeState = computed<LinksQueryState>(() => ({
+    status: status.value,
+    sort: sortBy.value,
+    tag: tag.value,
+  }))
+
   function applyRouteState(state: LinksQueryState) {
     sortBy.value = state.sort
     status.value = state.status
@@ -56,6 +62,7 @@ export const useDashboardLinksStore = defineStore('dashboard-links', () => {
     closeLinkEditor,
     notifyLinkUpdate,
     onLinkUpdate,
+    routeState,
     applyRouteState,
   }
 })

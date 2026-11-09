@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   getDashboardLinkDetailLocation,
   getDashboardLinkDetailUrl,
+  getDashboardLinksLocation,
 } from '../../app/utils/link-check'
 
 vi.mock('@/utils/dashboard-query', async () => import('../../app/utils/dashboard-query'))
@@ -40,6 +41,27 @@ describe('dashboard link detail navigation', () => {
     expect(getDashboardLinkDetailLocation('detail-slug')).toEqual({
       path: '/dashboard/link',
       query: { slug: 'detail-slug' },
+    })
+  })
+
+  it('returns the plain links list for default filters', () => {
+    expect(getDashboardLinksLocation({ status: 'active', sort: 'newest' })).toEqual({
+      path: '/dashboard/links',
+      query: {},
+    })
+  })
+
+  it('carries non-default status, sort, and tag back to the links list', () => {
+    expect(getDashboardLinksLocation({ status: 'expired', sort: 'az', tag: 'product' })).toEqual({
+      path: '/dashboard/links',
+      query: { status: 'expired', sort: 'az', tag: 'product' },
+    })
+  })
+
+  it('keeps only the filters that differ from the defaults', () => {
+    expect(getDashboardLinksLocation({ status: 'active', sort: 'oldest' })).toEqual({
+      path: '/dashboard/links',
+      query: { sort: 'oldest' },
     })
   })
 

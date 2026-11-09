@@ -70,7 +70,7 @@ linksStore.onLinkUpdate(({ link: updatedLink, type }) => {
     return
 
   if (type === 'delete') {
-    navigateTo('/dashboard/links', { replace: true })
+    navigateTo(getDashboardLinksLocation(linksStore.routeState), { replace: true })
   }
   else if (type === 'edit') {
     link.value = updatedLink
