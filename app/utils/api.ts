@@ -1,5 +1,6 @@
 import type { NitroFetchOptions, NitroFetchRequest } from 'nitropack'
 import { getAuthToken, removeAuthToken } from '@/utils/auth-token'
+import { getHttpErrorStatus } from '@/utils/http-error'
 
 type APIOptions = Omit<NitroFetchOptions<NitroFetchRequest>, 'headers'> & {
   headers?: Record<string, string>
@@ -21,7 +22,7 @@ export async function useAPI(api: string, options?: APIOptions): Promise<unknown
     return await $fetch(api, requestOptions)
   }
   catch (error: unknown) {
-    if (typeof error === 'object' && error !== null && 'status' in error && error.status === 401) {
+    if (getHttpErrorStatus(error) === 401) {
       removeAuthToken()
       if (import.meta.client && window.location.pathname !== '/dashboard/login')
         window.location.assign('/dashboard/login')
