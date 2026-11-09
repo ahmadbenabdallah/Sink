@@ -46,6 +46,8 @@ export default defineNuxtConfig({
       kvBatchLimit: '50',
       maxUrlLength: '16384',
       homeURL: process.env.NUXT_HOME_URL || '',
+      // Public origin for canonical links, e.g. https://go.example.com. Empty: use the serving origin.
+      siteUrl: '',
       linkProxyEnabled: false,
     },
   },
