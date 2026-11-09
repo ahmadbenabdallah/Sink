@@ -78,6 +78,7 @@ On Workers, set the same value in Builds and runtime. On Pages, set once, then r
 | `NUXT_PUBLIC_KV_BATCH_LIMIT`      | `50`    | Export page size; import accepts at most half per request                                          |
 | `NUXT_PUBLIC_MAX_URL_LENGTH`      | `16384` | Maximum target URL length in characters (256-24000)                                                |
 | `NUXT_PUBLIC_HOME_URL`            | empty   | Non-empty URL redirects `/`; empty shows the Sink homepage                                         |
+| `NUXT_PUBLIC_SITE_URL`            | empty   | Public origin for canonical links, e.g. `https://go.example.com`; empty uses the serving origin    |
 | `NUXT_PUBLIC_LINK_PROXY_ENABLED`  | `false` | `true` allows links to opt into reverse proxy mode; off, stored proxy links fall back to redirects |
 
 `NUXT_PUBLIC_*` values are baked into the built UI and read at runtime, so changes need a rebuild before the client picks them up.
