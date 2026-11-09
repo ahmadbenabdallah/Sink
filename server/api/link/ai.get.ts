@@ -13,7 +13,7 @@ defineRouteMeta({
         in: 'query',
         required: true,
         schema: { type: 'string', format: 'uri' },
-        description: 'The URL to generate a slug for',
+        description: 'The URL to generate a slug for ',
       },
     ],
   },
