@@ -56,7 +56,7 @@ export const UrlSchema = z.string()
   .min(1, 'URL is required')
   .max(MAX_URL_LENGTH, `URL must not exceed ${MAX_URL_LENGTH} characters`)
   .url('URL format is invalid')
-export const SlugSchema = z.string().trim().max(2048).regex(new RegExp(slugRegex))
+export const SlugSchema = z.string().trim().max(2048).regex(new RegExp(slugRegex as RegExp))
 // `server/middleware/1.redirect.ts` skips reserved slugs before it looks a link up, so a
 // link written to one never redirects. Reject them where new links come in, and compare
 // case-insensitively because write paths lowercase the slug unless `caseSensitive` is set.
