@@ -1,4 +1,4 @@
-import type { Link } from '@/types'
+import type { Link } from '#shared/types/link'
 import { parsePath, withQuery } from 'ufo'
 import { proxyLinkRequest } from '../services/link-proxy'
 

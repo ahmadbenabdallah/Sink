@@ -392,6 +392,14 @@ describe('/api/link/edit', { concurrent: false }, () => {
     expect(data).toHaveProperty('shortLink')
   })
 
+  it('rejects an edit that sets a past expiration', async () => {
+    const payload = createLinkPayload()
+    expect((await postJson('/api/link/create', payload)).status).toBe(201)
+
+    const response = await putJson('/api/link/edit', { ...payload, expiration: Math.floor(Date.now() / 1000) - 60 })
+    expect(response.status).toBe(400)
+  })
+
   it('preserves, changes, and clears password with edit semantics', async () => {
     const initialPassword = 'secret123'
     const newPassword = 'changed456'

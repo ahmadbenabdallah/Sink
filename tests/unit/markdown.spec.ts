@@ -49,6 +49,32 @@ describe('fetchPageMarkdown', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
+  it('rejects private hosts without fetching', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchPageMarkdown(createEvent({}), 'http://10.0.0.1/internal', createAI())).resolves.toBeNull()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('does not follow a redirect to a private host', async () => {
+    const requested: string[] = []
+    // Emulates the runtime: redirects are followed unless the caller opts into 'manual'.
+    const fakeFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url = String(input)
+      requested.push(url)
+      if (url === 'https://example.com/redirect') {
+        const response = new Response(null, { status: 302, headers: { Location: 'http://127.0.0.1/secret' } })
+        return init?.redirect === 'manual' ? response : fakeFetch('http://127.0.0.1/secret', init)
+      }
+      return new Response('# internal', { headers: { 'Content-Type': 'text/markdown' } })
+    }
+    vi.stubGlobal('fetch', fakeFetch)
+
+    await expect(fetchPageMarkdown(createEvent({}), 'https://example.com/redirect', createAI())).resolves.toBeNull()
+    expect(requested).toEqual(['https://example.com/redirect'])
+  })
+
   it('caps streamed responses at 256 KiB and cancels the reader', async () => {
     const cancel = vi.fn()
     const stream = new ReadableStream<Uint8Array>({
