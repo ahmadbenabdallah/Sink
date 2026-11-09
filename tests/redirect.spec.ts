@@ -282,6 +282,31 @@ describe('/', () => {
     }
   })
 
+  it('follows an upstream redirect to another public host and serves its body', async () => {
+    mockUpstream({
+      'upstream.test': () => new Response(null, { status: 302, headers: { Location: 'https://moved.test/page' } }),
+      'moved.test': () => new Response('moved body'),
+    })
+    const slug = await createProxyLink('https://upstream.test/')
+
+    const response = await fetch(`/${slug}`, { redirect: 'manual' })
+    expect(response.status).toBe(200)
+    expect(response.headers.get('location')).toBeNull()
+    expect(await response.text()).toBe('moved body')
+  })
+
+  it('refuses an upstream redirect to a private address', async () => {
+    mockUpstream({
+      'upstream.test': () => new Response(null, { status: 302, headers: { Location: 'http://127.0.0.1/admin' } }),
+    })
+    const slug = await createProxyLink('https://upstream.test/')
+
+    const response = await fetch(`/${slug}`, { redirect: 'manual' })
+    expect(response.status).toBe(502)
+    expect(response.headers.get('location')).toBeNull()
+    expect(upstreamCalls('127.0.0.1').length).toBe(0)
+  })
+
   it('does not forward credential headers to the proxy target', async () => {
     mockUpstream({
       'headers.test': init => new Response(JSON.stringify({ headers: upstreamHeaders(init) }), {

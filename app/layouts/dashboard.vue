@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { useScroll } from '@vueuse/core'
 
-const { pageTitle } = useDashboardRoute()
+const { currentPage, pageTitle } = useDashboardRoute()
 const route = useRoute()
+const linksStore = useDashboardLinksStore()
+// Only the link-detail page gets the third level: Dashboard › Links › <slug>.
+const detailSlug = computed(() => currentPage.value === 'link' ? parseDashboardSlug(route.query.slug) : undefined)
 
 const scrollContainer = ref<HTMLElement | null>(null)
 const { y } = useScroll(scrollContainer)
@@ -52,7 +55,10 @@ useSeoMeta({
           >
             <SidebarTrigger class="-ml-1" />
             <Separator orientation="vertical" class="mr-2 h-4" />
-            <DashboardPageBreadcrumb :title="$t(pageTitle ?? 'dashboard.title')" />
+            <DashboardPageBreadcrumb
+              :title="detailSlug ?? $t(pageTitle ?? 'dashboard.title')"
+              :parent="detailSlug ? { title: $t('nav.links'), to: getDashboardLinksLocation(linksStore.routeState) } : undefined"
+            />
           </div>
 
           <div

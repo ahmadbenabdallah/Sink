@@ -21,6 +21,7 @@ import {
 } from '../services/link-store/d1'
 import { deleteLinkCache, isActiveLinkExpiration, putLinkCache, readLegacyKvLink } from '../services/link-store/kv'
 import { insertMigratedKvLink, readCompletedLinkMigrationMarker } from '../services/link-store/migration'
+import { normalizeLinkPasswordForStorage } from './link-password'
 
 export function normalizeSlug(event: H3Event, slug: string): string {
   const { caseSensitive } = useRuntimeConfig(event)
@@ -129,7 +130,11 @@ export async function createLinks(event: H3Event, links: Link[]): Promise<Create
 }
 
 export async function migrateKvLink(event: H3Event, link: Link, effectiveExpiresAt?: number): Promise<boolean> {
-  return await insertMigratedKvLink(event, link, effectiveExpiresAt)
+  // Legacy KV links may hold plaintext passwords; D1 only ever stores hashes.
+  const migrated = link.password
+    ? { ...link, password: await normalizeLinkPasswordForStorage(link.password) }
+    : link
+  return await insertMigratedKvLink(event, migrated, effectiveExpiresAt)
 }
 
 export async function updateLink(event: H3Event, link: Link, expected?: ExpectedLinkVersion): Promise<boolean> {

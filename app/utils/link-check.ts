@@ -1,5 +1,12 @@
-import type { DashboardQuery } from '@/utils/dashboard-query'
-import { parseAnalysisQuery, serializeAnalysisQuery } from '@/utils/dashboard-query'
+import type { DashboardQuery, LinksQueryState } from '@/utils/dashboard-query'
+import { parseAnalysisQuery, serializeAnalysisQuery, serializeLinksQuery } from '@/utils/dashboard-query'
+
+export function getDashboardLinksLocation(state: LinksQueryState) {
+  return {
+    path: '/dashboard/links',
+    query: serializeLinksQuery(state),
+  }
+}
 
 export function getDashboardLinkDetailLocation(slug: string, sourceQuery?: DashboardQuery) {
   return {

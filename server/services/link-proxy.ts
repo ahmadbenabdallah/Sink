@@ -90,7 +90,6 @@ export async function proxyLinkRequest(event: H3Event, targetUrl: string, option
   const init: RequestInit & { duplex?: 'half' } = {
     method,
     headers: buildForwardHeaders(event),
-    redirect: 'follow',
     signal: controller.signal,
   }
   if (method !== 'GET' && method !== 'HEAD') {
@@ -101,7 +100,7 @@ export async function proxyLinkRequest(event: H3Event, targetUrl: string, option
 
   let upstream: Response
   try {
-    upstream = await fetch(targetUrl, init)
+    upstream = await fetchPublicHttpUrl(targetUrl, init)
   }
   catch (cause) {
     throw createError({ status: 502, statusText: 'Proxy request failed', cause })
