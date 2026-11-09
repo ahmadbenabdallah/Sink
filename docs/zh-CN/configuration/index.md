@@ -71,14 +71,15 @@ description: Sink 支持的全部环境变量——做什么、填在哪、什�
 
 Workers 要在 Builds 和运行时填相同值。Pages 只填一次，然后重新部署。
 
-| 变量                              | 默认    | 用途                                                                |
-| --------------------------------- | ------- | ------------------------------------------------------------------- |
-| `NUXT_PUBLIC_PREVIEW_MODE`        | 空      | `true` = 演示模式（链接只活 5 分钟）                                |
-| `NUXT_PUBLIC_SLUG_DEFAULT_LENGTH` | `6`     | 自动生成短链码的长度                                                |
-| `NUXT_PUBLIC_KV_BATCH_LIMIT`      | `50`    | 导出每页条数；导入每次最多一半                                      |
-| `NUXT_PUBLIC_MAX_URL_LENGTH`      | `16384` | 目标 URL 最大字符数（256-24000）                                    |
-| `NUXT_PUBLIC_HOME_URL`            | 空      | 非空则把 `/` 重定向到该 URL；空则显示 Sink 首页                     |
-| `NUXT_PUBLIC_LINK_PROXY_ENABLED`  | `false` | `true` 时允许链接开启反向代理模式；关闭时存量代理链接回退为普通跳转 |
+| 变量                              | 默认    | 用途                                                                          |
+| --------------------------------- | ------- | ----------------------------------------------------------------------------- |
+| `NUXT_PUBLIC_PREVIEW_MODE`        | 空      | `true` = 演示模式（链接只活 5 分钟）                                          |
+| `NUXT_PUBLIC_SLUG_DEFAULT_LENGTH` | `6`     | 自动生成短链码的长度                                                          |
+| `NUXT_PUBLIC_KV_BATCH_LIMIT`      | `50`    | 导出每页条数；导入每次最多一半                                                |
+| `NUXT_PUBLIC_MAX_URL_LENGTH`      | `16384` | 目标 URL 最大字符数（256-24000）                                              |
+| `NUXT_PUBLIC_HOME_URL`            | 空      | 非空则把 `/` 重定向到该 URL；空则显示 Sink 首页                               |
+| `NUXT_PUBLIC_SITE_URL`            | 空      | canonical 链接使用的公开域名，如 `https://go.example.com`；空则用当前访问域名 |
+| `NUXT_PUBLIC_LINK_PROXY_ENABLED`  | `false` | `true` 时允许链接开启反向代理模式；关闭时存量代理链接回退为普通跳转           |
 
 `NUXT_PUBLIC_*` 的值会打进构建出的页面、同时也在运行时读取，所以修改后需要重新构建，客户端才能拿到新值。
 

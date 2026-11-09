@@ -49,6 +49,11 @@ async function loadLink(currentSlug = slug.value) {
   catch (error) {
     if (controller.signal.aborted)
       return
+    // A slug that doesn't exist is a 404 page, not a retryable load failure.
+    if (getHttpErrorStatus(error) === 404) {
+      showError({ statusCode: 404, statusMessage: 'Link not found' })
+      return
+    }
     console.error(error)
     loadError.value = true
   }
