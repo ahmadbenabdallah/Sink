@@ -74,6 +74,15 @@ export default defineNuxtConfig({
   experimental: {
     enforceModuleCompatibility: true,
   },
+  hooks: {
+    // Cloudflare refuses `Sec-Purpose: prefetch` requests to Worker routes with
+    // a 503, so <link rel="prefetch"> hints never help and only log errors.
+    // NuxtLink's visibility prefetch (plain script loads) still works.
+    'build:manifest': (manifest) => {
+      for (const resource of Object.values(manifest))
+        resource.prefetch = false
+    },
+  },
   typescript: {
     tsConfig: {
       compilerOptions: {
