@@ -12,6 +12,10 @@
     "nodejs_compat"
   ],
   "keep_vars": true,
+  // Production is served from the custom domain attached in the Cloudflare dashboard.
+  // Set explicitly so deploys do not enable the workers.dev address or preview URLs by default.
+  "workers_dev": false,
+  "preview_urls": false,
   "upload_source_maps": true,
   "observability": {
     "logs": {
