@@ -68,7 +68,7 @@ pnpm db:migrate:remote   # mutates the configured remote D1 database
 
 ## Testing quirks
 
-- Vitest uses `@cloudflare/vitest-pool-workers`, `wrangler.jsonc`, one Worker, `isolate: false`, and `maxWorkers: 1`. Storage is shared across the run.
+- Vitest uses `@cloudflare/vitest-plugin`, `wrangler.jsonc`, one Worker, `isolate: false`, and `maxWorkers: 1`. Storage is shared across the run.
 - Worker tests execute `.output/server/index.mjs` from `wrangler.jsonc`. Run `pnpm build` after server changes before the final test run, or tests may exercise stale output.
 - Use unique slugs and cleanup helpers from `tests/utils.ts`; do not make state-sharing suites concurrent.
 - `tests/setup.ts` applies all D1 migrations before tests. Update migrations, not ad hoc test setup, when schema changes.
