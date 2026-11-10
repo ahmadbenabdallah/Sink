@@ -74,11 +74,24 @@ const useLinkMigrationStore = defineStore('link-migration', () => {
     error.value = null
   }
 
+  // The cache keeps the links page instant, but the server stays the authority:
+  // after a database reset it reports "not complete" and the cache must go.
+  // A failed request keeps the cached status so a network blip changes nothing.
+  async function revalidateCachedStatus(): Promise<void> {
+    try {
+      const status = await useAPI<LinkMigrationStatus>('/api/link/migration/status')
+      applyStatus(status)
+      cachedStatus.value = status.completed ? status : null
+    }
+    catch {}
+  }
+
   async function fetchStatus(): Promise<LinkMigrationStatus | null> {
     try {
       const cached = cachedStatus.value
       if (cached?.completed) {
         applyStatus(cached)
+        void revalidateCachedStatus()
         return cached
       }
 
