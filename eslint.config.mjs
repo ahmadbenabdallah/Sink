@@ -10,6 +10,8 @@ export default withNuxt(antfu(
       'app/components/ui/**',
       'app/data/**',
       'public/*.json',
+      // Symlink to AGENTS.md; on Windows it checks out as a one-line text file.
+      'CLAUDE.md',
     ],
     rules: {
       '@typescript-eslint/ban-ts-comment': 'off',
