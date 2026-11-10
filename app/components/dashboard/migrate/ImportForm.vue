@@ -122,6 +122,7 @@ function resetForm() {
         <Button
           v-else
           class="w-full"
+          :disabled="previewMode"
           @click="importLinks"
         >
           <Upload aria-hidden="true" class="size-4" />
