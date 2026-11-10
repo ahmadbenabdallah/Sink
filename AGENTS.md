@@ -15,7 +15,7 @@
 - Use `@lucide/vue` for Lucide icons; do not add `lucide-vue-next`.
 - Application forms must live in dedicated `*Form.vue` components and should prefer `@tanstack/vue-form`. Generated components under `app/components/ui/form/**` may use `vee-validate` internally.
 - Business dialogs must live in dedicated `*Dialog.vue` or `*Modal.vue` components; use `AlertDialog` for confirmations and `ResponsiveModal` for task content that adapts between dialog and drawer, and do not inline these implementations in unrelated components.
-- Locale messages live in `i18n/locales/<locale>/*.json` and are loaded through the module list in `i18n/i18n.ts`. Organize feature messages by their owning product domain; do not introduce cross-cutting `ux`, `ui`, or `messages` namespaces at the top level or across product domains.
+- Locale messages live in `i18n/locales/<locale>/*.json` and are loaded through the module list in `i18n/config.json`, which `i18n/i18n.ts` maps to locale files. Organize feature messages by their owning product domain; do not introduce cross-cutting `ux`, `ui`, or `messages` namespaces at the top level or across product domains.
 - Keep every locale directory aligned on module files, translation keys, and interpolation placeholders. When moving a key or changing the module list, update every locale and all application references in the same change.
 
 ## Setup and commands
@@ -37,10 +37,13 @@ pnpm test --run -t 'creates new link'     # tests matching a name
 ```
 
 - ESLint and TypeScript extend generated `.nuxt` files. If they are missing, run `pnpm postinstall` (or `pnpm install`) before diagnosing config errors.
-- Authenticated tests need `NUXT_SITE_TOKEN`; local values are loaded from `.env`, with `.env.example` as the template.
+- Authenticated tests need `NUXT_SITE_TOKEN`; local values are loaded from `.env`, with `.env.example` as the template. The template sets `NUXT_PUBLIC_PREVIEW_MODE=true`, which makes edit, delete, and import tests return 403; leave it empty in the `.env` used for tests.
 - `.github/workflows/fork-ci.yml` runs lint, typecheck, locale check, build, and tests on every pull request and push to `master`. It only reports; it does not block merges or deploy. Run the same commands locally before pushing.
 - `fork-ci` also runs dependency review (pull requests only), a gitleaks secret scan over the full history (`.gitleaks.toml`), and the project Semgrep rules in `.semgrep/rules`. Server code must not call raw `fetch()`; use `fetchPublicHttpUrl` for user-supplied URLs.
 - Tests run with `remoteBindings: false` (`vitest.config.ts`), so they need no Cloudflare login or API token.
+- On Windows, `pnpm build` fails under cmd or PowerShell because the script sets `NODE_OPTIONS=` inline. Run it from a POSIX shell such as Git Bash: `node scripts/build-sphere.js && NODE_OPTIONS=--max-old-space-size=8192 npx nuxt build`.
+- A running `pnpm dev` keeps `.output/public` open (it backs the `ASSETS` binding), so a build fails with `EBUSY` on Windows. Stop the dev server before building.
+- `CLAUDE.md` is a symlink to `AGENTS.md`. Edit `AGENTS.md` only; on Windows the symlink checks out as a one-line text file and must not be changed.
 - The pre-commit hook only runs `eslint --fix` on staged JS/TS/Vue files; it does not replace full-project verification.
 
 ## Architecture and data flow
@@ -72,8 +75,10 @@ pnpm db:migrate:remote   # mutates the configured remote D1 database
 - Worker tests execute `.output/server/index.mjs` from `wrangler.jsonc`. Run `pnpm build` after server changes before the final test run, or tests may exercise stale output.
 - Use unique slugs and cleanup helpers from `tests/utils.ts`; do not make state-sharing suites concurrent.
 - `tests/setup.ts` applies all D1 migrations before tests. Update migrations, not ad hoc test setup, when schema changes.
+- A spec that imports server code directly must alias `#shared/...` itself, for example `vi.mock('#shared/utils/link-password', async () => import('../../shared/utils/link-password'))`.
+- `runScheduledTasks()` can return before the cron hooks finish. Wait for the effect with `vi.waitFor` instead of asserting right after the call (see `tests/api/link-password-rehash.spec.ts`).
 
 ## Generated artifacts
 
-- `pnpm install` regenerates ignored `public/world.json` via `build:map`.
+- `pnpm install` regenerates ignored `public/world.json` via `build:map`. It also rewrites the tracked `public/countries.geojson` from the map bundled with `@unovis/ts`, so its content can change when that package updates; restore it with `git restore public/countries.geojson` unless you mean to update the map.
 - `pnpm build` regenerates `public/sphere.bin` through its prebuild hook. `build:colo` and `build:testimonials` generate `public/colos.json` and `app/data/testimonials.json`; the testimonial task is network-dependent and randomizes order.
