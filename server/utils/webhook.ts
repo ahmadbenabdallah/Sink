@@ -112,6 +112,7 @@ export async function deliverWebhook(options: DeliverWebhookOptions): Promise<vo
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT_MS)
   try {
+    // nosemgrep: sink-no-raw-fetch-in-server -- operator-configured webhook URL, validated above, redirect: manual
     const response = await (options.fetcher || fetch)(url, {
       method: 'POST',
       redirect: 'manual',

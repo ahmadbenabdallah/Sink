@@ -12,6 +12,7 @@ export async function isSafeUrl(event: H3Event, url: string): Promise<boolean> {
     dohUrl.searchParams.set('type', 'A')
     dohUrl.searchParams.set('name', hostname)
 
+    // nosemgrep: sink-no-raw-fetch-in-server -- operator-configured DoH resolver URL, not a user-supplied URL
     const dnsResult = await ofetch<{ Answer?: Array<{ data: string }> }>(dohUrl.toString(), {
       headers: { accept: 'application/dns-json' },
       timeout: 5000,

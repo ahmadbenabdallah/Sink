@@ -97,4 +97,4 @@ jobs:
           persist-credentials: false
       - run: pipx install semgrep==1.185.0
       - run: semgrep --test .semgrep/rules
-      - run: semgrep scan --config .semgrep/rules --error --metrics=off server
+      - run: semgrep scan --config .semgrep/rules --error --metrics=off server shared
