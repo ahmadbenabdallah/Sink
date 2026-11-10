@@ -37,3 +37,19 @@ describe('verifyLinkPassword with a hashed stored password', () => {
     expect(await verifyLinkPassword(stored, stored)).toBe(false)
   })
 })
+
+// Guessing a password is unauthenticated, so the input size must be bounded
+// before any hashing work. Stored passwords are capped at 128 characters.
+describe('verifyLinkPassword input length cap', () => {
+  it('accepts a 1024-character input that matches a legacy stored password', async () => {
+    const password = 'a'.repeat(1024)
+
+    expect(await verifyLinkPassword(password, password)).toBe(true)
+  })
+
+  it('rejects a 1025-character input even when it equals a legacy stored password', async () => {
+    const password = 'a'.repeat(1025)
+
+    expect(await verifyLinkPassword(password, password)).toBe(false)
+  })
+})
