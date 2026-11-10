@@ -80,6 +80,19 @@ describe('analytics query builders', () => {
     expect(compiled).not.toContain('limit')
   })
 
+  // Counters weight visitors by the sample interval; charts must agree with them under sampling.
+  it('weights views visitors by the sample interval like the counters', () => {
+    const compiled = compileAnalyticsQuery(buildViewsQuery({ ...filters, unit: 'day', clientTimezone: 'Etc/UTC' }, event))
+
+    expect(compiled).toContain('ROUND(COUNT(DISTINCT blob4) * SUM(_sample_interval) / COUNT()) as visitors')
+  })
+
+  it('weights heatmap visitors by the sample interval like the counters', () => {
+    const compiled = compileAnalyticsQuery(buildHeatmapQuery({ clientTimezone: 'Etc/UTC' }, event))
+
+    expect(compiled).toContain('ROUND(COUNT(DISTINCT blob4) * SUM(_sample_interval) / COUNT()) as visitors')
+  })
+
   it('inlines the validated row limit for metrics', () => {
     const query: Query & { type: 'browser' } = { type: 'browser', limit: 25 }
     const compiled = compileAnalyticsQuery(buildMetricsQuery(query, event))

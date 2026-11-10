@@ -84,7 +84,7 @@ export function buildViewsQuery(query: ViewsQuery, event: H3Event) {
     .select([
       sql<string>`formatDateTime(${sql.ref('timestamp')}, ${sql.lit(viewUnits[query.unit])}, ${sql.lit(timezone)})`.as('time'),
       sql<number>`SUM(_sample_interval)`.as('visits'),
-      sql<number>`COUNT(DISTINCT ${sql.ref(logsMap.ip!)})`.as('visitors'),
+      weightedDistinct(logsMap.ip!).as('visitors'),
     ])
     .groupBy('time')
     .orderBy('time')
@@ -112,7 +112,7 @@ export function buildHeatmapQuery(query: HeatmapQuery, event: H3Event) {
       sql<number>`toDayOfWeek(${tzTimestamp})`.as('weekday'),
       sql<number>`toHour(${tzTimestamp})`.as('hour'),
       sql<number>`SUM(_sample_interval)`.as('visits'),
-      sql<number>`COUNT(DISTINCT ${sql.ref(logsMap.ip!)})`.as('visitors'),
+      weightedDistinct(logsMap.ip!).as('visitors'),
     ])
     .groupBy(['weekday', 'hour'])
     .orderBy('weekday')
