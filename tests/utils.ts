@@ -1,6 +1,6 @@
 import type { Link } from '../shared/schemas/link'
 import { env, exports } from 'cloudflare:workers'
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { expect } from 'vitest'
 import { linkMigrationRuns, links, linkTombstones } from '../server/database/schema'
@@ -76,7 +76,18 @@ export async function deleteStoredLink(slug: string) {
 }
 
 export async function deleteStoredLinks(slugs: string[]) {
-  await Promise.all(slugs.map(slug => deleteStoredLink(slug)))
+  // Chunked deletes: one statement per table per 50 slugs instead of two per slug,
+  // so cleanup of 100+ seeded links stays well inside the hook timeout.
+  const chunks: string[][] = []
+  for (let index = 0; index < slugs.length; index += 50)
+    chunks.push(slugs.slice(index, index + 50))
+  await Promise.all([
+    ...slugs.map(slug => env.KV.delete(`link:${slug}`)),
+    ...chunks.flatMap(chunk => [
+      db.delete(links).where(inArray(links.slug, chunk)),
+      db.delete(linkTombstones).where(inArray(linkTombstones.slug, chunk)),
+    ]),
+  ])
 }
 
 export async function clearLinkMigrationState() {

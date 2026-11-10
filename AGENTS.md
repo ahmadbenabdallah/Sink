@@ -38,7 +38,8 @@ pnpm test --run -t 'creates new link'     # tests matching a name
 
 - ESLint and TypeScript extend generated `.nuxt` files. If they are missing, run `pnpm postinstall` (or `pnpm install`) before diagnosing config errors.
 - Authenticated tests need `NUXT_SITE_TOKEN`; local values are loaded from `.env`, with `.env.example` as the template.
-- There is no validation CI workflow. Run the relevant lint, typecheck, and test commands locally.
+- `.github/workflows/fork-ci.yml` runs lint, typecheck, locale check, build, and tests on every pull request and push to `master`. It only reports; it does not block merges or deploy. Run the same commands locally before pushing.
+- Tests run with `remoteBindings: false` (`vitest.config.ts`), so they need no Cloudflare login or API token.
 - The pre-commit hook only runs `eslint --fix` on staged JS/TS/Vue files; it does not replace full-project verification.
 
 ## Architecture and data flow
