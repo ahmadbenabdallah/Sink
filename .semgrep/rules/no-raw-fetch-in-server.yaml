@@ -1,0 +1,11 @@
+rules:
+  - id: sink-no-raw-fetch-in-server
+    languages: [typescript]
+    severity: ERROR
+    message: >-
+      Raw fetch() in server code. For URLs that come from users or stored links,
+      use fetchPublicHttpUrl (server/utils/public-url.ts): it blocks private
+      addresses and re-checks every redirect hop. If the URL is fixed by
+      configuration, add a nosemgrep comment that says why.
+    patterns:
+      - pattern: fetch(...)

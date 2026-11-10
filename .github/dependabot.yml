@@ -1,0 +1,12 @@
+# Keeps the SHA-pinned actions in .github/workflows up to date.
+# npm version updates are left to Renovate (renovate.json); Dependabot security
+# updates for npm are enabled in the repository settings.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']

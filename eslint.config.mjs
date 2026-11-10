@@ -12,6 +12,8 @@ export default withNuxt(antfu(
       'public/*.json',
       // Symlink to AGENTS.md; on Windows it checks out as a one-line text file.
       'CLAUDE.md',
+      // Semgrep rule fixtures, checked by `semgrep --test`.
+      '.semgrep/**',
     ],
     rules: {
       '@typescript-eslint/ban-ts-comment': 'off',
