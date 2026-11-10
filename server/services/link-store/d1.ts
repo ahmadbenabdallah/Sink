@@ -285,7 +285,10 @@ export async function d1UpdateLink(event: H3Event, link: Link, expected?: Expect
     eq(linkTags.linkSlug, link.slug),
     exists(db.select({ slug: links.slug }).from(links).where(currentVersion)),
   ))
-  const tagInserts = link.tags.map(tag => db.insert(tags).values({ name: tag }).onConflictDoNothing())
+  // Guarded like the associations below: a losing update must not leave orphan tag rows.
+  const tagInserts = link.tags.map(tag => db.insert(tags).select(
+    db.select({ name: sql<string>`${tag}`.as('name') }).from(links).where(currentVersion),
+  ).onConflictDoNothing())
   const associationInserts = link.tags.map(tag => db.insert(linkTags).select(
     db.select({ linkSlug: links.slug, tagName: sql<string>`${tag}`.as('tag_name') }).from(links).where(currentVersion),
   ).onConflictDoNothing())
