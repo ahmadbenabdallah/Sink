@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^9.5.1",
-    "@cloudflare/vitest-pool-workers": "^0.18.8",
+    "@cloudflare/vitest-plugin": "^1.5.1",
     "@internationalized/date": "^3.12.4",
     "@lucide/vue": "^1.70.0",
     "@modelcontextprotocol/server": "^2.4.0",
