@@ -92,6 +92,16 @@ function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
   return diff === 0
 }
 
+// Digests the UTF-16 code units rather than UTF-8, so strings differ exactly when `===` says they do
+// (TextEncoder would map every lone surrogate to U+FFFD).
+async function digestText(value: string): Promise<Uint8Array> {
+  const units = new Uint16Array(value.length)
+  for (let i = 0; i < value.length; i++) {
+    units[i] = value.charCodeAt(i)
+  }
+  return new Uint8Array(await crypto.subtle.digest('SHA-256', units))
+}
+
 export async function hashLinkPassword(password: string): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(LINK_PASSWORD_SALT_BYTES))
   const hash = await deriveLinkPasswordHash(password, salt, LINK_PASSWORD_ITERATIONS)
@@ -112,8 +122,11 @@ export async function normalizeLinkPasswordForStorage(password: string): Promise
 
 export async function verifyLinkPassword(input: string, stored: string): Promise<boolean> {
   const parsed = parseStoredLinkPassword(stored)
-  if (!parsed)
-    return input === stored
+  if (!parsed) {
+    // Legacy plaintext: compare fixed-size digests so neither content nor length leaks through timing.
+    const [inputDigest, storedDigest] = await Promise.all([digestText(input), digestText(stored)])
+    return timingSafeEqual(inputDigest, storedDigest)
+  }
 
   const inputHash = await deriveLinkPasswordHash(input, parsed.salt, parsed.iterations)
   return timingSafeEqual(inputHash, parsed.hash)
