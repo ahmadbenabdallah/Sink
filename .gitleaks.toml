@@ -1,0 +1,11 @@
+# Gitleaks config for fork-ci. Extends the default rules.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Test fixtures (fake passwords and webhook secrets) and placeholder tokens in the skill doc"
+paths = [
+  '''^tests/''',
+  '''^skills/sink/SKILL\.md$''',
+  '''^\.semgrep/''',
+]
