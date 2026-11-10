@@ -3,7 +3,7 @@ packages:
 
 strictPeerDependencies: true
 overrides:
-  source-map-resolve@0.6.0>decode-uri-component: 0.2.2
+  source-map-resolve@0.6.0>decode-uri-component: 0.5.1
   vue-metamorph@3.3.4>glob: 11.1.0
   vitepress@1.6.4>vite: 5.4.21
   # Security patches within the same major until wrangler / eslint plugins bump them.
