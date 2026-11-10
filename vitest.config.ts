@@ -30,6 +30,9 @@ function isHandledValidationError(error: unknown): error is HandledValidationErr
 export default defineConfig(async ({ mode }) => ({
   plugins: [
     cloudflareTest({
+      // Tests never reach Cloudflare: no login or API token needed, locally or in CI.
+      // The AI binding still exists; AI routes fall back when it fails.
+      remoteBindings: false,
       wrangler: {
         configPath: './wrangler.jsonc',
       },
