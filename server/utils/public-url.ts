@@ -35,6 +35,7 @@ export async function fetchPublicHttpUrl(url: string, init: RequestInit = {}): P
     if (!isPublicHttpUrl(target))
       throw new Error('URL is not allowed for server-side fetching')
 
+    // nosemgrep: sink-no-raw-fetch-in-server -- this is the checked helper itself
     const response = await fetch(target, { ...request, redirect: 'manual' })
     const location = response.headers.get('location')
     if (response.status < 300 || response.status >= 400 || !location)
