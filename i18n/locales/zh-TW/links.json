@@ -107,6 +107,8 @@
       "image_ratio_hint": "建議尺寸：1200×630",
       "image_preview": "圖片預覽",
       "slug_required": "請先輸入短連結",
+      "slug_invalid": "只能使用字母、數字，以及它們之間的單一連字號，例如 my-short-link",
+      "slug_too_long": "短網址過長（最多 2,048 個字元）",
       "generate_random_slug": "產生隨機短連結代碼",
       "generate_ai_slug": "使用 AI 產生短連結代碼",
       "utm_builder": "UTM 建構器",

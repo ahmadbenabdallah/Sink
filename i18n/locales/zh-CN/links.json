@@ -107,6 +107,8 @@
       "image_ratio_hint": "推荐尺寸：1200×630",
       "image_preview": "图片预览",
       "slug_required": "请先输入短链",
+      "slug_invalid": "只能使用字母、数字，以及它们之间的单个连字符，例如 my-short-link",
+      "slug_too_long": "短链接过长（最多 2,048 个字符）",
       "generate_random_slug": "生成随机短链标识",
       "generate_ai_slug": "用 AI 生成短链标识",
       "utm_builder": "UTM 构建器",

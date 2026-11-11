@@ -5,7 +5,7 @@ import { useForm } from '@tanstack/vue-form'
 import { useDebounceFn } from '@vueuse/core'
 import { toast } from 'vue-sonner'
 import { z } from 'zod'
-import { MAX_URL_LENGTH, nanoid, SlugSchema } from '#shared/schemas/link'
+import { MAX_URL_LENGTH, nanoid } from '#shared/schemas/link'
 
 const props = defineProps<{
   link: Partial<DashboardLink>
@@ -23,7 +23,6 @@ const { t, locale } = useI18n()
 const linksSearchStore = useDashboardLinksSearchStore()
 const requestUrl = useRequestURL()
 
-const slugValidator = SlugSchema
 const commentValidator = z.string().max(500).optional()
 
 const generateSlug = nanoid()
@@ -60,7 +59,11 @@ const tagsInput = useTemplateRef<{ commit: () => boolean }>('tagsInput')
 watch(isSubmitting, value => emit('update:submitting', value), { immediate: true })
 watch(isDirty, value => emit('update:dirty', value), { immediate: true })
 
-const validateSlug = makeZodValidator(slugValidator)
+const slugPattern = new RegExp(useAppConfig().slugRegex as RegExp)
+function validateSlug({ value }: { value: unknown }): string | undefined {
+  const error = getLinkSlugValidationError(value, slugPattern)
+  return error ? t(`links.form.slug_${error.kind}`) : undefined
+}
 const validateComment = makeZodValidator(commentValidator)
 
 function makeUrlValidator(optional: boolean) {

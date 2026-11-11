@@ -107,6 +107,8 @@
       "image_ratio_hint": "Consigliato: 1200×630",
       "image_preview": "Anteprima immagine",
       "slug_required": "Inserisci prima uno slug",
+      "slug_invalid": "Usa solo lettere, numeri e trattini singoli tra di essi, ad esempio my-short-link",
+      "slug_too_long": "Lo slug è troppo lungo (massimo 2.048 caratteri)",
       "generate_random_slug": "Genera slug casuale",
       "generate_ai_slug": "Genera slug con IA",
       "utm_builder": "Generatore UTM",

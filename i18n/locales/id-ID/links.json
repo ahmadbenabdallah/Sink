@@ -107,6 +107,8 @@
       "image_ratio_hint": "Disarankan: 1200×630",
       "image_preview": "Pratinjau gambar",
       "slug_required": "Masukkan slug terlebih dahulu",
+      "slug_invalid": "Gunakan hanya huruf, angka, dan satu tanda hubung di antaranya, misalnya my-short-link",
+      "slug_too_long": "Slug terlalu panjang (maksimal 2.048 karakter)",
       "generate_random_slug": "Buat slug acak",
       "generate_ai_slug": "Buat slug dengan AI",
       "utm_builder": "Pembuat UTM",
