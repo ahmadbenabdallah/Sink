@@ -11,6 +11,7 @@ export function useWAE(event: H3Event, query: Compilable) {
   if (import.meta.dev)
     console.info('useWAE', compiledQuery)
 
+  // nosemgrep: sink-no-raw-fetch-in-server -- fixed Cloudflare API host, not a user-supplied URL
   return $fetch(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/analytics_engine/sql`, {
     method: 'POST',
     headers: {

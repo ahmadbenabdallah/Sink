@@ -4,6 +4,8 @@ import { isHashedLinkPassword, isMaskedLinkPassword, LINK_PASSWORD_HASH_PREFIX, 
 const LINK_PASSWORD_ITERATIONS = 10_000
 const LINK_PASSWORD_SALT_BYTES = 16
 const LINK_PASSWORD_HASH_BITS = 256
+// Guessing is unauthenticated, so bound the input before any hashing. Stored passwords are at most 128 characters.
+const LINK_PASSWORD_MAX_INPUT_LENGTH = 1024
 
 interface StoredLinkPassword {
   iterations: number
@@ -121,9 +123,13 @@ export async function normalizeLinkPasswordForStorage(password: string): Promise
 }
 
 export async function verifyLinkPassword(input: string, stored: string): Promise<boolean> {
+  if (input.length > LINK_PASSWORD_MAX_INPUT_LENGTH)
+    return false
+
   const parsed = parseStoredLinkPassword(stored)
   if (!parsed) {
-    // Legacy plaintext: compare fixed-size digests so neither content nor length leaks through timing.
+    // Legacy plaintext: compare fixed-size digests so content does not leak through timing
+    // (the stored length only at SHA-256 block granularity).
     const [inputDigest, storedDigest] = await Promise.all([digestText(input), digestText(stored)])
     return timingSafeEqual(inputDigest, storedDigest)
   }

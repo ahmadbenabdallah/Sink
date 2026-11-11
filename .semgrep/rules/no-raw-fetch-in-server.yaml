@@ -3,9 +3,17 @@ rules:
     languages: [typescript]
     severity: ERROR
     message: >-
-      Raw fetch() in server code. For URLs that come from users or stored links,
+      Direct HTTP fetch in server code. For URLs that come from users or stored links,
       use fetchPublicHttpUrl (server/utils/public-url.ts): it blocks private
       addresses and re-checks every redirect hop. If the URL is fixed by
       configuration, add a nosemgrep comment that says why.
-    patterns:
+    pattern-either:
       - pattern: fetch(...)
+      - pattern: globalThis.fetch(...)
+      - pattern: $fetch(...)
+      - pattern: $fetch.raw(...)
+      - pattern: ofetch(...)
+      - pattern: ofetch.raw(...)
+      # Calls with explicit type arguments, e.g. ofetch<Result>(url), which the patterns above do not match.
+      - pattern-regex: '(?<![\w.$])(\$fetch|ofetch)(\.raw)?<'
+      - pattern: ($X || fetch)(...)
