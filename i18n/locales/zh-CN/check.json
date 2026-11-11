@@ -6,7 +6,8 @@
       "timeout": "超时时间（秒）",
       "timeout_description": "单个链接的超时时间，默认 6 秒。",
       "batch_size": "批量大小",
-      "batch_size_description": "每次请求检测的链接数量，最大 10。"
+      "batch_size_description": "每次请求检测的链接数量，最大 10。",
+      "number_out_of_range": "请输入 {min} 到 {max} 之间的整数"
     },
     "actions": {
       "start": "开始检测",

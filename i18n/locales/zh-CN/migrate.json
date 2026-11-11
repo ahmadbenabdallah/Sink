@@ -70,7 +70,11 @@
         "invalid_json": "无效的 JSON 文件",
         "invalid_format": "文件格式无效，请使用从 Sink 导出的文件",
         "parse_error": "文件解析失败",
-        "batch_failed": "此批链接导入失败。"
+        "batch_failed": "此批链接导入失败。",
+        "value_invalid": "值无效",
+        "value_required": "缺少必填值",
+        "value_too_long": "值过长",
+        "slug_reserved": "该短链接为系统保留"
       }
     }
   }

@@ -52,7 +52,7 @@ async function handleFile(file: File) {
   catch (error) {
     console.error(error)
     toast.error(t('links.form.image_upload_failed'), {
-      description: error instanceof Error ? error.message : String(error),
+      description: getErrorMessage(error, t('common.unexpected_error')),
     })
   }
   finally {

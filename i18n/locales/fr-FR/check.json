@@ -6,7 +6,8 @@
       "timeout": "Délai d’attente (secondes)",
       "timeout_description": "Délai d’attente pour chaque lien. Valeur par défaut : 6 secondes.",
       "batch_size": "Taille du lot",
-      "batch_size_description": "Nombre de liens vérifiés par requête. Maximum : 10."
+      "batch_size_description": "Nombre de liens vérifiés par requête. Maximum : 10.",
+      "number_out_of_range": "Saisissez un nombre entier entre {min} et {max}"
     },
     "actions": {
       "start": "Lancer la vérification",

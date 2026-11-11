@@ -70,7 +70,11 @@
         "invalid_json": "Tệp JSON không hợp lệ",
         "invalid_format": "Định dạng tệp không hợp lệ. Vui lòng sử dụng tệp được xuất từ Sink.",
         "parse_error": "Không thể phân tích tệp",
-        "batch_failed": "Lô nhập này đã thất bại."
+        "batch_failed": "Lô nhập này đã thất bại.",
+        "value_invalid": "Giá trị không hợp lệ",
+        "value_required": "Thiếu giá trị bắt buộc",
+        "value_too_long": "Giá trị quá dài",
+        "slug_reserved": "Slug này đã được dành riêng"
       }
     }
   }

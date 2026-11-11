@@ -5,7 +5,7 @@ import { useForm } from '@tanstack/vue-form'
 import { useDebounceFn } from '@vueuse/core'
 import { toast } from 'vue-sonner'
 import { z } from 'zod'
-import { MAX_URL_LENGTH, nanoid } from '#shared/schemas/link'
+import { LINK_TEXT_MAX_LENGTH, MAX_URL_LENGTH, nanoid } from '#shared/schemas/link'
 
 const props = defineProps<{
   link: Partial<DashboardLink>
@@ -22,8 +22,6 @@ const emit = defineEmits<{
 const { t, locale } = useI18n()
 const linksSearchStore = useDashboardLinksSearchStore()
 const requestUrl = useRequestURL()
-
-const commentValidator = z.string().max(500).optional()
 
 const generateSlug = nanoid()
 
@@ -47,7 +45,7 @@ const form = useForm({
     catch (error) {
       console.error(error)
       toast.error(props.isEdit ? t('links.update_failed') : t('links.create_failed'), {
-        description: error instanceof Error ? error.message : String(error),
+        description: getErrorMessage(error, t('common.unexpected_error')),
       })
     }
   },
@@ -64,7 +62,22 @@ function validateSlug({ value }: { value: unknown }): string | undefined {
   const error = getLinkSlugValidationError(value, slugPattern)
   return error ? t(`links.form.slug_${error.kind}`) : undefined
 }
-const validateComment = makeZodValidator(commentValidator)
+
+function makeMaxLengthValidator(labelKey: string, max: number) {
+  return makeZodValidator(z.string().trim().max(max), () => t('links.form.field_too_long', {
+    field: t(labelKey),
+    max: max.toLocaleString(locale.value),
+  }))
+}
+
+// The comment keeps the form's own tighter limit; the other fields mirror the server limits.
+const validateComment = makeMaxLengthValidator('links.form.comment', 500)
+const textValidators = {
+  title: makeMaxLengthValidator('links.form.og_title', LINK_TEXT_MAX_LENGTH.title),
+  description: makeMaxLengthValidator('links.form.og_description', LINK_TEXT_MAX_LENGTH.description),
+  image: makeMaxLengthValidator('links.form.og_image', LINK_TEXT_MAX_LENGTH.image),
+  password: makeMaxLengthValidator('links.form.password_label', LINK_TEXT_MAX_LENGTH.password),
+}
 
 function makeUrlValidator(optional: boolean) {
   return ({ value }: { value: unknown }): string | undefined => {
@@ -80,6 +93,15 @@ function makeUrlValidator(optional: boolean) {
 
 const validateUrl = makeUrlValidator(false)
 const validateOptionalUrl = makeUrlValidator(true)
+
+function validateGeo({ value }: { value: { url: string }[] }): string | undefined {
+  for (const route of value) {
+    const error = validateOptionalUrl({ value: route.url })
+    if (error)
+      return error
+  }
+  return undefined
+}
 
 const utmBuilderOpen = ref(false)
 const advancedSections = ref<string[]>([])
@@ -123,7 +145,7 @@ async function aiSlug() {
   catch (error) {
     console.error(error)
     toast.error(t('links.ai_slug_failed'), {
-      description: error instanceof Error ? error.message : String(error),
+      description: getErrorMessage(error, t('common.unexpected_error')),
     })
   }
   finally {
@@ -191,21 +213,31 @@ function getInitialAdvancedSections() {
 
 advancedSections.value = getInitialAdvancedSections()
 
+const advancedFieldSections = {
+  password: 'link_settings',
+  title: 'og',
+  description: 'og',
+  image: 'og',
+  google: 'device',
+  apple: 'device',
+  geo: 'geo',
+} as const
+
 async function submitForm() {
   if (tagsInput.value?.commit() === false)
     return
 
   await form.handleSubmit()
 
-  const fieldOrder = ['url', 'slug', 'comment', 'google', 'apple'] as const
-  const firstInvalidField = fieldOrder.find(name => Boolean(form.getFieldMeta(name)?.errors.length))
-  if ((firstInvalidField === 'google' || firstInvalidField === 'apple') && !advancedSections.value.includes('device'))
-    advancedSections.value = [...advancedSections.value, 'device']
+  // Open every advanced section holding an invalid field so its message is visible.
+  const invalidSections = Object.entries(advancedFieldSections)
+    .filter(([name]) => form.getFieldMeta(name as keyof typeof advancedFieldSections)?.errors.length)
+    .map(([, section]) => section)
+  if (invalidSections.length)
+    advancedSections.value = [...new Set([...advancedSections.value, ...invalidSections])]
 
   await nextTick()
-  const firstError = firstInvalidField
-    ? document.getElementById(`${props.formId}-${firstInvalidField}`)
-    : null
+  const firstError = document.getElementById(props.formId)?.querySelector<HTMLElement>('[aria-invalid="true"]')
   firstError?.scrollIntoView({ block: 'center' })
   firstError?.focus({ preventScroll: true })
 }
@@ -382,6 +414,8 @@ defineExpose({ initializeRandomSlug })
         :form="form"
         :id-prefix="formId"
         :validate-optional-url="validateOptionalUrl"
+        :validate-geo="validateGeo"
+        :text-validators="textValidators"
         :is-invalid="isInvalid"
         :get-aria-invalid="getAriaInvalid"
         :format-errors="formatErrors"

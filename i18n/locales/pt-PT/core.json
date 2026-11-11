@@ -11,7 +11,8 @@
     "edit": "Editar",
     "delete": "Eliminar",
     "delete_success": "Eliminado com sucesso!",
-    "search": "Pesquisar"
+    "search": "Pesquisar",
+    "unexpected_error": "Ocorreu um erro, por favor tenta novamente"
   },
   "theme": {
     "toggle": "Alternar tema",

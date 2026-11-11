@@ -27,12 +27,29 @@ describe('/api/upload/image', () => {
       expect(assetResponse.status).toBe(200)
       expect(new Uint8Array(await assetResponse.arrayBuffer())).toEqual(TEST_PNG_BYTES)
       expect(assetResponse.headers.get('Content-Type')).toBe('image/png')
+      expect(assetResponse.headers.get('X-Content-Type-Options')).toBe('nosniff')
       expect(assetResponse.headers.get('ETag')).toBeTruthy()
       expect(assetResponse.headers.get('Cache-Control')).toBe('public, max-age=31536000, immutable')
     }
     finally {
       if (key)
         await env.R2.delete(key)
+    }
+  })
+
+  it.each(['text/html', 'image/svg+xml'])('never serves a stored %s object as an active type', async (contentType) => {
+    const key = `images/asset-type-${crypto.randomUUID()}/payload`
+    await env.R2.put(key, '<script>alert(1)</script>', { httpMetadata: { contentType } })
+    try {
+      const response = await fetch(`/_assets/${key}`)
+      expect(response.status).toBe(200)
+      await response.arrayBuffer()
+      expect(response.headers.get('Content-Type')).toBe('application/octet-stream')
+      expect(response.headers.get('Content-Disposition')).toBe('attachment')
+      expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff')
+    }
+    finally {
+      await env.R2.delete(key)
     }
   })
 

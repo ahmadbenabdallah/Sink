@@ -7,8 +7,9 @@ const { useAPIMock } = vi.hoisted(() => ({
   useAPIMock: vi.fn(async () => []),
 }))
 
-vi.mock('#imports', () => ({ defineStore }))
+vi.mock('#imports', () => ({ defineStore, useNuxtApp: () => ({ $i18n: { t: (key: string) => key } }) }))
 vi.mock('@/utils/api', () => ({ useAPI: useAPIMock }))
+vi.mock('@/utils/http-error', async () => import('../../app/utils/http-error'))
 
 describe('dashboard links search store', () => {
   const linksStore = reactive({
@@ -91,10 +92,18 @@ describe('dashboard links search store', () => {
     expect(store.loading).toBe(false)
     expect(store.links).toEqual([])
 
-    useAPIMock.mockRejectedValueOnce(new Error('Unavailable'))
+    // An ofetch error: transport text in `message`, the server's reason in `data`.
+    useAPIMock.mockRejectedValueOnce(Object.assign(
+      new Error('[GET] "/api/link/search": 423 Link migration is required'),
+      { data: { statusMessage: 'Link migration is required' } },
+    ))
     await store.searchLinks('other')
     expect(store.requestStatus).toBe('error')
-    expect(store.error).toBe('Unavailable')
+    expect(store.error).toBe('Link migration is required')
+
+    useAPIMock.mockRejectedValueOnce(new Error('[GET] "/api/link/search": 500 Server Error'))
+    await store.searchLinks('another')
+    expect(store.error).toBe('common.unexpected_error')
 
     store.invalidateSearch()
     expect(store.requestStatus).toBe('idle')

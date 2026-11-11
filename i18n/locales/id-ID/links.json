@@ -125,7 +125,8 @@
       "ai_og_generate": "Buat OpenGraph AI",
       "duplicate_url_hint": "URL ini sudah ada sebagai {shortLink}",
       "proxy_label": "Aktifkan Reverse Proxy",
-      "proxy_description": "Meneruskan konten dari URL tujuan secara transparan tanpa pengalihan 301/302. Ideal untuk langganan konfigurasi dan API. Tidak dapat digabungkan dengan cloaking tautan."
+      "proxy_description": "Meneruskan konten dari URL tujuan secara transparan tanpa pengalihan 301/302. Ideal untuk langganan konfigurasi dan API. Tidak dapat digabungkan dengan cloaking tautan.",
+      "field_too_long": "{field} terlalu panjang (maksimal {max} karakter)"
     },
     "dialogs": {
       "discard": {

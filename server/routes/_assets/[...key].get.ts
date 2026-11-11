@@ -1,4 +1,5 @@
 import { SlugSchema } from '#shared/schemas/link'
+import { IMAGE_ALLOWED_TYPES } from '#shared/utils/image'
 
 const slugValidator = SlugSchema
 
@@ -33,9 +34,14 @@ export default eventHandler(async (event) => {
     throw createError({ status: 404, statusText: 'Image not found' })
   }
 
-  const contentType = object.httpMetadata?.contentType || 'application/octet-stream'
+  // Only image types the upload endpoint accepts are served as such; anything else must not render.
+  const storedType = object.httpMetadata?.contentType
+  const contentType = storedType && IMAGE_ALLOWED_TYPES.includes(storedType) ? storedType : 'application/octet-stream'
 
   setHeader(event, 'Content-Type', contentType)
+  if (contentType !== storedType)
+    setHeader(event, 'Content-Disposition', 'attachment')
+  setHeader(event, 'X-Content-Type-Options', 'nosniff')
   setHeader(event, 'Cache-Control', 'public, max-age=31536000, immutable')
   setHeader(event, 'ETag', object.etag)
 

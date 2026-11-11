@@ -11,7 +11,8 @@
     "edit": "Edit",
     "delete": "Hapus",
     "delete_success": "Berhasil dihapus!",
-    "search": "Cari"
+    "search": "Cari",
+    "unexpected_error": "Terjadi kesalahan, silakan coba lagi"
   },
   "theme": {
     "toggle": "Ganti tema",

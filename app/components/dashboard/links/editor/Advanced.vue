@@ -18,6 +18,8 @@ const props = defineProps<{
   }
   idPrefix: string
   validateOptionalUrl: (ctx: { value: string }) => string | undefined
+  validateGeo: (ctx: { value: DashboardLinkFormData['geo'] }) => string | undefined
+  textValidators: Record<'title' | 'description' | 'image' | 'password', (ctx: { value: unknown }) => string | undefined>
   isInvalid: (field: AnyFieldApi) => boolean
   getAriaInvalid: (field: AnyFieldApi) => string | undefined
   formatErrors: (errors: unknown[]) => string[]
@@ -81,7 +83,7 @@ async function aiOg() {
   catch (error) {
     console.error(error)
     toast.error(t('links.ai_og_failed'), {
-      description: error instanceof Error ? error.message : String(error),
+      description: getErrorMessage(error, t('common.unexpected_error')),
     })
   }
   finally {
@@ -91,7 +93,12 @@ async function aiOg() {
 </script>
 
 <template>
-  <Accordion v-model="openSections" type="multiple" class="w-full">
+  <!-- Collapsed sections stay mounted: an unmounted field is skipped by submit validation. -->
+  <Accordion
+    v-model="openSections" type="multiple" :unmount-on-hide="false" class="
+      w-full
+    "
+  >
     <AccordionItem value="link_settings">
       <AccordionTrigger>
         {{ $t('links.form.link_settings') }}
@@ -196,8 +203,12 @@ async function aiOg() {
             </Field>
           </props.form.Field>
 
-          <props.form.Field v-slot="{ field }" name="password">
-            <Field>
+          <props.form.Field
+            v-slot="{ field }"
+            name="password"
+            :validators="{ onBlur: textValidators.password, onSubmit: textValidators.password }"
+          >
+            <Field :data-invalid="isInvalid(field)">
               <FieldLabel :for="`${idPrefix}-${field.name}`">
                 {{ $t('links.form.password_label') }}
               </FieldLabel>
@@ -210,9 +221,16 @@ async function aiOg() {
                 :model-value="formatPasswordDisplay(field.state.value)"
                 :placeholder="$t('links.form.password_placeholder')"
                 :type="isMaskedLinkPassword(field.state.value) ? 'text' : 'password'"
-                autocomplete="off"
+                :aria-invalid="getAriaInvalid(field)"
+                autocomplete="new-password"
+                data-1p-ignore
+                data-lpignore="true"
                 @blur="field.handleBlur"
                 @input="field.handleChange(($event.target as HTMLInputElement).value)"
+              />
+              <FieldError
+                v-if="isInvalid(field)"
+                :errors="formatErrors(field.state.meta.errors)"
               />
             </Field>
           </props.form.Field>
@@ -226,8 +244,12 @@ async function aiOg() {
       </AccordionTrigger>
       <AccordionContent class="px-1">
         <FieldGroup>
-          <props.form.Field v-slot="{ field }" name="title">
-            <Field>
+          <props.form.Field
+            v-slot="{ field }"
+            name="title"
+            :validators="{ onBlur: textValidators.title, onSubmit: textValidators.title }"
+          >
+            <Field :data-invalid="isInvalid(field)">
               <div class="flex items-center justify-between">
                 <FieldLabel :for="`${idPrefix}-${field.name}`">
                   {{ $t('links.form.og_title') }}
@@ -252,24 +274,40 @@ async function aiOg() {
                 :name="field.name"
                 :model-value="field.state.value"
                 :placeholder="$t('links.form.og_title_placeholder')"
+                :aria-invalid="getAriaInvalid(field)"
                 autocomplete="off"
                 @blur="field.handleBlur"
                 @input="field.handleChange(($event.target as HTMLInputElement).value)"
               />
+              <FieldError
+                v-if="isInvalid(field)"
+                :errors="formatErrors(field.state.meta.errors)"
+              />
             </Field>
           </props.form.Field>
 
-          <props.form.Field v-slot="{ field }" name="description">
+          <props.form.Field
+            v-slot="{ field }"
+            name="description"
+            :validators="{ onBlur: textValidators.description, onSubmit: textValidators.description }"
+          >
             <DashboardLinksEditorFieldTextarea
               :field="field"
               :input-id="`${idPrefix}-${field.name}`"
               :label="$t('links.form.og_description')"
               :placeholder="$t('links.form.og_description_placeholder')"
+              :invalid="isInvalid(field)"
+              :aria-invalid="getAriaInvalid(field)"
+              :errors="formatErrors(field.state.meta.errors)"
             />
           </props.form.Field>
 
-          <props.form.Field v-slot="{ field }" name="image">
-            <Field>
+          <props.form.Field
+            v-slot="{ field }"
+            name="image"
+            :validators="{ onChange: textValidators.image, onSubmit: textValidators.image }"
+          >
+            <Field :data-invalid="isInvalid(field)">
               <FieldLabel :for="`${idPrefix}-${field.name}`">
                 {{ $t('links.form.og_image') }}
               </FieldLabel>
@@ -278,6 +316,10 @@ async function aiOg() {
                 :slug="currentSlug"
                 :input-id="`${idPrefix}-${field.name}`"
                 @update:model-value="field.handleChange($event || '')"
+              />
+              <FieldError
+                v-if="isInvalid(field)"
+                :errors="formatErrors(field.state.meta.errors)"
               />
             </Field>
           </props.form.Field>
@@ -336,7 +378,11 @@ async function aiOg() {
       </AccordionTrigger>
       <AccordionContent class="px-1">
         <FieldGroup>
-          <props.form.Field v-slot="{ field }" name="geo">
+          <props.form.Field
+            v-slot="{ field }"
+            name="geo"
+            :validators="{ onBlur: validateGeo, onSubmit: validateGeo }"
+          >
             <div class="space-y-2">
               <div
                 v-for="(item, i) in field.state.value" :key="i" class="
@@ -375,7 +421,13 @@ async function aiOg() {
                     inputmode="url"
                     placeholder="https://..."
                     autocomplete="off"
+                    :aria-invalid="isInvalid(field) && validateOptionalUrl({ value: item.url }) ? 'true' : undefined"
+                    @blur="field.handleBlur"
                     @input="field.handleChange(updateGeoRoute(field.state.value, i, { url: ($event.target as HTMLInputElement).value }))"
+                  />
+                  <FieldError
+                    v-if="isInvalid(field) && validateOptionalUrl({ value: item.url })"
+                    :errors="[validateOptionalUrl({ value: item.url })]"
                   />
                 </Field>
                 <Button

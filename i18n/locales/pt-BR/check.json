@@ -6,7 +6,8 @@
       "timeout": "Tempo limite (segundos)",
       "timeout_description": "Tempo limite para cada link. O padrão é 6 segundos.",
       "batch_size": "Tamanho do lote",
-      "batch_size_description": "Links verificados por solicitação. O máximo é 10."
+      "batch_size_description": "Links verificados por solicitação. O máximo é 10.",
+      "number_out_of_range": "Insira um número inteiro de {min} a {max}"
     },
     "actions": {
       "start": "Iniciar verificação",

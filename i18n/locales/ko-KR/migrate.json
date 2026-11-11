@@ -70,7 +70,11 @@
         "invalid_json": "잘못된 JSON 파일입니다",
         "invalid_format": "잘못된 파일 형식입니다. Sink에서 내보낸 파일을 사용해 주세요.",
         "parse_error": "파일 구문 분석에 실패했습니다",
-        "batch_failed": "이 가져오기 묶음에 실패했습니다."
+        "batch_failed": "이 가져오기 묶음에 실패했습니다.",
+        "value_invalid": "값이 올바르지 않습니다",
+        "value_required": "필수 값이 없습니다",
+        "value_too_long": "값이 너무 깁니다",
+        "slug_reserved": "예약된 슬러그입니다"
       }
     }
   }

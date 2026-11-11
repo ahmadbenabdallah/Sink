@@ -17,7 +17,7 @@ async function handleBackup() {
   }
   catch (error) {
     toast.error(t('migrate.backup.failed'), {
-      description: error instanceof Error ? error.message : String(error),
+      description: getErrorMessage(error, t('common.unexpected_error')),
     })
   }
   finally {

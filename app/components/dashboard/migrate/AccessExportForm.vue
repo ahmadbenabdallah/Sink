@@ -45,7 +45,7 @@ const form = useForm({
     }
     catch (error) {
       toast.error(t('migrate.access_export.failed'), {
-        description: error instanceof Error ? error.message : String(error),
+        description: getErrorMessage(error, t('common.unexpected_error')),
       })
     }
     finally {
@@ -61,7 +61,7 @@ const currentDatePreset = form.useStore(state => state.values.datePreset)
 const dateRangeLabel = computed(() => `${shortDate(currentStartAt.value, locale.value)} - ${shortDate(currentEndAt.value, locale.value)}`)
 
 const slugFilterSchema = z.string().max(2048)
-const validateSlugFilter = makeZodValidator(slugFilterSchema)
+const validateSlugFilter = makeZodValidator(slugFilterSchema, () => t('links.form.slug_too_long'))
 
 function setDateRange(range: [number, number]) {
   form.setFieldValue('startAt', range[0])

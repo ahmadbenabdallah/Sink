@@ -6,7 +6,8 @@
       "timeout": "Zeitlimit (Sekunden)",
       "timeout_description": "Zeitlimit pro Link. Standardwert: 6 Sekunden.",
       "batch_size": "Batch-Größe",
-      "batch_size_description": "Anzahl der pro Anfrage geprüften Links. Maximal 10."
+      "batch_size_description": "Anzahl der pro Anfrage geprüften Links. Maximal 10.",
+      "number_out_of_range": "Gib eine ganze Zahl von {min} bis {max} ein"
     },
     "actions": {
       "start": "Prüfung starten",

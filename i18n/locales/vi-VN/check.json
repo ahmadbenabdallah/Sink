@@ -6,7 +6,8 @@
       "timeout": "Thời gian chờ (giây)",
       "timeout_description": "Thời gian chờ cho mỗi liên kết. Mặc định là 6 giây.",
       "batch_size": "Kích thước lô",
-      "batch_size_description": "Số liên kết được kiểm tra trong mỗi yêu cầu. Tối đa là 10."
+      "batch_size_description": "Số liên kết được kiểm tra trong mỗi yêu cầu. Tối đa là 10.",
+      "number_out_of_range": "Nhập một số nguyên từ {min} đến {max}"
     },
     "actions": {
       "start": "Bắt đầu kiểm tra",

@@ -136,8 +136,11 @@ export default eventHandler(async (event): Promise<LinkMigrationRunResult> => {
     try {
       const stored = await KV.getWithMetadata(key.name, { type: 'json' })
       const parsed = parseLegacyKvLink(stored.value, key.name.slice(5))
-      if (!parsed.success)
-        throw new Error(parsed.error.issues.map(issue => issue.message).join('; '))
+      if (!parsed.success) {
+        result.failed++
+        result.failedItems.push({ key: key.name, reason: parsed.error.issues.map(issue => issue.message).join('; ') })
+        continue
+      }
 
       const link = parsed.data
       link.slug = normalizeSlug(event, link.slug)
@@ -159,7 +162,7 @@ export default eventHandler(async (event): Promise<LinkMigrationRunResult> => {
       result.failed++
       result.failedItems.push({
         key: key.name,
-        reason: error instanceof Error ? error.message : String(error),
+        reason: publicFailureReason(error, 'Failed to migrate link', { operation: 'migrate', key: key.name }),
       })
     }
   }

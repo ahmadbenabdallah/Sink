@@ -27,6 +27,8 @@ vi.mock('#shared/schemas/import', async () => import('../../shared/schemas/impor
 vi.mock('#shared/utils/export-file', async () => import('../../shared/utils/export-file'))
 vi.mock('@/utils/api', () => ({ useAPI: vi.fn() }))
 vi.mock('@/utils/file', () => ({ saveAsJson: mocks.saveAsJson }))
+vi.mock('@/utils/http-error', async () => import('../../app/utils/http-error'))
+vi.mock('@/utils/validation', async () => import('../../app/utils/validation'))
 vi.mock('vue-sonner', () => ({ toast: { success: mocks.toastSuccess } }))
 
 beforeEach(() => {
@@ -114,7 +116,28 @@ describe('useLinkImport', () => {
     await empty.handleFile(jsonFile({ version: '1.0', links: [] }))
     expect(empty.parsedData.value).toBeNull()
     expect(empty.parseError.value).toBe('migrate.import.errors.invalid_format')
-    expect(empty.validationErrors.value).not.toHaveLength(0)
+    expect(empty.validationErrors.value).toEqual(['links: migrate.import.errors.value_required'])
+  })
+
+  it('lists translated validation errors instead of validator text', async () => {
+    const state = createImport()
+    await state.handleFile(jsonFile({
+      version: '1.0',
+      links: [
+        { slug: 'bad_slug', url: 'https://example.com' },
+        { slug: 'dashboard', url: 'not a url' },
+        { slug: 'ok', url: 'https://example.com', comment: 'c'.repeat(2049) },
+        { slug: 'ok-2', url: 'https://example.com', createdAt: 'yesterday' },
+      ],
+    }))
+
+    expect(state.validationErrors.value).toEqual([
+      'links.0.slug: links.form.slug_invalid',
+      'links.1.url: links.form.url_invalid',
+      'links.1.slug: migrate.import.errors.slug_reserved',
+      'links.2.comment: migrate.import.errors.value_too_long',
+      'links.3.createdAt: migrate.import.errors.value_invalid',
+    ])
   })
 
   it('merges batch results with global indexes and completes after a failed batch', async () => {
@@ -137,7 +160,10 @@ describe('useLinkImport', () => {
         })
       }
       expect(state.importProgress.value).toBe(67)
-      throw new Error('Batch unavailable')
+      throw Object.assign(new Error('[POST] "/api/link/import": 423 Link migration is required'), {
+        status: 423,
+        data: { statusMessage: 'Link migration is required' },
+      })
     })
     state = createImport({ requestImport })
     await state.handleFile(jsonFile({
@@ -158,10 +184,25 @@ describe('useLinkImport', () => {
       skippedItems: [{ index: 1, ...link(1) }],
       failedItems: [
         { index: 2, ...link(2), reason: 'invalid' },
-        { index: 4, ...link(4), reason: 'Batch unavailable' },
+        { index: 4, ...link(4), reason: 'Link migration is required' },
       ],
     })
     expect(mocks.toastSuccess).toHaveBeenCalledWith('migrate.import.result.success_message:1')
+  })
+
+  it('reports a translated reason when a batch fails without a server reason', async () => {
+    const state = createImport({
+      requestImport: async () => {
+        throw new Error('[POST] "/api/link/import": <no response> Failed to fetch')
+      },
+    })
+    await state.handleFile(jsonFile({ version: '1.0', links: [link(0)] }))
+
+    await state.importLinks()
+
+    expect(state.importResult.value?.failedItems).toEqual([
+      { index: 0, ...link(0), reason: 'migrate.import.errors.batch_failed' },
+    ])
   })
 
   it('ignores reset and a second import while a request is pending', async () => {
