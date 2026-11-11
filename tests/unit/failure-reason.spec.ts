@@ -49,9 +49,10 @@ describe('publicFailureReason', () => {
     expect(JSON.stringify(logged)).not.toContain('pbkdf2-hash-secret')
   })
 
-  it('keeps the masked-password reason raised while preparing a link', async () => {
-    const error = await normalizeLinkPasswordForStorage(maskLinkPassword('secret123')).catch(error => error)
-
-    expect(publicFailureReason(error, 'Failed to save link', {})).toBe('Masked password cannot be stored')
+  // A 4xx createError, so publicFailureReason keeps its text (first test above).
+  it('a masked password is rejected with a client error that carries a plain reason', async () => {
+    await expect(normalizeLinkPasswordForStorage(maskLinkPassword('secret123')))
+      .rejects
+      .toMatchObject({ statusCode: 400, statusMessage: 'Masked password cannot be stored' })
   })
 })
