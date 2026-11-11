@@ -118,9 +118,21 @@ export default eventHandler(async (event) => {
       const headerConfirmed = getHeader(event, 'x-link-confirm') === 'true'
       let formConfirmed = false
 
+      // Guessing is unauthenticated: every submitted password is counted before it is verified.
+      // Prompt views and requests for unprotected links never reach this.
+      const linkSlug = link.slug
+      const passwordAttemptAllowed = async () => {
+        if (await allowLinkPasswordAttempt(cloudflare.env.LINK_PASSWORD_LIMITER, linkSlug, getHeader(event, 'cf-connecting-ip')))
+          return true
+        setHeader(event, 'Retry-After', LINK_PASSWORD_LIMIT_PERIOD_SECONDS)
+        return false
+      }
+
       // Password protection check
       if (link.password) {
         if (headerPassword) {
+          if (!await passwordAttemptAllowed())
+            throw createError({ status: 429, statusText: 'Too many password attempts' })
           if (!await verifyLinkPassword(headerPassword, link.password)) {
             throw createError({ status: 403, statusText: 'Incorrect password' })
           }
@@ -132,6 +144,14 @@ export default eventHandler(async (event) => {
           const body = await readBody(event)
           const submittedPassword = typeof body?.password === 'string' ? body.password : ''
 
+          // An empty password can never match: show the prompt again without counting or hashing.
+          if (!submittedPassword)
+            return sendNoStoreHtml(generatePasswordHtml(slug, { hasError: true, locale: getLocale() }))
+          // The form keeps its own page when limited, so the visitor can retry from it.
+          if (!await passwordAttemptAllowed()) {
+            setResponseStatus(event, 429)
+            return sendNoStoreHtml(generatePasswordHtml(slug, { hasError: true, locale: getLocale() }))
+          }
           if (!await verifyLinkPassword(submittedPassword, link.password)) {
             return sendNoStoreHtml(generatePasswordHtml(slug, { hasError: true, locale: getLocale() }))
           }

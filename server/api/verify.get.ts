@@ -30,6 +30,7 @@ export default eventHandler((event) => {
     throw createError({
       status: 401,
       statusText: 'Unauthorized',
+      data: { code: 'unauthorized' },
     })
   }
 

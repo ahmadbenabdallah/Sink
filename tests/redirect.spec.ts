@@ -501,6 +501,55 @@ describe('password protected redirect', { concurrent: false }, () => {
     expect(correctPasswordResponse.headers.get('location')).toBe(payload.url)
   })
 
+  // retry: the local limiter resets on wall-clock minute boundaries, which can fall inside the test.
+  it('limits password attempts per slug and client IP without counting prompt views', { retry: 1 }, async () => {
+    const password = 'limited-secret123'
+    const slug = `password-limit-${crypto.randomUUID()}`
+    const createResponse = await postJson('/api/link/create', { url: 'https://example.com/limited', slug, password })
+    expect(createResponse.status).toBe(201)
+    createdSlugs.push(slug)
+
+    const attempt = (guess: string, ip = '203.0.113.7') => fetch(`/${slug}`, {
+      redirect: 'manual',
+      headers: { 'x-link-password': guess, 'cf-connecting-ip': ip },
+    })
+    const submitForm = (guess: string) => fetch(`/${slug}`, {
+      method: 'POST',
+      redirect: 'manual',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'cf-connecting-ip': '203.0.113.7' },
+      body: new URLSearchParams({ password: guess }),
+    })
+
+    // Prompt views and passwordless POSTs are not attempts.
+    for (let view = 0; view < 12; view++) {
+      const prompt = await fetch(`/${slug}`, { redirect: 'manual', headers: { 'cf-connecting-ip': '203.0.113.7' } })
+      expect(prompt.status).toBe(200)
+    }
+    expect((await submitForm('')).status).toBe(200)
+
+    // 10 attempts per minute: a correct password inside the limit still works.
+    for (let guess = 0; guess < 8; guess++)
+      expect((await attempt(`wrong-${guess}`)).status).toBe(403)
+    const wrongForm = await submitForm('wrong-form')
+    expect(wrongForm.status).toBe(200)
+    expect(await wrongForm.text()).toContain('Password Required')
+    const allowed = await attempt(password)
+    expect(allowed.status).toBe(301)
+    expect(allowed.headers.get('location')).toBe('https://example.com/limited')
+
+    // The 11th attempt is refused before verification, even with the right password.
+    const limited = await attempt(password)
+    expect(limited.status).toBe(429)
+    expect(limited.headers.get('retry-after')).toBe('60')
+    expect(await limited.text()).toContain('Too many password attempts')
+    const limitedForm = await submitForm(password)
+    expect(limitedForm.status).toBe(429)
+    expect(limitedForm.headers.get('retry-after')).toBe('60')
+
+    // Another client IP has its own budget.
+    expect((await attempt(password, '198.51.100.9')).status).toBe(301)
+  })
+
   it('carries a valid password through unsafe confirmation and redirects after confirmation', async () => {
     const slug = `password-unsafe-${crypto.randomUUID()}`
     const password = 'unsafe-secret123'

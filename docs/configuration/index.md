@@ -44,6 +44,8 @@ A **binding** connects a Cloudflare product to Sink under a fixed name.
 
 Analytics is optional. Without it, short links and the dashboard still work; charts stay empty. Setup: [Analytics](/features/analytics).
 
+`wrangler.jsonc` also declares `LINK_PASSWORD_LIMITER`, a Workers Rate Limiting binding that allows 10 link-password attempts per minute per short link and client IP. It needs no setup. Correct passwords count too, so a client that sends `x-link-password` on every request is limited to 10 requests per minute per IP, and visitors behind one shared IP share the budget. The binding exists on Workers deployments only: where it is absent (for example a Pages deployment), attempts are not limited.
+
 ## Required
 
 ::: warning `NUXT_SITE_TOKEN`

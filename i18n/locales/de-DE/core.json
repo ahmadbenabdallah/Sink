@@ -19,5 +19,28 @@
     "light": "Hell",
     "dark": "Dunkel",
     "system": "System"
+  },
+  "errors": {
+    "ai_not_enabled": "KI ist auf dieser Instanz nicht aktiviert.",
+    "cloudflare_credentials_rejected": "Cloudflare hat die konfigurierten API-Zugangsdaten abgelehnt.",
+    "cloudflare_request_failed": "Die Anfrage an die Cloudflare-API ist fehlgeschlagen.",
+    "file_required": "Eine Datei ist erforderlich.",
+    "file_too_large": "Die Datei überschreitet das Limit von {max} MB.",
+    "forbidden": "Sie sind dazu nicht berechtigt.",
+    "invalid_cursor": "Der Paginierungs-Cursor ist ungültig. Laden Sie die Liste neu und versuchen Sie es erneut.",
+    "invalid_file_type": "Ungültiger Dateityp. Erlaubt: JPEG, PNG, WebP, GIF.",
+    "invalid_slug": "Das Slug-Format ist ungültig.",
+    "link_exists": "Ein Link mit diesem Slug existiert bereits.",
+    "link_migration_required": "Die Link-Migration muss zuerst abgeschlossen werden.",
+    "link_modified": "Der Link wurde zwischenzeitlich geändert oder ersetzt. Laden Sie ihn neu und versuchen Sie es erneut.",
+    "link_not_found": "Link nicht gefunden.",
+    "masked_password": "Ein maskiertes Passwort kann nicht gespeichert werden. Geben Sie das vollständige Passwort ein.",
+    "not_found": "Nicht gefunden.",
+    "preview_mode": "Diese Aktion ist im Vorschaumodus deaktiviert.",
+    "r2_not_configured": "Der R2-Speicher ist nicht konfiguriert.",
+    "slug_required": "Ein Slug ist erforderlich.",
+    "token_too_short": "Der Token ist zu kurz.",
+    "too_many_links": "Zu viele Links. Maximal {max} Links pro Anfrage.",
+    "unauthorized": "Anmeldung erforderlich oder Token ungültig."
   }
 }

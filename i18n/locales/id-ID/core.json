@@ -19,5 +19,28 @@
     "light": "Terang",
     "dark": "Gelap",
     "system": "Sistem"
+  },
+  "errors": {
+    "ai_not_enabled": "AI tidak diaktifkan pada instans ini.",
+    "cloudflare_credentials_rejected": "Cloudflare menolak kredensial API yang dikonfigurasi.",
+    "cloudflare_request_failed": "Permintaan ke API Cloudflare gagal.",
+    "file_required": "File wajib disertakan.",
+    "file_too_large": "Ukuran file melebihi batas {max} MB.",
+    "forbidden": "Anda tidak diizinkan melakukan tindakan ini.",
+    "invalid_cursor": "Kursor halaman tidak valid. Muat ulang daftar lalu coba lagi.",
+    "invalid_file_type": "Jenis file tidak valid. Yang diizinkan: JPEG, PNG, WebP, GIF.",
+    "invalid_slug": "Format slug tidak valid.",
+    "link_exists": "Tautan dengan slug ini sudah ada.",
+    "link_migration_required": "Migrasi tautan harus diselesaikan terlebih dahulu.",
+    "link_modified": "Tautan telah diubah atau diganti. Muat ulang lalu coba lagi.",
+    "link_not_found": "Tautan tidak ditemukan.",
+    "masked_password": "Kata sandi yang disamarkan tidak dapat disimpan. Masukkan kata sandi lengkap.",
+    "not_found": "Tidak ditemukan.",
+    "preview_mode": "Tindakan ini dinonaktifkan dalam mode pratinjau.",
+    "r2_not_configured": "Penyimpanan R2 belum dikonfigurasi.",
+    "slug_required": "Slug wajib diisi.",
+    "token_too_short": "Token terlalu pendek.",
+    "too_many_links": "Terlalu banyak tautan. Maksimal {max} tautan per permintaan.",
+    "unauthorized": "Perlu masuk, atau token tidak valid."
   }
 }

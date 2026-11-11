@@ -86,8 +86,8 @@ function resultVariant(result: LinkCheckResult): 'default' | 'secondary' | 'dest
             {{ $t('check.duration_ms', { duration: result.duration }) }}
           </TableCell>
           <TableCell class="text-muted-foreground">
-            <div class="max-h-20 overflow-hidden break-all" :title="result.error || '-'">
-              {{ result.error || '-' }}
+            <div class="max-h-20 overflow-hidden break-all">
+              {{ result.errorCode ? $t(`check.errors.${result.errorCode}`) : '-' }}
             </div>
           </TableCell>
           <TableCell class="text-right">

@@ -55,6 +55,12 @@
       "broken": "異常",
       "network_error": "網路異常"
     },
+    "errors": {
+      "timeout": "請求逾時。",
+      "blocked": "不允許在伺服器端檢測此 URL。",
+      "too_many_redirects": "重新導向次數過多。",
+      "network": "無法連線到目標位址。"
+    },
     "empty": {
       "not_started": "暫無檢測結果。",
       "no_broken_links": "未發現異常連結。",

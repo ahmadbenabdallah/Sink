@@ -134,8 +134,18 @@ export default eventHandler(async (event): Promise<LinkMigrationRunResult> => {
 
   for (const key of page.keys) {
     try {
-      const stored = await KV.getWithMetadata(key.name, { type: 'json' })
-      const parsed = parseLegacyKvLink(stored.value, key.name.slice(5))
+      // Read as text: a `json` read throws on a corrupt value, indistinguishable from a KV failure.
+      const stored = await KV.getWithMetadata(key.name, { type: 'text' })
+      let value: unknown
+      try {
+        value = JSON.parse(stored.value ?? 'null')
+      }
+      catch {
+        result.failed++
+        result.failedItems.push({ key: key.name, reason: 'Stored value is not valid JSON' })
+        continue
+      }
+      const parsed = parseLegacyKvLink(value, key.name.slice(5))
       if (!parsed.success) {
         result.failed++
         result.failedItems.push({ key: key.name, reason: parsed.error.issues.map(issue => issue.message).join('; ') })

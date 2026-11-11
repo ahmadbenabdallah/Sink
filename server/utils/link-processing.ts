@@ -34,6 +34,7 @@ export function assertLinkWritesAllowed(event: H3Event, action: string): void {
     throw createError({
       status: 403,
       statusText: `Preview mode cannot ${action} links.`,
+      data: { code: 'preview_mode', action },
     })
   }
 }
@@ -94,7 +95,7 @@ export async function saveNewLink(event: H3Event, link: Link): Promise<LinkRespo
   await hashNewLinkPassword(link)
 
   if (!await createLink(event, link))
-    throw createError({ status: 409, statusText: 'Link already exists' })
+    throw createError({ status: 409, statusText: 'Link already exists', data: { code: 'link_exists' } })
 
   return buildLinkResponse(event, link)
 }
@@ -113,7 +114,7 @@ export async function upsertLink(event: H3Event, link: Link): Promise<LinkRespon
   // Another writer claimed the slug between the lookup and the insert.
   const racedLink = await getAuthoritativeLink(event, link.slug)
   if (!racedLink)
-    throw createError({ status: 409, statusText: 'Link already exists' })
+    throw createError({ status: 409, statusText: 'Link already exists', data: { code: 'link_exists' } })
 
   return { ...buildLinkResponse(event, racedLink), status: 'existing' }
 }
@@ -124,7 +125,7 @@ export async function replaceLink(event: H3Event, link: EditLink): Promise<LinkR
 
   const existingLink = await getAnyAuthoritativeLink(event, link.slug)
   if (!existingLink)
-    throw createError({ status: 404, statusText: 'Link not found' })
+    throw createError({ status: 404, statusText: 'Link not found', data: { code: 'link_not_found' } })
 
   if (link.url !== existingLink.url)
     await detectUnsafeLink(event, link)
@@ -133,7 +134,7 @@ export async function replaceLink(event: H3Event, link: EditLink): Promise<LinkR
   await applyEditableLinkPassword(newLink, link.password)
 
   if (!await updateLink(event, newLink, { id: existingLink.id, updatedAt: existingLink.updatedAt }))
-    throw createError({ status: 409, statusText: 'Link was modified or replaced' })
+    throw createError({ status: 409, statusText: 'Link was modified or replaced', data: { code: 'link_modified' } })
 
   return buildLinkResponse(event, newLink)
 }

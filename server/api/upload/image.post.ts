@@ -32,24 +32,24 @@ export default eventHandler(async (event) => {
   const slug = formData.get('slug') as string | null
 
   if (!file) {
-    throw createError({ status: 400, statusText: 'File is required' })
+    throw createError({ status: 400, statusText: 'File is required', data: { code: 'file_required' } })
   }
 
   if (!slug) {
-    throw createError({ status: 400, statusText: 'Slug is required' })
+    throw createError({ status: 400, statusText: 'Slug is required', data: { code: 'slug_required' } })
   }
 
   const slugResult = slugValidator.safeParse(slug)
   if (!slugResult.success) {
-    throw createError({ status: 400, statusText: 'Invalid slug format' })
+    throw createError({ status: 400, statusText: 'Invalid slug format', data: { code: 'invalid_slug' } })
   }
 
   if (!IMAGE_ALLOWED_TYPES.includes(file.type)) {
-    throw createError({ status: 400, statusText: 'Invalid file type. Allowed: jpeg, png, webp, gif' })
+    throw createError({ status: 400, statusText: 'Invalid file type. Allowed: jpeg, png, webp, gif', data: { code: 'invalid_file_type' } })
   }
 
   if (file.size > IMAGE_MAX_SIZE) {
-    throw createError({ status: 400, statusText: 'File size exceeds 5MB limit' })
+    throw createError({ status: 400, statusText: 'File size exceeds 5MB limit', data: { code: 'file_too_large', max: IMAGE_MAX_SIZE / 1024 / 1024 } })
   }
 
   const ext = file.type.split('/')[1]

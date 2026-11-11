@@ -89,7 +89,7 @@ describe('/api/link/check', { concurrent: false }, () => {
         url: link.url,
         status: 0,
         ok: false,
-        error: 'URL is not allowed for server-side checking',
+        errorCode: 'blocked',
       })
     }
     finally {

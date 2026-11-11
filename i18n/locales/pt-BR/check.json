@@ -55,6 +55,12 @@
       "broken": "Quebrado",
       "network_error": "Erro de rede"
     },
+    "errors": {
+      "timeout": "A requisição expirou.",
+      "blocked": "Esta URL não é permitida para verificação no servidor.",
+      "too_many_redirects": "Redirecionamentos demais.",
+      "network": "Não foi possível alcançar o destino."
+    },
     "empty": {
       "not_started": "Nenhum resultado ainda.",
       "no_broken_links": "Nenhum link quebrado encontrado.",

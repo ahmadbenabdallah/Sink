@@ -55,6 +55,12 @@
       "broken": "Defekt",
       "network_error": "Netzwerkfehler"
     },
+    "errors": {
+      "timeout": "Zeitüberschreitung der Anfrage.",
+      "blocked": "Diese URL ist für die serverseitige Prüfung nicht zulässig.",
+      "too_many_redirects": "Zu viele Weiterleitungen.",
+      "network": "Das Ziel ist nicht erreichbar."
+    },
     "empty": {
       "not_started": "Noch keine Ergebnisse.",
       "no_broken_links": "Keine defekten Links gefunden.",

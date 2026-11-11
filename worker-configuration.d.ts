@@ -6,6 +6,7 @@ interface __BaseEnv_Env {
 	R2: R2Bucket;
 	DB: D1Database;
 	ANALYTICS: AnalyticsEngineDataset;
+	LINK_PASSWORD_LIMITER: RateLimit;
 	AI: Ai;
 	ASSETS: Fetcher;
 	NUXT_SITE_TOKEN: string;

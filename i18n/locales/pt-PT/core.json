@@ -19,5 +19,28 @@
     "light": "Claro",
     "dark": "Escuro",
     "system": "Sistema"
+  },
+  "errors": {
+    "ai_not_enabled": "A IA não está ativada nesta instância.",
+    "cloudflare_credentials_rejected": "A Cloudflare rejeitou as credenciais de API configuradas.",
+    "cloudflare_request_failed": "O pedido à API da Cloudflare falhou.",
+    "file_required": "É necessário um ficheiro.",
+    "file_too_large": "O ficheiro excede o limite de {max} MB.",
+    "forbidden": "Não tem permissão para efetuar esta ação.",
+    "invalid_cursor": "O cursor de paginação é inválido. Recarregue a lista e tente novamente.",
+    "invalid_file_type": "Tipo de ficheiro inválido. Permitidos: JPEG, PNG, WebP, GIF.",
+    "invalid_slug": "O formato do slug é inválido.",
+    "link_exists": "Já existe um link com este slug.",
+    "link_migration_required": "É necessário concluir primeiro a migração de links.",
+    "link_modified": "O link foi entretanto modificado ou substituído. Recarregue-o e tente novamente.",
+    "link_not_found": "Link não encontrado.",
+    "masked_password": "Não é possível guardar uma palavra-passe mascarada. Introduza a palavra-passe completa.",
+    "not_found": "Não encontrado.",
+    "preview_mode": "Esta ação está desativada no modo de pré-visualização.",
+    "r2_not_configured": "O armazenamento R2 não está configurado.",
+    "slug_required": "É necessário um slug.",
+    "token_too_short": "O token é demasiado curto.",
+    "too_many_links": "Demasiados links. Máximo de {max} links por pedido.",
+    "unauthorized": "É necessário iniciar sessão ou o token é inválido."
   }
 }

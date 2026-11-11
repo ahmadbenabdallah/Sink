@@ -2,6 +2,8 @@ import { CalendarDate } from '@internationalized/date'
 import { describe, expect, it, vi } from 'vitest'
 import {
   createLinkFormInitialValues,
+  getGeoRoutesUrlValidationError,
+  getInvalidAdvancedSections,
   getLinkSlugValidationError,
   getLinkUrlValidationError,
   normalizeLinkFormSubmitPayload,
@@ -61,6 +63,36 @@ describe('link URL validation', () => {
   it('accepts complete URLs and optional empty values', () => {
     expect(getLinkUrlValidationError('https://example.com', 100)).toBeUndefined()
     expect(getLinkUrlValidationError('', 100, true)).toBeUndefined()
+  })
+})
+
+describe('geo route URL validation', () => {
+  it('accepts no routes, valid URLs, and rows whose URL is still empty', () => {
+    expect(getGeoRoutesUrlValidationError([], 100)).toBeUndefined()
+    expect(getGeoRoutesUrlValidationError([{ url: 'https://us.example.com' }, { url: '  ' }], 100)).toBeUndefined()
+  })
+
+  it('reports the first invalid route', () => {
+    expect(getGeoRoutesUrlValidationError([
+      { url: 'https://ok.example.com' },
+      { url: 'https://example.com/long' },
+      { url: 'not a URL' },
+    ], 22)).toEqual({ kind: 'too_long', length: 24 })
+    expect(getGeoRoutesUrlValidationError([{ url: 'not a URL' }], 20)).toEqual({ kind: 'invalid' })
+  })
+})
+
+describe('invalid advanced sections', () => {
+  it('returns nothing when no advanced field is invalid', () => {
+    expect(getInvalidAdvancedSections(() => false)).toEqual([])
+  })
+
+  it('maps every invalid advanced field to its accordion section, once each, in field order', () => {
+    const invalid = new Set(['image', 'title', 'password', 'geo'])
+    expect(getInvalidAdvancedSections(name => invalid.has(name))).toEqual(['link_settings', 'og', 'geo'])
+    expect(getInvalidAdvancedSections(name => name === 'apple')).toEqual(['device'])
+    expect(getInvalidAdvancedSections(name => name === 'google')).toEqual(['device'])
+    expect(getInvalidAdvancedSections(name => name === 'description')).toEqual(['og'])
   })
 })
 

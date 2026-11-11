@@ -55,6 +55,12 @@
       "broken": "异常",
       "network_error": "网络异常"
     },
+    "errors": {
+      "timeout": "请求超时。",
+      "blocked": "不允许在服务端检测此 URL。",
+      "too_many_redirects": "重定向次数过多。",
+      "network": "无法访问目标地址。"
+    },
     "empty": {
       "not_started": "暂无检测结果。",
       "no_broken_links": "没有发现异常链接。",

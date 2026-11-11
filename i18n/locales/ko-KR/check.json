@@ -55,6 +55,12 @@
       "broken": "손상됨",
       "network_error": "네트워크 오류"
     },
+    "errors": {
+      "timeout": "요청 시간이 초과되었습니다.",
+      "blocked": "이 URL은 서버 측 확인이 허용되지 않습니다.",
+      "too_many_redirects": "리디렉션이 너무 많습니다.",
+      "network": "대상에 연결할 수 없습니다."
+    },
     "empty": {
       "not_started": "아직 결과가 없습니다.",
       "no_broken_links": "손상된 링크가 없습니다.",

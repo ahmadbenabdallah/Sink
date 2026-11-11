@@ -61,6 +61,18 @@
       "bucket_name": "sink" // Override with DEPLOY_R2_BUCKET_NAME
     }
   ],
+  // Link-password guesses per slug and client IP (server/utils/link-password-limit.ts).
+  // namespace_id is any positive integer unique within the account; period must be 10 or 60.
+  "ratelimits": [
+    {
+      "name": "LINK_PASSWORD_LIMITER",
+      "namespace_id": "1001",
+      "simple": {
+        "limit": 10,
+        "period": 60
+      }
+    }
+  ],
   "triggers": {
     "crons": ["0 0 * * *"] // Run backup task daily at 00:00 UTC
   }

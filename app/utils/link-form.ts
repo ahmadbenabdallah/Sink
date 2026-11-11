@@ -39,6 +39,38 @@ export function getLinkUrlValidationError(
   return URL.canParse(url) ? undefined : { kind: 'invalid' }
 }
 
+/** First URL error among the geo routes. A row whose URL is still empty is valid; submit drops it. */
+export function getGeoRoutesUrlValidationError(
+  routes: { url: string }[],
+  maxUrlLength: number,
+): LinkUrlValidationError | undefined {
+  for (const route of routes) {
+    const error = getLinkUrlValidationError(route.url, maxUrlLength, true)
+    if (error)
+      return error
+  }
+  return undefined
+}
+
+/** The accordion section of the link editor that holds each validated advanced field. */
+const ADVANCED_FIELD_SECTIONS = {
+  password: 'link_settings',
+  title: 'og',
+  description: 'og',
+  image: 'og',
+  google: 'device',
+  apple: 'device',
+  geo: 'geo',
+} as const
+
+export type AdvancedLinkField = keyof typeof ADVANCED_FIELD_SECTIONS
+
+/** Sections holding at least one invalid field; the editor opens them so the messages are visible. */
+export function getInvalidAdvancedSections(hasError: (field: AdvancedLinkField) => boolean): string[] {
+  const fields = Object.keys(ADVANCED_FIELD_SECTIONS) as AdvancedLinkField[]
+  return [...new Set(fields.filter(hasError).map(field => ADVANCED_FIELD_SECTIONS[field]))]
+}
+
 export function createLinkFormInitialValues(link: Partial<DashboardLink>): DashboardLinkFormData {
   return {
     url: link.url ?? '',

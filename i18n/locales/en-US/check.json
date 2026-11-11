@@ -55,6 +55,12 @@
       "broken": "Broken",
       "network_error": "Network Error"
     },
+    "errors": {
+      "timeout": "The request timed out.",
+      "blocked": "This URL is not allowed for server-side checking.",
+      "too_many_redirects": "Too many redirects.",
+      "network": "The destination could not be reached."
+    },
     "empty": {
       "not_started": "No results yet.",
       "no_broken_links": "No broken links found.",

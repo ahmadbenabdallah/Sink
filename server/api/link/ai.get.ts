@@ -47,7 +47,7 @@ export default eventHandler(async (event) => {
   const { AI } = cloudflare.env
 
   if (!AI) {
-    throw createError({ status: 501, statusText: 'AI not enabled' })
+    throw createError({ status: 501, statusText: 'AI not enabled', data: { code: 'ai_not_enabled' } })
   }
 
   const { aiPrompt, aiModel } = useRuntimeConfig(event)

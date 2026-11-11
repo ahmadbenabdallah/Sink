@@ -1,3 +1,7 @@
+// Relative, not `#shared`: unit specs import this file (directly and through composables) without that alias.
+import type { ApiErrorCode } from '../../shared/utils/api-error'
+import { API_ERROR_CODES } from '../../shared/utils/api-error'
+
 /** HTTP status of a failed $fetch/useAPI call; undefined for network errors and non-HTTP failures. */
 export function getHttpErrorStatus(error: unknown): number | undefined {
   if (typeof error === 'object' && error !== null && 'status' in error && typeof error.status === 'number')
@@ -20,7 +24,7 @@ function plainReason(value: unknown): string | undefined {
   return text
 }
 
-function parseErrorBody(data: unknown): { statusMessage?: unknown, message?: unknown } {
+function parseErrorBody(data: unknown): { statusMessage?: unknown, message?: unknown, data?: unknown } {
   // `responseType: 'text'` requests receive the JSON error body unparsed.
   if (typeof data === 'string') {
     try {
@@ -44,13 +48,46 @@ function validationReason(message: unknown): string | undefined {
   return undefined
 }
 
+/** The server's error code (`createError({ data: { code, ...params } })`) and its interpolation values. */
+export function getErrorCode(error: unknown): { code: ApiErrorCode, params: Record<string, unknown> } | undefined {
+  if (typeof error !== 'object' || error === null)
+    return undefined
+
+  const { data } = parseErrorBody((error as { data?: unknown }).data)
+  if (typeof data !== 'object' || data === null)
+    return undefined
+
+  const { code, ...params } = data as Record<string, unknown>
+  return API_ERROR_CODES.includes(code as ApiErrorCode) ? { code: code as ApiErrorCode, params } : undefined
+}
+
+function translatedReason(error: unknown): string | undefined {
+  const coded = getErrorCode(error)
+  if (!coded)
+    return undefined
+  // No Nuxt app (unit tests, early boot) or no translation: the caller falls back to the server reason.
+  try {
+    const i18n = useNuxtApp().$i18n
+    const key = `errors.${coded.code}`
+    return i18n.te(key) ? i18n.t(key, coded.params) : undefined
+  }
+  catch {
+    return undefined
+  }
+}
+
 /**
- * Message to show for a failed $fetch/useAPI call: the server's own reason when it is a
- * short plain string, otherwise the caller's translated `fallback`.
+ * Message to show for a failed $fetch/useAPI call: the translation of the server's error
+ * code when there is one, else the server's own reason when it is a short plain string,
+ * otherwise the caller's translated `fallback`.
  */
 export function getErrorMessage(error: unknown, fallback: string): string {
   if (typeof error !== 'object' || error === null)
     return fallback
+
+  const translated = translatedReason(error)
+  if (translated)
+    return translated
 
   const { data, statusMessage } = error as { data?: unknown, statusMessage?: unknown }
   const body = parseErrorBody(data)

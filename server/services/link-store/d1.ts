@@ -317,7 +317,7 @@ function decodeCursor(cursor: string | undefined, sort: LinkSortBy, tag: string 
   if (!cursor)
     return undefined
   if (!cursor.startsWith(D1_CURSOR_PREFIX))
-    throw createError({ status: 400, statusText: 'Invalid pagination cursor' })
+    throw createError({ status: 400, statusText: 'Invalid pagination cursor', data: { code: 'invalid_cursor' } })
   try {
     const decoded = JSON.parse(atob(cursor.slice(D1_CURSOR_PREFIX.length))) as D1Cursor
     if (decoded.sort !== sort || decoded.tag !== tag || decoded.status !== status || typeof decoded.slug !== 'string')
@@ -327,7 +327,7 @@ function decodeCursor(cursor: string | undefined, sort: LinkSortBy, tag: string 
     return decoded
   }
   catch {
-    throw createError({ status: 400, statusText: 'Invalid pagination cursor' })
+    throw createError({ status: 400, statusText: 'Invalid pagination cursor', data: { code: 'invalid_cursor' } })
   }
 }
 

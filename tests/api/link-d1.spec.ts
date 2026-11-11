@@ -637,6 +637,22 @@ describe('d1 link integration', () => {
     expect(reason).not.toBe('Failed to migrate link')
   })
 
+  it('reports a KV value that is not JSON with a specific reason', async () => {
+    await clearLinkMigrationState()
+    const slug = trackSlug(`corrupt-json-${crypto.randomUUID()}`)
+    await env.KV.put(`link:${slug}`, '{"url": "https://example.com/truncated')
+
+    let cursor: string | undefined
+    let page: LinkMigrationRunResult
+    do {
+      const response = await postJson('/api/link/migration/run', { force: true, cursor })
+      page = await response.json() as LinkMigrationRunResult
+      cursor = page.cursor
+    } while (page.failed === 0 && cursor)
+    expect(page.failedItems).toContainEqual({ key: `link:${slug}`, reason: 'Stored value is not valid JSON' })
+    expect(await env.KV.get(`link:${slug}`)).not.toBeNull()
+  })
+
   it('supports all D1 sorts and stable keyset pagination', async () => {
     const prefix = `sort-${crypto.randomUUID()}-`
     const links = [

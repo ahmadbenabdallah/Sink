@@ -31,5 +31,6 @@ export default eventHandler(async (event) => {
   throw createError({
     status: 404,
     statusText: 'Not Found',
+    data: { code: 'not_found' },
   })
 })

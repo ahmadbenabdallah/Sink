@@ -45,6 +45,7 @@ export async function assertLinkStoreReady(event: H3Event): Promise<void> {
   throw createError({
     status: 423,
     statusText: 'Link migration is required',
+    data: { code: 'link_migration_required' },
   })
 }
 

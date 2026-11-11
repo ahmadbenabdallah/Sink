@@ -23,12 +23,16 @@ if (!Number.isSafeInteger(configuredMaxUrlLength)
 
 export const MAX_URL_LENGTH = configuredMaxUrlLength
 
+const SLUG_MAX_LENGTH = 2048
+
 /** Maximum lengths of the free-text link fields. The dashboard form validates against the same numbers. */
 export const LINK_TEXT_MAX_LENGTH = {
   comment: 2048,
   title: 256,
   description: 2048,
-  image: 128,
+  // Longest path `server/api/upload/image.post.ts` returns: `/_assets/images/<slug>/<10-char id>.<ext>`,
+  // where the longest extension is `jpeg`.
+  image: '/_assets/images/'.length + SLUG_MAX_LENGTH + '/0123456789.jpeg'.length,
   password: 128,
 } as const
 
@@ -65,7 +69,7 @@ export const UrlSchema = z.string()
   .min(1, 'URL is required')
   .max(MAX_URL_LENGTH, `URL must not exceed ${MAX_URL_LENGTH} characters`)
   .url('URL format is invalid')
-export const SlugSchema = z.string().trim().max(2048).regex(new RegExp(slugRegex as RegExp))
+export const SlugSchema = z.string().trim().max(SLUG_MAX_LENGTH).regex(new RegExp(slugRegex as RegExp))
 // `server/middleware/1.redirect.ts` skips reserved slugs before it looks a link up, so a
 // link written to one never redirects. Reject them where new links come in, and compare
 // case-insensitively because write paths lowercase the slug unless `caseSensitive` is set.
