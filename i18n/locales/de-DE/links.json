@@ -107,6 +107,8 @@
       "image_ratio_hint": "Empfohlen: 1200×630",
       "image_preview": "Bildvorschau",
       "slug_required": "Bitte zuerst einen Slug eingeben",
+      "slug_invalid": "Nur Buchstaben, Zahlen und einzelne Bindestriche dazwischen verwenden, zum Beispiel my-short-link",
+      "slug_too_long": "Slug ist zu lang (maximal 2.048 Zeichen)",
       "generate_random_slug": "Zufälligen Slug erzeugen",
       "generate_ai_slug": "Slug mit KI erzeugen",
       "utm_builder": "UTM-Builder",

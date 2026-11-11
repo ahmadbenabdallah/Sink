@@ -107,6 +107,8 @@
       "image_ratio_hint": "Khuyến nghị: 1200×630",
       "image_preview": "Xem trước hình ảnh",
       "slug_required": "Vui lòng nhập slug trước",
+      "slug_invalid": "Chỉ dùng chữ cái, chữ số và một dấu gạch nối ở giữa, ví dụ my-short-link",
+      "slug_too_long": "Slug quá dài (tối đa 2.048 ký tự)",
       "generate_random_slug": "Tạo slug ngẫu nhiên",
       "generate_ai_slug": "Tạo slug bằng AI",
       "utm_builder": "Trình tạo UTM",

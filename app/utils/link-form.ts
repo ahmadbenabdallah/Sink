@@ -7,6 +7,21 @@ export type LinkUrlValidationError
     | { kind: 'invalid' }
     | { kind: 'too_long', length: number }
 
+export interface LinkSlugValidationError { kind: 'required' | 'invalid' | 'too_long' }
+
+const LINK_SLUG_MAX_LENGTH = 2048
+
+/** Mirrors `SlugSchema` (trim, max length, pattern) but returns a kind the form can translate. */
+export function getLinkSlugValidationError(value: unknown, pattern: RegExp): LinkSlugValidationError | undefined {
+  const slug = typeof value === 'string' ? value.trim() : ''
+  if (!slug)
+    return { kind: 'required' }
+  if (slug.length > LINK_SLUG_MAX_LENGTH)
+    return { kind: 'too_long' }
+
+  return pattern.test(slug) ? undefined : { kind: 'invalid' }
+}
+
 export function getLinkUrlValidationError(
   value: unknown,
   maxUrlLength: number,

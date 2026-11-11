@@ -2,6 +2,7 @@ import { CalendarDate } from '@internationalized/date'
 import { describe, expect, it, vi } from 'vitest'
 import {
   createLinkFormInitialValues,
+  getLinkSlugValidationError,
   getLinkUrlValidationError,
   normalizeLinkFormSubmitPayload,
 } from '../../app/utils/link-form'
@@ -146,5 +147,26 @@ describe('link form submit payload', () => {
     })
     expect(normalizeLinkFormSubmitPayload(formValues({ unsafe: false }), true).unsafe).toBe(false)
     expect(normalizeLinkFormSubmitPayload(formValues(), false).expiration).toBeUndefined()
+  })
+})
+
+describe('link slug validation', () => {
+  const pattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i
+
+  it.each(['abc', 'my-link', 'My-Link-2', '  padded  '])('accepts %j', (slug) => {
+    expect(getLinkSlugValidationError(slug, pattern)).toBeUndefined()
+  })
+
+  it.each(['', '   ', undefined, 42])('reports %j as required', (slug) => {
+    expect(getLinkSlugValidationError(slug, pattern)).toEqual({ kind: 'required' })
+  })
+
+  it.each(['my_link', 'my link', 'a.b', '/abc', 'abc-', '-abc', 'a--b', 'café'])('reports %j as invalid', (slug) => {
+    expect(getLinkSlugValidationError(slug, pattern)).toEqual({ kind: 'invalid' })
+  })
+
+  it('reports a slug over 2048 characters as too long', () => {
+    expect(getLinkSlugValidationError('a'.repeat(2049), pattern)).toEqual({ kind: 'too_long' })
+    expect(getLinkSlugValidationError('a'.repeat(2048), pattern)).toBeUndefined()
   })
 })
