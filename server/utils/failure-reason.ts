@@ -8,9 +8,14 @@ import { isError } from 'h3'
 export function publicFailureReason(error: unknown, fallback: string, context: Record<string, unknown>): string {
   if (isError(error) && error.statusCode < 500 && error.statusMessage)
     return error.statusMessage
-  // A bounded string, not the object: a driver error can carry query parameters (URLs, password hashes).
-  const cause = (error as { cause?: { message?: unknown } } | null)?.cause?.message
-  const message = String(cause ?? (error as { message?: unknown } | null)?.message ?? error).slice(0, 300)
-  console.error({ event: 'link_write.failed', ...context, error: message })
+  // Never the error's own message: a query error's message lists the bound parameters (URLs, password
+  // hashes). Its `cause` is the database's reason (e.g. a constraint name), which carries no row data.
+  const { name, cause } = (error ?? {}) as { name?: unknown, cause?: { message?: unknown } }
+  console.error({
+    event: 'link_write.failed',
+    ...context,
+    errorName: typeof name === 'string' ? name : typeof error,
+    cause: typeof cause?.message === 'string' ? cause.message.slice(0, 300) : undefined,
+  })
   return fallback
 }

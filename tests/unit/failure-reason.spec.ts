@@ -25,7 +25,7 @@ describe('publicFailureReason', () => {
     const log = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     expect(publicFailureReason(error, 'Failed to save link', { slug: 'abc' })).toBe('Failed to save link')
-    expect(log).toHaveBeenCalledWith(expect.objectContaining({ slug: 'abc', error: expect.any(String) }))
+    expect(log).toHaveBeenCalledWith(expect.objectContaining({ event: 'link_write.failed', slug: 'abc' }))
   })
 
   it('does not keep the text of a server-side (5xx) error', () => {
@@ -34,13 +34,19 @@ describe('publicFailureReason', () => {
     expect(publicFailureReason(createError({ status: 500, statusText: 'D1_ERROR: no such table' }), 'Failed to save link', {})).toBe('Failed to save link')
   })
 
-  it('logs a bounded message, never the whole error object', () => {
+  it('logs the database cause, bounded, and never the query message with its parameters', () => {
     const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const error = new Error('Failed query: insert into "links" values (?) params: pbkdf2-hash-secret', {
+      cause: new Error(`D1_ERROR: UNIQUE constraint failed ${'x'.repeat(1000)}`),
+    })
 
-    publicFailureReason(new Error(`Failed query params: ${'x'.repeat(1000)}`), 'Failed to save link', {})
+    publicFailureReason(error, 'Failed to save link', {})
 
-    const logged = log.mock.calls[0]![0] as { error: string }
-    expect(logged.error.length).toBeLessThanOrEqual(300)
+    const logged = log.mock.calls[0]![0] as { errorName: string, cause: string }
+    expect(logged.errorName).toBe('Error')
+    expect(logged.cause).toMatch(/^D1_ERROR: UNIQUE constraint failed/)
+    expect(logged.cause.length).toBeLessThanOrEqual(300)
+    expect(JSON.stringify(logged)).not.toContain('pbkdf2-hash-secret')
   })
 
   it('keeps the masked-password reason raised while preparing a link', async () => {
