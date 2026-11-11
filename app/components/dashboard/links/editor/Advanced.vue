@@ -53,6 +53,15 @@ function removeGeoRoute(routes: GeoRoute[], index: number | string) {
   return routes.filter((_, routeIndex) => routeIndex !== targetIndex)
 }
 
+// One URL validation per row per render; the message only shows once the field is invalid.
+function getGeoRows(field: AnyFieldApi) {
+  const showErrors = props.isInvalid(field)
+  return (field.state.value as GeoRoute[]).map(route => ({
+    ...route,
+    error: showErrors ? props.validateOptionalUrl({ value: route.url }) : undefined,
+  }))
+}
+
 function formatPasswordDisplay(password: string) {
   return isMaskedLinkPassword(password)
     ? password.replace(LINK_PASSWORD_MASK_PREFIX, '')
@@ -385,7 +394,7 @@ async function aiOg() {
           >
             <div class="space-y-2">
               <div
-                v-for="(item, i) in field.state.value" :key="i" class="
+                v-for="(item, i) in getGeoRows(field)" :key="i" class="
                   flex flex-col gap-2
                   sm:flex-row sm:items-start
                 "
@@ -421,13 +430,13 @@ async function aiOg() {
                     inputmode="url"
                     placeholder="https://..."
                     autocomplete="off"
-                    :aria-invalid="isInvalid(field) && validateOptionalUrl({ value: item.url }) ? 'true' : undefined"
+                    :aria-invalid="item.error ? 'true' : undefined"
                     @blur="field.handleBlur"
                     @input="field.handleChange(updateGeoRoute(field.state.value, i, { url: ($event.target as HTMLInputElement).value }))"
                   />
                   <FieldError
-                    v-if="isInvalid(field) && validateOptionalUrl({ value: item.url })"
-                    :errors="[validateOptionalUrl({ value: item.url })]"
+                    v-if="item.error"
+                    :errors="[item.error]"
                   />
                 </Field>
                 <Button

@@ -45,9 +45,10 @@ async function handleSubmit() {
     removeAuthToken()
     console.error(e)
     submitError.value = t('login.failed')
-    submitErrorReason.value = getHttpErrorStatus(e) === 401
-      ? t('login.invalid_token')
-      : getErrorMessage(e, t('common.unexpected_error'))
+    submitErrorReason.value = getLoginFailureReason(e, {
+      invalidToken: t('login.invalid_token'),
+      fallback: t('common.unexpected_error'),
+    })
   }
   finally {
     isSubmitting.value = false

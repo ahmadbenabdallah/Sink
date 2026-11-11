@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DashboardLink } from '@/types/dashboard-links'
+import type { LinkUrlValidationError } from '@/utils/link-form'
 import { ExternalLink, Shuffle, Sparkles } from '@lucide/vue'
 import { useForm } from '@tanstack/vue-form'
 import { useDebounceFn } from '@vueuse/core'
@@ -70,8 +71,8 @@ function makeMaxLengthValidator(labelKey: string, max: number) {
   }))
 }
 
-// The comment keeps the form's own tighter limit; the other fields mirror the server limits.
-const validateComment = makeMaxLengthValidator('links.form.comment', 500)
+// Every limit mirrors the server's, so a link saved through the API stays editable here.
+const validateComment = makeMaxLengthValidator('links.form.comment', LINK_TEXT_MAX_LENGTH.comment)
 const textValidators = {
   title: makeMaxLengthValidator('links.form.og_title', LINK_TEXT_MAX_LENGTH.title),
   description: makeMaxLengthValidator('links.form.og_description', LINK_TEXT_MAX_LENGTH.description),
@@ -79,28 +80,24 @@ const textValidators = {
   password: makeMaxLengthValidator('links.form.password_label', LINK_TEXT_MAX_LENGTH.password),
 }
 
+function formatUrlError(error: LinkUrlValidationError | undefined): string | undefined {
+  if (!error)
+    return undefined
+  return t(`links.form.url_${error.kind}`, {
+    length: 'length' in error ? error.length.toLocaleString(locale.value) : '',
+    max: MAX_URL_LENGTH.toLocaleString(locale.value),
+  })
+}
+
 function makeUrlValidator(optional: boolean) {
-  return ({ value }: { value: unknown }): string | undefined => {
-    const error = getLinkUrlValidationError(value, MAX_URL_LENGTH, optional)
-    if (!error)
-      return undefined
-    return t(`links.form.url_${error.kind}`, {
-      length: 'length' in error ? error.length.toLocaleString(locale.value) : '',
-      max: MAX_URL_LENGTH.toLocaleString(locale.value),
-    })
-  }
+  return ({ value }: { value: unknown }) => formatUrlError(getLinkUrlValidationError(value, MAX_URL_LENGTH, optional))
 }
 
 const validateUrl = makeUrlValidator(false)
 const validateOptionalUrl = makeUrlValidator(true)
 
 function validateGeo({ value }: { value: { url: string }[] }): string | undefined {
-  for (const route of value) {
-    const error = validateOptionalUrl({ value: route.url })
-    if (error)
-      return error
-  }
-  return undefined
+  return formatUrlError(getGeoRoutesUrlValidationError(value, MAX_URL_LENGTH))
 }
 
 const utmBuilderOpen = ref(false)
@@ -213,16 +210,6 @@ function getInitialAdvancedSections() {
 
 advancedSections.value = getInitialAdvancedSections()
 
-const advancedFieldSections = {
-  password: 'link_settings',
-  title: 'og',
-  description: 'og',
-  image: 'og',
-  google: 'device',
-  apple: 'device',
-  geo: 'geo',
-} as const
-
 async function submitForm() {
   if (tagsInput.value?.commit() === false)
     return
@@ -230,9 +217,7 @@ async function submitForm() {
   await form.handleSubmit()
 
   // Open every advanced section holding an invalid field so its message is visible.
-  const invalidSections = Object.entries(advancedFieldSections)
-    .filter(([name]) => form.getFieldMeta(name as keyof typeof advancedFieldSections)?.errors.length)
-    .map(([, section]) => section)
+  const invalidSections = getInvalidAdvancedSections(name => !!form.getFieldMeta(name)?.errors.length)
   if (invalidSections.length)
     advancedSections.value = [...new Set([...advancedSections.value, ...invalidSections])]
 

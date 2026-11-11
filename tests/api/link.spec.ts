@@ -145,12 +145,25 @@ describe('/api/link/create', { concurrent: false }, () => {
     expect(data.data.message).toContain('URL must not exceed 16384 characters')
   })
 
+  it('accepts the uploaded image path of a maximal slug and nothing longer', async () => {
+    // What /api/upload/image returns for a 2048-character slug and the longest extension.
+    const image = `/_assets/images/${'a'.repeat(2048)}/0123456789.jpeg`
+
+    const accepted = await postJson('/api/link/create', { ...createLinkPayload(), image })
+    expect(accepted.status).toBe(201)
+    expect((await accepted.json() as { link: { image?: string } }).link.image).toBe(image)
+
+    const rejected = await postJson('/api/link/create', { ...createLinkPayload(), image: `${image}x` })
+    expect(rejected.status).toBe(400)
+  })
+
   it('returns 409 when slug already exists', async () => {
     const payload = createLinkPayload()
     await postJson('/api/link/create', payload)
 
     const duplicateResponse = await postJson('/api/link/create', payload)
     expect(duplicateResponse.status).toBe(409)
+    expect(await duplicateResponse.json()).toMatchObject({ statusMessage: 'Link already exists', data: { code: 'link_exists' } })
   })
 
   it('masks password in response and stores hashed password', async () => {
