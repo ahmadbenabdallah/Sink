@@ -44,6 +44,8 @@ description: Sink 支持的全部环境变量——做什么、填在哪、什�
 
 访问分析是可选的。不配也能用短链和仪表盘；图表会是空的。启用步骤见[访问分析](/zh-CN/features/analytics)。
 
+`wrangler.jsonc` 还声明了 `LINK_PASSWORD_LIMITER`（Workers Rate Limiting 绑定）：每个短链、每个客户端 IP 每分钟最多尝试 10 次链接密码。无需额外配置。正确的密码也会计数，因此每次请求都携带 `x-link-password` 的客户端每个 IP 每分钟最多 10 次请求，同一共享 IP 下的访客共用该额度。该绑定仅存在于 Workers 部署中；没有该绑定时（例如 Pages 部署）不限制尝试次数。
+
 ## 必须配置
 
 ::: warning `NUXT_SITE_TOKEN`
