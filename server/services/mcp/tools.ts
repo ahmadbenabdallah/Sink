@@ -111,7 +111,7 @@ const linkTools: McpToolDefinition[] = [
   }),
   defineTool({
     name: 'check_links',
-    description: 'Fetch the target URL of each stored link, alphabetically by slug with cursor pagination, and report its HTTP status. URLs that are not public HTTP(S) are skipped with an error.',
+    description: 'Fetch the target URL of each stored link, alphabetically by slug with cursor pagination, and report its HTTP status. A link that could not be fetched has status 0 and an errorCode: blocked (not a public HTTP(S) URL), timeout, too_many_redirects or network.',
     inputSchema: LinkCheckRequestSchema,
     annotations: { readOnlyHint: true, openWorldHint: true },
     handler(event, args) {

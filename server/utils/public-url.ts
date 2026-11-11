@@ -20,6 +20,26 @@ export function isPublicHttpUrl(url: string): boolean {
 
 const MAX_REDIRECTS = 5
 
+type PublicUrlFailure = 'blocked' | 'too_many_redirects'
+
+class PublicUrlError extends Error {
+  constructor(readonly failure: PublicUrlFailure, message: string) {
+    super(message)
+  }
+}
+
+/**
+ * Why a fetchPublicHttpUrl call failed, as a fixed code that is safe to show: the runtime's
+ * own error text is never returned.
+ */
+export function classifyPublicFetchError(error: unknown): PublicUrlFailure | 'timeout' | 'network' {
+  if (error instanceof PublicUrlError)
+    return error.failure
+  // The only abort source callers pass is a timeout signal.
+  const name = (error as { name?: unknown } | null)?.name
+  return name === 'TimeoutError' || name === 'AbortError' ? 'timeout' : 'network'
+}
+
 /**
  * fetch() for user-supplied URLs: follows redirects manually so every hop must
  * pass isPublicHttpUrl. Mirrors the Fetch spec redirect rules (303, or 301/302
@@ -33,7 +53,7 @@ export async function fetchPublicHttpUrl(url: string, init: RequestInit = {}): P
 
   for (let redirects = 0; ; redirects++) {
     if (!isPublicHttpUrl(target))
-      throw new Error('URL is not allowed for server-side fetching')
+      throw new PublicUrlError('blocked', 'URL is not allowed for server-side fetching')
 
     // nosemgrep: sink-no-raw-fetch-in-server -- this is the checked helper itself
     const response = await fetch(target, { ...request, redirect: 'manual' })
@@ -43,7 +63,7 @@ export async function fetchPublicHttpUrl(url: string, init: RequestInit = {}): P
 
     await response.body?.cancel()
     if (redirects === MAX_REDIRECTS)
-      throw new Error('Too many redirects')
+      throw new PublicUrlError('too_many_redirects', 'Too many redirects')
 
     const next = new URL(location, target)
     const headers = new Headers(request.headers)

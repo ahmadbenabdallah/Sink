@@ -25,6 +25,7 @@ export default eventHandler(async (event) => {
     throw createError({
       status: 403,
       statusText: 'Forbidden',
+      data: { code: 'forbidden' },
     })
   }
 
@@ -34,12 +35,14 @@ export default eventHandler(async (event) => {
     throw createError({
       status: 401,
       statusText: 'Token is too short',
+      data: { code: 'token_too_short' },
     })
   }
 
   throw createError({
     status: 401,
     statusText: 'Unauthorized',
+    data: { code: 'unauthorized' },
   })
 })
 

@@ -19,5 +19,28 @@
     "light": "Clair",
     "dark": "Sombre",
     "system": "Système"
+  },
+  "errors": {
+    "ai_not_enabled": "L’IA n’est pas activée sur cette instance.",
+    "cloudflare_credentials_rejected": "Cloudflare a refusé les identifiants d’API configurés.",
+    "cloudflare_request_failed": "La requête vers l’API Cloudflare a échoué.",
+    "file_required": "Un fichier est requis.",
+    "file_too_large": "Le fichier dépasse la limite de {max} Mo.",
+    "forbidden": "Vous n’êtes pas autorisé à effectuer cette action.",
+    "invalid_cursor": "Le curseur de pagination est invalide. Rechargez la liste et réessayez.",
+    "invalid_file_type": "Type de fichier invalide. Formats acceptés : JPEG, PNG, WebP, GIF.",
+    "invalid_slug": "Le format du slug est invalide.",
+    "link_exists": "Un lien avec ce slug existe déjà.",
+    "link_migration_required": "La migration des liens doit d’abord être terminée.",
+    "link_modified": "Le lien a été modifié ou remplacé entre-temps. Rechargez-le et réessayez.",
+    "link_not_found": "Lien introuvable.",
+    "masked_password": "Un mot de passe masqué ne peut pas être enregistré. Saisissez le mot de passe complet.",
+    "not_found": "Introuvable.",
+    "preview_mode": "Cette action est désactivée en mode aperçu.",
+    "r2_not_configured": "Le stockage R2 n’est pas configuré.",
+    "slug_required": "Un slug est requis.",
+    "token_too_short": "Le jeton est trop court.",
+    "too_many_links": "Trop de liens. Maximum {max} liens par requête.",
+    "unauthorized": "Connexion requise ou jeton invalide."
   }
 }

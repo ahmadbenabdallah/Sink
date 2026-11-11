@@ -55,6 +55,12 @@
       "broken": "Rusak",
       "network_error": "Kesalahan Jaringan"
     },
+    "errors": {
+      "timeout": "Waktu permintaan habis.",
+      "blocked": "URL ini tidak diizinkan untuk pemeriksaan sisi server.",
+      "too_many_redirects": "Terlalu banyak pengalihan.",
+      "network": "Tujuan tidak dapat dijangkau."
+    },
     "empty": {
       "not_started": "Belum ada hasil.",
       "no_broken_links": "Tidak ditemukan tautan rusak.",

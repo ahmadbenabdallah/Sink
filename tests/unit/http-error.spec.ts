@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { getErrorMessage, getHttpErrorStatus } from '../../app/utils/http-error'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { getErrorCode, getErrorMessage, getHttpErrorStatus } from '../../app/utils/http-error'
 
 describe('getHttpErrorStatus', () => {
   it('reads the status of a $fetch error', () => {
@@ -68,5 +68,58 @@ describe('getErrorMessage', () => {
     expect(getErrorMessage(fetchError({ statusMessage: 42 }), fallback)).toBe(fallback)
     expect(getErrorMessage('boom', fallback)).toBe(fallback)
     expect(getErrorMessage(null, fallback)).toBe(fallback)
+  })
+})
+
+describe('getErrorCode', () => {
+  it('reads a known code and its parameters from the error body', () => {
+    expect(getErrorCode({ data: { statusMessage: 'Too many links. Maximum 100 links per request.', data: { code: 'too_many_links', max: 100 } } }))
+      .toEqual({ code: 'too_many_links', params: { max: 100 } })
+    expect(getErrorCode({ data: '{"data":{"code":"link_exists"}}' })).toEqual({ code: 'link_exists', params: {} })
+  })
+
+  it('ignores unknown codes and bodies without one', () => {
+    expect(getErrorCode({ data: { data: { code: 'constructor' } } })).toBeUndefined()
+    expect(getErrorCode({ data: { data: { code: 42 } } })).toBeUndefined()
+    expect(getErrorCode({ data: { data: { issues: [] } } })).toBeUndefined()
+    expect(getErrorCode({ data: { statusMessage: 'Not Found' } })).toBeUndefined()
+    expect(getErrorCode(new TypeError('Failed to fetch'))).toBeUndefined()
+    expect(getErrorCode(null)).toBeUndefined()
+  })
+})
+
+describe('getErrorMessage with a coded error', () => {
+  const fallback = 'Something went wrong'
+  const error = { data: { statusMessage: 'Too many links. Maximum 100 links per request.', data: { code: 'too_many_links', max: 100 } } }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  function stubI18n(messages: Record<string, string>) {
+    vi.stubGlobal('useNuxtApp', () => ({
+      $i18n: {
+        te: (key: string) => key in messages,
+        t: (key: string, params: Record<string, unknown>) => messages[key]!.replace(/\{(\w+)\}/g, (_, name) => String(params[name])),
+      },
+    }))
+  }
+
+  it('prefers the translation of the code, with its parameters', () => {
+    stubI18n({ 'errors.too_many_links': 'Trop de liens. Maximum {max}.' })
+    expect(getErrorMessage(error, fallback)).toBe('Trop de liens. Maximum 100.')
+  })
+
+  it('keeps the server reason when the code has no translation', () => {
+    stubI18n({})
+    expect(getErrorMessage(error, fallback)).toBe('Too many links. Maximum 100 links per request.')
+  })
+
+  it('keeps the server reason when no Nuxt app is available', () => {
+    expect(getErrorMessage(error, fallback)).toBe('Too many links. Maximum 100 links per request.')
+    vi.stubGlobal('useNuxtApp', () => {
+      throw new Error('[nuxt] instance unavailable')
+    })
+    expect(getErrorMessage(error, fallback)).toBe('Too many links. Maximum 100 links per request.')
   })
 })

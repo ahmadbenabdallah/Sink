@@ -85,7 +85,7 @@ describe('useWAE', () => {
       statusCode: 502,
       statusMessage: 'Cloudflare API rejected the configured credentials',
     })
-    expect(error.data).toBeUndefined()
+    expect(error.data).toEqual({ code: 'cloudflare_credentials_rejected' })
     expect(JSON.stringify(error)).not.toMatch(/secret-token|upstream-body/)
   })
 
@@ -95,7 +95,7 @@ describe('useWAE', () => {
     const error = await Promise.resolve(useWAE(event, query)).then(() => null, error => error)
 
     expect(error).toMatchObject({ statusCode: 502, statusMessage: 'Cloudflare API request failed' })
-    expect(error.data).toBeUndefined()
+    expect(error.data).toEqual({ code: 'cloudflare_request_failed' })
     expect(JSON.stringify(error)).not.toMatch(/secret-token|upstream-body/)
   })
 })

@@ -17,7 +17,7 @@ function toCsv(rows: AccessExportRow[]): string {
 
 export default eventHandler(async (event) => {
   if (getRouterParam(event, 'action') !== 'export') {
-    throw createError({ status: 404, statusText: 'Not Found' })
+    throw createError({ status: 404, statusText: 'Not Found', data: { code: 'not_found' } })
   }
 
   const query = await getValidatedQuery(event, StatsExportQuerySchema.parse)

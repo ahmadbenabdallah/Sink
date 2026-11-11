@@ -19,5 +19,28 @@
     "light": "Light",
     "dark": "Dark",
     "system": "System"
+  },
+  "errors": {
+    "ai_not_enabled": "AI is not enabled on this instance.",
+    "cloudflare_credentials_rejected": "Cloudflare rejected the configured API credentials.",
+    "cloudflare_request_failed": "The request to the Cloudflare API failed.",
+    "file_required": "A file is required.",
+    "file_too_large": "The file exceeds the {max} MB limit.",
+    "forbidden": "You are not allowed to do this.",
+    "invalid_cursor": "The pagination cursor is invalid. Reload the list and try again.",
+    "invalid_file_type": "Invalid file type. Allowed: JPEG, PNG, WebP, GIF.",
+    "invalid_slug": "The slug format is invalid.",
+    "link_exists": "A link with this slug already exists.",
+    "link_migration_required": "The link migration must be completed first.",
+    "link_modified": "The link was modified or replaced in the meantime. Reload it and try again.",
+    "link_not_found": "Link not found.",
+    "masked_password": "A masked password cannot be saved. Enter the full password.",
+    "not_found": "Not found.",
+    "preview_mode": "This action is disabled in preview mode.",
+    "r2_not_configured": "R2 storage is not configured.",
+    "slug_required": "A slug is required.",
+    "token_too_short": "The token is too short.",
+    "too_many_links": "Too many links. Maximum {max} links per request.",
+    "unauthorized": "Sign-in is required or the token is invalid."
   }
 }

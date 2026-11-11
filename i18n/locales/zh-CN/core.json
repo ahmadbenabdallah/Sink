@@ -19,5 +19,28 @@
     "light": "浅色",
     "dark": "深色",
     "system": "跟随系统"
+  },
+  "errors": {
+    "ai_not_enabled": "此实例未启用 AI。",
+    "cloudflare_credentials_rejected": "Cloudflare 拒绝了已配置的 API 凭据。",
+    "cloudflare_request_failed": "请求 Cloudflare API 失败。",
+    "file_required": "请选择文件。",
+    "file_too_large": "文件超过 {max} MB 的大小限制。",
+    "forbidden": "你无权执行此操作。",
+    "invalid_cursor": "分页游标无效，请重新加载列表后重试。",
+    "invalid_file_type": "文件类型无效。支持：JPEG、PNG、WebP、GIF。",
+    "invalid_slug": "短链格式无效。",
+    "link_exists": "该短链已存在。",
+    "link_migration_required": "需要先完成链接迁移。",
+    "link_modified": "链接已被修改或替换，请重新加载后重试。",
+    "link_not_found": "未找到链接。",
+    "masked_password": "无法保存已掩码的密码，请输入完整密码。",
+    "not_found": "未找到。",
+    "preview_mode": "预览模式下已禁用此操作。",
+    "r2_not_configured": "未配置 R2 存储。",
+    "slug_required": "请填写短链。",
+    "token_too_short": "站点令牌太短。",
+    "too_many_links": "链接过多，每次请求最多 {max} 个链接。",
+    "unauthorized": "需要登录，或站点令牌无效。"
   }
 }

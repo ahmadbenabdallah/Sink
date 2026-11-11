@@ -55,6 +55,12 @@
       "broken": "Rompu",
       "network_error": "Erreur réseau"
     },
+    "errors": {
+      "timeout": "La requête a expiré.",
+      "blocked": "Cette URL n’est pas autorisée pour la vérification côté serveur.",
+      "too_many_redirects": "Trop de redirections.",
+      "network": "La destination est injoignable."
+    },
     "empty": {
       "not_started": "Aucun résultat pour le moment.",
       "no_broken_links": "Aucun lien rompu détecté.",

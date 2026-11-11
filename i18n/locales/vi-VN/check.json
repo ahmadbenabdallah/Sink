@@ -55,6 +55,12 @@
       "broken": "Bị hỏng",
       "network_error": "Lỗi mạng"
     },
+    "errors": {
+      "timeout": "Yêu cầu đã hết thời gian chờ.",
+      "blocked": "URL này không được phép kiểm tra từ phía máy chủ.",
+      "too_many_redirects": "Quá nhiều lần chuyển hướng.",
+      "network": "Không thể kết nối tới đích."
+    },
     "empty": {
       "not_started": "Chưa có kết quả.",
       "no_broken_links": "Không tìm thấy liên kết bị hỏng.",

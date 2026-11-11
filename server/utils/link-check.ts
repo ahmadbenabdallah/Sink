@@ -1,9 +1,8 @@
 import type { H3Event } from 'h3'
 import type { LinkCheckRequest, LinkCheckResponse, LinkCheckResult } from '#shared/types/link-check'
 import { getHeader } from 'h3'
-import { toErrorMessage } from '#shared/utils/error'
 import { listLinks } from './link-store'
-import { fetchPublicHttpUrl, isPublicHttpUrl } from './public-url'
+import { classifyPublicFetchError, fetchPublicHttpUrl, isPublicHttpUrl } from './public-url'
 
 const SAFE_FORWARDED_HEADERS = ['accept-language', 'user-agent'] as const
 
@@ -33,7 +32,7 @@ async function checkLink(
       ...link,
       status: 0,
       ok: false,
-      error: 'URL is not allowed for server-side checking',
+      errorCode: 'blocked',
       duration: Date.now() - startedAt,
       checkedAt,
     }
@@ -59,11 +58,14 @@ async function checkLink(
     }
   }
   catch (error) {
+    const errorCode = classifyPublicFetchError(error)
+    // The error name only: the message can echo the target URL or runtime internals.
+    console.warn({ event: 'link_check.failed', slug: link.slug, errorCode, errorName: error instanceof Error ? error.name : typeof error })
     return {
       ...link,
       status: 0,
       ok: false,
-      error: toErrorMessage(error, 300),
+      errorCode,
       duration: Date.now() - startedAt,
       checkedAt,
     }

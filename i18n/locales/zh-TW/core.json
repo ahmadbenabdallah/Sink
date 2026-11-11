@@ -19,5 +19,28 @@
     "light": "淺色",
     "dark": "深色",
     "system": "跟隨系統"
+  },
+  "errors": {
+    "ai_not_enabled": "此實例未啟用 AI。",
+    "cloudflare_credentials_rejected": "Cloudflare 拒絕了已設定的 API 憑證。",
+    "cloudflare_request_failed": "請求 Cloudflare API 失敗。",
+    "file_required": "請選擇檔案。",
+    "file_too_large": "檔案超過 {max} MB 的大小限制。",
+    "forbidden": "你無權執行此操作。",
+    "invalid_cursor": "分頁游標無效，請重新載入清單後重試。",
+    "invalid_file_type": "檔案類型無效。支援：JPEG、PNG、WebP、GIF。",
+    "invalid_slug": "短連結格式無效。",
+    "link_exists": "此短連結已存在。",
+    "link_migration_required": "需要先完成連結遷移。",
+    "link_modified": "連結已被修改或取代，請重新載入後重試。",
+    "link_not_found": "找不到連結。",
+    "masked_password": "無法儲存已遮罩的密碼，請輸入完整密碼。",
+    "not_found": "找不到。",
+    "preview_mode": "預覽模式下已停用此操作。",
+    "r2_not_configured": "尚未設定 R2 儲存空間。",
+    "slug_required": "請填寫短連結。",
+    "token_too_short": "站點密碼太短。",
+    "too_many_links": "連結過多，每次請求最多 {max} 個連結。",
+    "unauthorized": "需要登入，或站點密碼不正確。"
   }
 }

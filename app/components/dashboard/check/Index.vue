@@ -107,7 +107,7 @@ function exportResults() {
     result.url,
     result.status,
     resultText(result),
-    result.error ?? '',
+    result.errorCode ? t(`check.errors.${result.errorCode}`) : '',
     result.duration,
     result.checkedAt,
     `${window.location.origin}${getDashboardLinkDetailUrl(result.slug)}`,

@@ -55,6 +55,12 @@
       "broken": "Non funzionante",
       "network_error": "Errore di rete"
     },
+    "errors": {
+      "timeout": "La richiesta è scaduta.",
+      "blocked": "Questo URL non è consentito per la verifica lato server.",
+      "too_many_redirects": "Troppi reindirizzamenti.",
+      "network": "Impossibile raggiungere la destinazione."
+    },
     "empty": {
       "not_started": "Nessun risultato.",
       "no_broken_links": "Nessun link non funzionante trovato.",

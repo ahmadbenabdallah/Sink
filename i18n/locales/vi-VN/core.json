@@ -19,5 +19,28 @@
     "light": "Sáng",
     "dark": "Tối",
     "system": "Hệ thống"
+  },
+  "errors": {
+    "ai_not_enabled": "AI chưa được bật trên phiên bản này.",
+    "cloudflare_credentials_rejected": "Cloudflare đã từ chối thông tin xác thực API đã cấu hình.",
+    "cloudflare_request_failed": "Yêu cầu tới API Cloudflare đã thất bại.",
+    "file_required": "Cần có tệp.",
+    "file_too_large": "Tệp vượt quá giới hạn {max} MB.",
+    "forbidden": "Bạn không được phép thực hiện thao tác này.",
+    "invalid_cursor": "Con trỏ phân trang không hợp lệ. Hãy tải lại danh sách rồi thử lại.",
+    "invalid_file_type": "Loại tệp không hợp lệ. Cho phép: JPEG, PNG, WebP, GIF.",
+    "invalid_slug": "Định dạng slug không hợp lệ.",
+    "link_exists": "Đã tồn tại liên kết với slug này.",
+    "link_migration_required": "Cần hoàn tất việc di chuyển liên kết trước.",
+    "link_modified": "Liên kết đã bị sửa đổi hoặc thay thế. Hãy tải lại rồi thử lại.",
+    "link_not_found": "Không tìm thấy liên kết.",
+    "masked_password": "Không thể lưu mật khẩu đã bị che. Hãy nhập mật khẩu đầy đủ.",
+    "not_found": "Không tìm thấy.",
+    "preview_mode": "Thao tác này bị tắt trong chế độ xem trước.",
+    "r2_not_configured": "Chưa cấu hình bộ lưu trữ R2.",
+    "slug_required": "Cần có slug.",
+    "token_too_short": "Token quá ngắn.",
+    "too_many_links": "Quá nhiều liên kết. Tối đa {max} liên kết mỗi yêu cầu.",
+    "unauthorized": "Cần đăng nhập hoặc token không hợp lệ."
   }
 }

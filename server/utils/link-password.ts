@@ -115,7 +115,7 @@ export async function hashLinkPassword(password: string): Promise<string> {
 
 export async function normalizeLinkPasswordForStorage(password: string): Promise<string> {
   if (isMaskedLinkPassword(password))
-    throw createError({ status: 400, statusText: 'Masked password cannot be stored' })
+    throw createError({ status: 400, statusText: 'Masked password cannot be stored', data: { code: 'masked_password' } })
 
   if (parseStoredLinkPassword(password))
     return password

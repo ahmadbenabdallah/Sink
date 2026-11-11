@@ -3,6 +3,7 @@ export function requireR2Bucket(env: Cloudflare.Env): R2Bucket {
     throw createError({
       statusCode: 503,
       statusMessage: 'R2 binding not configured',
+      data: { code: 'r2_not_configured' },
     })
   }
 

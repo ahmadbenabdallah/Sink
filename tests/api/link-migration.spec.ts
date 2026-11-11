@@ -240,5 +240,6 @@ describe('/api/link/import', { concurrent: false }, () => {
 
     expect(response.status).toBe(400)
     expect(response.statusText).toBe('Too many links. Maximum 100 links per request.')
+    expect(await response.json()).toMatchObject({ data: { code: 'too_many_links', max: 100 } })
   })
 })

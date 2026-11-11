@@ -22,6 +22,7 @@ export default eventHandler(async (event) => {
     throw createError({
       status: 400,
       statusText: `Too many links. Maximum ${importRequestLimit} links per request.`,
+      data: { code: 'too_many_links', max: importRequestLimit },
     })
   }
 

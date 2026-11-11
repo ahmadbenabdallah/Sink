@@ -55,6 +55,12 @@
       "broken": "Com falha",
       "network_error": "Erro de rede"
     },
+    "errors": {
+      "timeout": "O pedido expirou.",
+      "blocked": "Este URL não é permitido para verificação no servidor.",
+      "too_many_redirects": "Demasiados redirecionamentos.",
+      "network": "Não foi possível alcançar o destino."
+    },
     "empty": {
       "not_started": "Ainda não existem resultados.",
       "no_broken_links": "Não foram encontrados links com falha.",

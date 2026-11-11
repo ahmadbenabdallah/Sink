@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchPublicHttpUrl } from '../../server/utils/public-url'
+import { classifyPublicFetchError, fetchPublicHttpUrl } from '../../server/utils/public-url'
 
 type Hop = (input: string, init: RequestInit) => Response
 
@@ -88,5 +88,29 @@ describe('fetchPublicHttpUrl', () => {
     await fetchPublicHttpUrl('https://a.example/form', { method: 'POST', body: 'a=1' })
 
     expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({ method: 'POST', body: 'a=1' })
+  })
+})
+
+describe('classifyPublicFetchError', () => {
+  it('reports a URL refused by the public-URL guard as blocked', async () => {
+    const error = await fetchPublicHttpUrl('http://127.0.0.1/').catch(error => error)
+    expect(classifyPublicFetchError(error)).toBe('blocked')
+  })
+
+  it('reports a redirect chain past the limit as too_many_redirects', async () => {
+    stubFetch(...Array.from({ length: 6 }, (_, index) => redirect(`https://example.com/${index}`)))
+    const error = await fetchPublicHttpUrl('https://example.com/start').catch(error => error)
+    expect(classifyPublicFetchError(error)).toBe('too_many_redirects')
+  })
+
+  it('reports an aborted or timed out request as timeout', () => {
+    expect(classifyPublicFetchError(new DOMException('The operation timed out', 'TimeoutError'))).toBe('timeout')
+    expect(classifyPublicFetchError(new DOMException('The operation was aborted', 'AbortError'))).toBe('timeout')
+  })
+
+  it('reports everything else as network, whatever the runtime message says', () => {
+    expect(classifyPublicFetchError(new TypeError('internal error; reference = abc123'))).toBe('network')
+    expect(classifyPublicFetchError(new Error('Too many redirects'))).toBe('network')
+    expect(classifyPublicFetchError('boom')).toBe('network')
   })
 })
