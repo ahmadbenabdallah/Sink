@@ -6,7 +6,8 @@
       "timeout": "제한 시간 (초)",
       "timeout_description": "각 링크에 대한 제한 시간입니다. 기본값은 6초입니다.",
       "batch_size": "일괄 처리 크기",
-      "batch_size_description": "요청당 확인할 링크 수입니다. 최대 10개입니다."
+      "batch_size_description": "요청당 확인할 링크 수입니다. 최대 10개입니다.",
+      "number_out_of_range": "{min}에서 {max} 사이의 정수를 입력해 주세요"
     },
     "actions": {
       "start": "점검 시작",

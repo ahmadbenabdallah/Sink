@@ -11,7 +11,8 @@
     "edit": "편집",
     "delete": "삭제",
     "delete_success": "삭제되었습니다!",
-    "search": "검색"
+    "search": "검색",
+    "unexpected_error": "문제가 발생했습니다. 다시 시도해 주세요"
   },
   "theme": {
     "toggle": "테마 전환",

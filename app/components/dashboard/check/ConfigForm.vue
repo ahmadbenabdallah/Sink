@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { LinkCheckConfig } from '@/types'
 import { useForm } from '@tanstack/vue-form'
-import { LinkCheckConfigSchema } from '#shared/schemas/link-check'
+import { LINK_CHECK_LIMITS, LinkCheckConfigSchema } from '#shared/schemas/link-check'
 
 defineProps<{
   checking: boolean
@@ -36,8 +36,14 @@ const form = useForm({
   },
 })
 
-const validateTimeout = makeZodValidator(LinkCheckConfigSchema.shape.timeout)
-const validateBatchSize = makeZodValidator(LinkCheckConfigSchema.shape.batchSize)
+const { t } = useI18n()
+
+function makeRangeValidator(name: keyof typeof LINK_CHECK_LIMITS) {
+  return makeZodValidator(LinkCheckConfigSchema.shape[name], () => t('check.config.number_out_of_range', LINK_CHECK_LIMITS[name]))
+}
+
+const validateTimeout = makeRangeValidator('timeout')
+const validateBatchSize = makeRangeValidator('batchSize')
 const clearDialogOpen = shallowRef(false)
 
 function getNumberInputValue(value: unknown) {
@@ -71,8 +77,8 @@ function getNumberInputChangeValue(event: Event) {
             :id="field.name"
             :name="field.name"
             type="number"
-            min="1"
-            max="30"
+            :min="LINK_CHECK_LIMITS.timeout.min"
+            :max="LINK_CHECK_LIMITS.timeout.max"
             step="1"
             inputmode="numeric"
             autocomplete="off"
@@ -102,8 +108,8 @@ function getNumberInputChangeValue(event: Event) {
             :id="field.name"
             :name="field.name"
             type="number"
-            min="1"
-            max="10"
+            :min="LINK_CHECK_LIMITS.batchSize.min"
+            :max="LINK_CHECK_LIMITS.batchSize.max"
             step="1"
             inputmode="numeric"
             autocomplete="off"

@@ -2,7 +2,6 @@
 import type { LinkCheckConfig, LinkCheckResult } from '@/types'
 import { toast } from 'vue-sonner'
 import { generateCsv } from '#shared/utils/csv'
-import { toErrorMessage } from '#shared/utils/error'
 import { createExportFilename } from '#shared/utils/export-file'
 
 const { t } = useI18n()
@@ -63,7 +62,7 @@ async function reloadLinks() {
   catch (error) {
     console.error(error)
     toast.error(t('check.messages.load_failed'), {
-      description: toErrorMessage(error),
+      description: getErrorMessage(error, t('common.unexpected_error')),
     })
   }
 }
@@ -80,7 +79,7 @@ async function runCheck(config: LinkCheckConfig) {
   catch (error) {
     console.error(error)
     toast.error(t('check.messages.load_failed'), {
-      description: toErrorMessage(error),
+      description: getErrorMessage(error, t('common.unexpected_error')),
     })
   }
 }

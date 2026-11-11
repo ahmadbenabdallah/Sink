@@ -125,7 +125,8 @@
       "ai_og_generate": "Tạo AI OpenGraph",
       "duplicate_url_hint": "URL này đã tồn tại dưới dạng {shortLink}",
       "proxy_label": "Bật proxy ngược",
-      "proxy_description": "Chuyển tiếp nội dung từ URL đích một cách minh bạch mà không cần chuyển hướng 301/302. Lý tưởng cho đăng ký cấu hình và API. Không thể kết hợp với che giấu liên kết."
+      "proxy_description": "Chuyển tiếp nội dung từ URL đích một cách minh bạch mà không cần chuyển hướng 301/302. Lý tưởng cho đăng ký cấu hình và API. Không thể kết hợp với che giấu liên kết.",
+      "field_too_long": "{field} quá dài (tối đa {max} ký tự)"
     },
     "dialogs": {
       "discard": {

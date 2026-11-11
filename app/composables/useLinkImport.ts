@@ -1,10 +1,13 @@
 import type { ImportData, ImportResult, ImportResultItem } from '#shared/schemas/import'
+import type { ImportIssueKind } from '@/utils/validation'
 import { computed, readonly, shallowRef } from 'vue'
 import { toast } from 'vue-sonner'
 import { ImportDataSchema } from '#shared/schemas/import'
 import { createExportFilename } from '#shared/utils/export-file'
 import { useAPI } from '@/utils/api'
 import { saveAsJson } from '@/utils/file'
+import { getErrorMessage } from '@/utils/http-error'
+import { getImportIssueKind } from '@/utils/validation'
 
 type ImportStatus = 'selecting' | 'ready' | 'importing' | 'complete'
 
@@ -12,6 +15,15 @@ interface UseLinkImportOptions {
   batchSize?: number
   requestImport?: (data: ImportData) => Promise<ImportResult>
   delay?: (ms: number) => Promise<void>
+}
+
+const importIssueMessageKeys: Record<ImportIssueKind, string> = {
+  slug_invalid: 'links.form.slug_invalid',
+  slug_reserved: 'migrate.import.errors.slug_reserved',
+  url_invalid: 'links.form.url_invalid',
+  required: 'migrate.import.errors.value_required',
+  too_long: 'migrate.import.errors.value_too_long',
+  invalid: 'migrate.import.errors.value_invalid',
 }
 
 function emptyResult(): ImportResult {
@@ -70,7 +82,7 @@ export function useLinkImport(options: UseLinkImportOptions = {}) {
     if (!result.success) {
       const errors = result.error.issues.slice(0, 10).map((error) => {
         const path = error.path.join('.')
-        return `${path}: ${error.message}`
+        return `${path}: ${t(importIssueMessageKeys[getImportIssueKind(error)])}`
       })
       if (result.error.issues.length > 10)
         errors.push(`… (+${result.error.issues.length - 10})`)
@@ -128,9 +140,7 @@ export function useLinkImport(options: UseLinkImportOptions = {}) {
             index: batchStart + itemIndex,
             slug: link.slug,
             url: link.url,
-            reason: error instanceof Error
-              ? error.message
-              : t('migrate.import.errors.batch_failed'),
+            reason: getErrorMessage(error, t('migrate.import.errors.batch_failed')),
           })
         }
       }

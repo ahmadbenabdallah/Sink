@@ -8,6 +8,7 @@ const { previewMode } = useRuntimeConfig().public
 const token = shallowRef('')
 const error = shallowRef('')
 const submitError = shallowRef('')
+const submitErrorReason = shallowRef('')
 const isSubmitting = shallowRef(false)
 
 const LoginSchema = z.object({
@@ -44,6 +45,9 @@ async function handleSubmit() {
     removeAuthToken()
     console.error(e)
     submitError.value = t('login.failed')
+    submitErrorReason.value = getHttpErrorStatus(e) === 401
+      ? t('login.invalid_token')
+      : getErrorMessage(e, t('common.unexpected_error'))
   }
   finally {
     isSubmitting.value = false
@@ -88,6 +92,7 @@ async function handleSubmit() {
     <Alert v-if="submitError" variant="destructive" role="alert">
       <AlertCircle aria-hidden="true" class="size-4" />
       <AlertTitle>{{ submitError }}</AlertTitle>
+      <AlertDescription>{{ submitErrorReason }}</AlertDescription>
     </Alert>
 
     <Alert v-if="previewMode">

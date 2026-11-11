@@ -11,7 +11,8 @@
     "edit": "編輯",
     "delete": "刪除",
     "delete_success": "刪除成功！",
-    "search": "搜尋"
+    "search": "搜尋",
+    "unexpected_error": "發生錯誤，請重試"
   },
   "theme": {
     "toggle": "切換主题",

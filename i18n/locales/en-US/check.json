@@ -6,7 +6,8 @@
       "timeout": "Timeout (seconds)",
       "timeout_description": "Timeout for each link. Default is 6 seconds.",
       "batch_size": "Batch size",
-      "batch_size_description": "Links checked per request. Maximum is 10."
+      "batch_size_description": "Links checked per request. Maximum is 10.",
+      "number_out_of_range": "Enter a whole number from {min} to {max}."
     },
     "actions": {
       "start": "Start Check",

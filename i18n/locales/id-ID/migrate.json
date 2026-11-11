@@ -70,7 +70,11 @@
         "invalid_json": "File JSON tidak valid",
         "invalid_format": "Format file tidak valid. Gunakan file yang diekspor dari Sink.",
         "parse_error": "Gagal mengurai file",
-        "batch_failed": "Batch impor ini gagal."
+        "batch_failed": "Batch impor ini gagal.",
+        "value_invalid": "Nilai tidak valid",
+        "value_required": "Nilai wajib belum diisi",
+        "value_too_long": "Nilai terlalu panjang",
+        "slug_reserved": "Slug ini sudah dicadangkan"
       }
     }
   }

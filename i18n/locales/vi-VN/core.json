@@ -11,7 +11,8 @@
     "edit": "Chỉnh sửa",
     "delete": "Xóa",
     "delete_success": "Xóa thành công!",
-    "search": "Tìm kiếm"
+    "search": "Tìm kiếm",
+    "unexpected_error": "Đã xảy ra lỗi, vui lòng thử lại"
   },
   "theme": {
     "toggle": "Chuyển đổi giao diện",

@@ -70,7 +70,11 @@
         "invalid_json": "File JSON non valido",
         "invalid_format": "Formato file non valido. Usa un file esportato da Sink.",
         "parse_error": "Analisi del file fallita",
-        "batch_failed": "Questo batch di importazione non è riuscito."
+        "batch_failed": "Questo batch di importazione non è riuscito.",
+        "value_invalid": "Valore non valido",
+        "value_required": "Valore obbligatorio mancante",
+        "value_too_long": "Valore troppo lungo",
+        "slug_reserved": "Questo slug è riservato"
       }
     }
   }

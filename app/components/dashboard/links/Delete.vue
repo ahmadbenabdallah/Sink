@@ -36,7 +36,9 @@ async function deleteLink() {
   }
   catch (error) {
     console.error(error)
-    toast.error(t('links.delete_failed'))
+    toast.error(t('links.delete_failed'), {
+      description: getErrorMessage(error, t('common.unexpected_error')),
+    })
   }
   finally {
     deleting.value = false

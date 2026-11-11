@@ -2,8 +2,9 @@ import type { LinkUpdateType } from '@/types'
 import type { DashboardLink, DashboardLinkSearchItem } from '@/types/dashboard-links'
 import { parseURL, stringifyParsedURL } from 'ufo'
 import { computed, readonly, ref, shallowRef } from 'vue'
-import { defineStore } from '#imports'
+import { defineStore, useNuxtApp } from '#imports'
 import { useAPI } from '@/utils/api'
+import { getErrorMessage } from '@/utils/http-error'
 
 export const useDashboardLinksSearchStore = defineStore('dashboard-links-search', () => {
   const linksStore = useDashboardLinksStore()
@@ -70,7 +71,7 @@ export const useDashboardLinksSearchStore = defineStore('dashboard-links-search'
       if (generation === searchGeneration) {
         console.error(cause)
         links.value = []
-        error.value = cause instanceof Error ? cause.message : String(cause)
+        error.value = getErrorMessage(cause, useNuxtApp().$i18n.t('common.unexpected_error'))
         requestStatus.value = 'error'
       }
       return []

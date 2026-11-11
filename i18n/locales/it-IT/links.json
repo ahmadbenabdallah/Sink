@@ -125,7 +125,8 @@
       "ai_og_generate": "Genera OpenGraph AI",
       "duplicate_url_hint": "Questo URL esiste già come {shortLink}",
       "proxy_label": "Abilita Reverse Proxy",
-      "proxy_description": "Inoltra in modo trasparente il contenuto dell'URL di destinazione senza reindirizzamento 301/302. Ideale per abbonamenti e API. Non può essere combinato con il mascheramento link."
+      "proxy_description": "Inoltra in modo trasparente il contenuto dell'URL di destinazione senza reindirizzamento 301/302. Ideale per abbonamenti e API. Non può essere combinato con il mascheramento link.",
+      "field_too_long": "{field}: massimo {max} caratteri"
     },
     "dialogs": {
       "discard": {

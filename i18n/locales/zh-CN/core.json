@@ -11,7 +11,8 @@
     "edit": "编辑",
     "delete": "删除",
     "delete_success": "删除成功！",
-    "search": "搜索"
+    "search": "搜索",
+    "unexpected_error": "出了点问题，请重试"
   },
   "theme": {
     "toggle": "切换主题",

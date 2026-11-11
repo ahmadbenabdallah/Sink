@@ -11,7 +11,8 @@
     "edit": "Edit",
     "delete": "Delete",
     "delete_success": "Delete successful!",
-    "search": "Search"
+    "search": "Search",
+    "unexpected_error": "Something went wrong. Please try again."
   },
   "theme": {
     "toggle": "Toggle theme",

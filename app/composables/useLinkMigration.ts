@@ -61,7 +61,7 @@ const useLinkMigrationStore = defineStore('link-migration', () => {
   }
 
   function setError(cause: unknown) {
-    error.value = cause instanceof Error ? cause.message : String(cause)
+    error.value = getErrorMessage(cause, useNuxtApp().$i18n.t('common.unexpected_error'))
   }
 
   function clearCachedStatus() {

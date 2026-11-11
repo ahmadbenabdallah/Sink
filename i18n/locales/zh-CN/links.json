@@ -125,7 +125,8 @@
       "ai_og_generate": "生成 AI OpenGraph",
       "duplicate_url_hint": "该 URL 已存在为 {shortLink}",
       "proxy_label": "启用反向代理",
-      "proxy_description": "直接透明代理转发目标 URL 内容，不发生 301/302 重定向。适合配置订阅或 API 请求。与链接伪装互斥。"
+      "proxy_description": "直接透明代理转发目标 URL 内容，不发生 301/302 重定向。适合配置订阅或 API 请求。与链接伪装互斥。",
+      "field_too_long": "{field}过长（最多 {max} 个字符）"
     },
     "dialogs": {
       "discard": {

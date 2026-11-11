@@ -125,7 +125,8 @@
       "ai_og_generate": "Générer l'OpenGraph IA",
       "duplicate_url_hint": "Cette URL existe déjà sous {shortLink}",
       "proxy_label": "Activer le proxy inverse",
-      "proxy_description": "Transfère de manière transparente le contenu de l'URL de destination sans redirection 301/302. Idéal pour les abonnements et les API. Ne peut pas être combiné avec le masquage de lien."
+      "proxy_description": "Transfère de manière transparente le contenu de l'URL de destination sans redirection 301/302. Idéal pour les abonnements et les API. Ne peut pas être combiné avec le masquage de lien.",
+      "field_too_long": "{field} : {max} caractères maximum"
     },
     "dialogs": {
       "discard": {

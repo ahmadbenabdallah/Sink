@@ -64,7 +64,7 @@ async function handleExport(status: 'all' | 'active' | 'expired') {
   }
   catch (error) {
     toast.error(t('migrate.export.failed'), {
-      description: error instanceof Error ? error.message : String(error),
+      description: getErrorMessage(error, t('common.unexpected_error')),
     })
   }
   finally {

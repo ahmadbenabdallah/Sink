@@ -23,6 +23,15 @@ if (!Number.isSafeInteger(configuredMaxUrlLength)
 
 export const MAX_URL_LENGTH = configuredMaxUrlLength
 
+/** Maximum lengths of the free-text link fields. The dashboard form validates against the same numbers. */
+export const LINK_TEXT_MAX_LENGTH = {
+  comment: 2048,
+  title: 256,
+  description: 2048,
+  image: 128,
+  password: 128,
+} as const
+
 export const nanoid = (length: number = slugDefaultLength) => customAlphabet('23456789abcdefghjkmnpqrstuvwxyz', length)
 
 const GeoSchema = z.preprocess((value) => {
@@ -40,12 +49,12 @@ const TagsSchema = z.preprocess((value) => {
   return [...new Set(value.map(tag => typeof tag === 'string' ? tag.trim().toLowerCase() : tag))]
 }, z.array(z.string().min(1).max(32)).max(10)).default([])
 
-export const LinkPasswordSchema = z.string().trim().min(1).max(128).refine(
+export const LinkPasswordSchema = z.string().trim().min(1).max(LINK_TEXT_MAX_LENGTH.password).refine(
   password => !password.startsWith(LINK_PASSWORD_MASK_PREFIX),
   'masked password cannot be submitted',
 ).describe('Password protection for the link.')
 
-export const EditLinkPasswordSchema = z.string().trim().max(128).refine(
+export const EditLinkPasswordSchema = z.string().trim().max(LINK_TEXT_MAX_LENGTH.password).refine(
   password => !password.startsWith(LINK_PASSWORD_MASK_PREFIX),
   'masked password cannot be submitted',
 ).optional().describe('Password protection for the link. An empty string clears it; omitting keeps the stored one.')
@@ -76,11 +85,11 @@ const ExpirationSchema = TimestampSchema.refine(expiration => expiration > Math.
 export const LinkFieldsSchema = z.object({
   url: UrlSchema.describe('The target URL.'),
   slug: SlugSchema.describe('The slug identifying the short link.'),
-  comment: z.string().trim().max(2048).optional().describe('Optional internal note.'),
+  comment: z.string().trim().max(LINK_TEXT_MAX_LENGTH.comment).optional().describe('Optional internal note.'),
   expiration: ExpirationSchema.optional().describe('Unix seconds. Must be in the future.'),
-  title: z.string().trim().max(256).optional().describe('Overrides the title in the link preview.'),
-  description: z.string().trim().max(2048).optional().describe('Overrides the description in the link preview.'),
-  image: z.string().trim().max(128).optional().describe('Overrides the image in the link preview.'),
+  title: z.string().trim().max(LINK_TEXT_MAX_LENGTH.title).optional().describe('Overrides the title in the link preview.'),
+  description: z.string().trim().max(LINK_TEXT_MAX_LENGTH.description).optional().describe('Overrides the description in the link preview.'),
+  image: z.string().trim().max(LINK_TEXT_MAX_LENGTH.image).optional().describe('Overrides the image in the link preview.'),
   apple: z.string().trim().url().max(MAX_URL_LENGTH).optional().describe('Apple App Store redirect URL.'),
   google: z.string().trim().url().max(MAX_URL_LENGTH).optional().describe('Google Play Store redirect URL.'),
   cloaking: z.boolean().optional().describe('Mask the destination URL behind the short link.'),

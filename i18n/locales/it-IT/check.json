@@ -6,7 +6,8 @@
       "timeout": "Timeout (secondi)",
       "timeout_description": "Timeout per ogni link. Il valore predefinito è 6 secondi.",
       "batch_size": "Dimensione batch",
-      "batch_size_description": "Link verificati per richiesta. Massimo 10."
+      "batch_size_description": "Link verificati per richiesta. Massimo 10.",
+      "number_out_of_range": "Inserisci un numero intero compreso tra {min} e {max}"
     },
     "actions": {
       "start": "Avvia verifica",

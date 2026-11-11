@@ -125,7 +125,8 @@
       "ai_og_generate": "Gerar OpenGraph da IA",
       "duplicate_url_hint": "Este URL já existe como {shortLink}",
       "proxy_label": "Ativar proxy inverso",
-      "proxy_description": "Encaminha de forma transparente o conteúdo do URL de destino sem redirecionamento 301/302. Ideal para assinaturas e APIs. Não pode ser combinado com ocultação de link."
+      "proxy_description": "Encaminha de forma transparente o conteúdo do URL de destino sem redirecionamento 301/302. Ideal para assinaturas e APIs. Não pode ser combinado com ocultação de link.",
+      "field_too_long": "{field}: máximo de {max} caracteres"
     },
     "dialogs": {
       "discard": {

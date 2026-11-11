@@ -11,7 +11,8 @@
     "edit": "Bearbeiten",
     "delete": "Löschen",
     "delete_success": "Erfolgreich gelöscht!",
-    "search": "Suchen"
+    "search": "Suchen",
+    "unexpected_error": "Etwas ist schiefgelaufen, bitte versuche es erneut"
   },
   "theme": {
     "toggle": "Theme wechseln",

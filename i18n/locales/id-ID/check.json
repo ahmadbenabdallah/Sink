@@ -6,7 +6,8 @@
       "timeout": "Batas waktu (detik)",
       "timeout_description": "Batas waktu untuk setiap tautan. Nilai default adalah 6 detik.",
       "batch_size": "Ukuran batch",
-      "batch_size_description": "Tautan yang diperiksa per permintaan. Maksimum 10."
+      "batch_size_description": "Tautan yang diperiksa per permintaan. Maksimum 10.",
+      "number_out_of_range": "Masukkan bilangan bulat dari {min} hingga {max}"
     },
     "actions": {
       "start": "Mulai Pemeriksaan",

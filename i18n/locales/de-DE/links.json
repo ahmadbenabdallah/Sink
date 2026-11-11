@@ -125,7 +125,8 @@
       "ai_og_generate": "KI-OpenGraph generieren",
       "duplicate_url_hint": "Diese URL existiert bereits als {shortLink}",
       "proxy_label": "Reverse-Proxy aktivieren",
-      "proxy_description": "Leitet Inhalte der Ziel-URL transparent weiter, ohne 301/302-Weiterleitung. Ideal für Abonnements und APIs. Kann nicht mit Link-Cloaking kombiniert werden."
+      "proxy_description": "Leitet Inhalte der Ziel-URL transparent weiter, ohne 301/302-Weiterleitung. Ideal für Abonnements und APIs. Kann nicht mit Link-Cloaking kombiniert werden.",
+      "field_too_long": "{field}: maximal {max} Zeichen"
     },
     "dialogs": {
       "discard": {
