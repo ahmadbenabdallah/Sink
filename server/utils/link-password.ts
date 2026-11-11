@@ -1,4 +1,5 @@
 import type { Link } from '#shared/schemas/link'
+import { createError } from 'h3'
 import { isHashedLinkPassword, isMaskedLinkPassword, LINK_PASSWORD_HASH_PREFIX, maskLinkPassword } from '#shared/utils/link-password'
 
 const LINK_PASSWORD_ITERATIONS = 10_000
@@ -114,7 +115,7 @@ export async function hashLinkPassword(password: string): Promise<string> {
 
 export async function normalizeLinkPasswordForStorage(password: string): Promise<string> {
   if (isMaskedLinkPassword(password))
-    throw new Error('Masked password cannot be stored')
+    throw createError({ status: 400, statusText: 'Masked password cannot be stored' })
 
   if (parseStoredLinkPassword(password))
     return password

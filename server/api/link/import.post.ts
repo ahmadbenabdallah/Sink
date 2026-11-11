@@ -13,13 +13,6 @@ defineRouteMeta({
   },
 })
 
-// h3 errors carry their text in `statusMessage` while `message` stays empty.
-function describeImportError(error: unknown): string {
-  if (!(error instanceof Error))
-    return 'Unknown error'
-  return error.message || (error as { statusMessage?: string }).statusMessage || 'Unknown error'
-}
-
 export default eventHandler(async (event) => {
   assertLinkWritesAllowed(event, 'import')
 
@@ -72,14 +65,14 @@ export default eventHandler(async (event) => {
     for (const item of prepared) {
       if ('error' in item) {
         result.failed++
-        result.failedItems.push({ index: item.index, slug: item.linkData.slug, url: item.linkData.url, reason: describeImportError(item.error) })
+        result.failedItems.push({ index: item.index, slug: item.linkData.slug, url: item.linkData.url, reason: publicFailureReason(item.error, 'Failed to save link', { operation: 'import', slug: item.linkData.slug }) })
         continue
       }
 
       const writeResult = writeResults[writeIndex++]!
       if ('error' in writeResult) {
         result.failed++
-        result.failedItems.push({ index: item.index, slug: item.link.slug, url: item.linkData.url, reason: describeImportError(writeResult.error) })
+        result.failedItems.push({ index: item.index, slug: item.link.slug, url: item.linkData.url, reason: publicFailureReason(writeResult.error, 'Failed to save link', { operation: 'import', slug: item.link.slug }) })
       }
       else if (!writeResult.created) {
         result.skippedItems.push({ index: item.index, slug: item.link.slug, url: item.linkData.url })

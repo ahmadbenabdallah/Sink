@@ -1,3 +1,4 @@
+import type { ImportResult } from '../../shared/schemas/import'
 import type { Link } from '../../shared/schemas/link'
 import type { LinkMigrationRunResult, LinkMigrationStatus } from '../../shared/schemas/link-migration'
 import { env } from 'cloudflare:workers'
@@ -550,6 +551,32 @@ describe('d1 link integration', () => {
     expect((await db.select({ slug: linkTombstones.slug }).from(linkTombstones).where(eq(linkTombstones.slug, link.slug)).limit(1))[0] ?? null).toBeNull()
   })
 
+  it('hides database errors from import and migration failure reasons', async () => {
+    const link = makeLink(`db-fail-${crypto.randomUUID()}`)
+    const trigger = `fail_${link.id.replaceAll('-', '')}`
+    await env.DB.exec(`CREATE TRIGGER ${trigger} BEFORE INSERT ON links WHEN NEW.slug = '${link.slug}' BEGIN SELECT RAISE(ABORT, 'driver-detail'); END;`)
+    try {
+      const imported = await postJson('/api/link/import', { version: '1.0', links: [link] })
+      const importResult = await imported.json() as ImportResult
+      expect(importResult.failedItems).toEqual([{ index: 0, slug: link.slug, url: link.url, reason: 'Failed to save link' }])
+
+      await clearLinkMigrationState()
+      await putKvLink(link)
+      let cursor: string | undefined
+      let page: LinkMigrationRunResult
+      do {
+        const response = await postJson('/api/link/migration/run', { force: true, cursor })
+        page = await response.json() as LinkMigrationRunResult
+        cursor = page.cursor
+      } while (page.failed === 0 && cursor)
+      expect(page.failedItems).toContainEqual({ key: `link:${link.slug}`, reason: 'Failed to migrate link' })
+      expect(JSON.stringify(page)).not.toMatch(/driver-detail|insert into/i)
+    }
+    finally {
+      await env.DB.exec(`DROP TRIGGER IF EXISTS ${trigger}`)
+    }
+  })
+
   it('removes a failed migration run without recording completion', async () => {
     await clearLinkMigrationState()
     const invalidKey = `link:invalid-${crypto.randomUUID()}`
@@ -604,6 +631,10 @@ describe('d1 link integration', () => {
     const response = await postJson('/api/link/migration/run', { force: true })
     const result = await response.json() as LinkMigrationRunResult
     expect(result.failed).toBeGreaterThanOrEqual(1)
+    // Validation reasons are produced by our own schema and stay visible.
+    const reason = result.failedItems.find(item => item.key === `link:${slug}`)?.reason
+    expect(reason).toBeTruthy()
+    expect(reason).not.toBe('Failed to migrate link')
   })
 
   it('supports all D1 sorts and stable keyset pagination', async () => {

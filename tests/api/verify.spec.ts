@@ -29,6 +29,7 @@ describe('/api/verify', () => {
       headers: { Authorization: 'Bearer invalid-token-12345' },
     })
     expect(response.status).toBe(401)
+    expect(await response.json()).toMatchObject({ statusMessage: 'Unauthorized' })
   })
 
   it('does not trust an Access header when Access is not configured', async () => {

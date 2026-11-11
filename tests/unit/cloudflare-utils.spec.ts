@@ -41,9 +41,9 @@ describe('useWAE', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('preserves requests and propagates errors when credentials are complete', async () => {
-    const error = new Error('forbidden')
-    const fetchMock = vi.fn().mockRejectedValue(error)
+  it('preserves requests and reports a failed call as a 502 when credentials are complete', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const fetchMock = vi.fn().mockRejectedValue(new Error('network down'))
     vi.stubGlobal('useRuntimeConfig', () => ({
       cfAccountId: 'account',
       cfApiToken: 'token',
@@ -51,7 +51,7 @@ describe('useWAE', () => {
     vi.stubGlobal('compileAnalyticsQuery', () => 'select * from sink')
     vi.stubGlobal('$fetch', fetchMock)
 
-    await expect(useWAE(event, query)).rejects.toBe(error)
+    await expect(useWAE(event, query)).rejects.toMatchObject({ statusCode: 502, statusMessage: 'Cloudflare API request failed' })
     expect(fetchMock).toHaveBeenCalledWith(
       'https://api.cloudflare.com/client/v4/accounts/account/analytics_engine/sql',
       {
@@ -62,5 +62,40 @@ describe('useWAE', () => {
         retryDelay: 100,
       },
     )
+  })
+
+  function stubUpstreamFailure(status: number) {
+    const upstream = Object.assign(new Error('upstream'), {
+      status,
+      statusCode: status,
+      data: { errors: [{ message: 'upstream-body' }] },
+    })
+    vi.stubGlobal('useRuntimeConfig', () => ({ cfAccountId: 'account', cfApiToken: 'secret-token' }))
+    vi.stubGlobal('compileAnalyticsQuery', () => 'select * from sink')
+    vi.stubGlobal('$fetch', vi.fn().mockRejectedValue(upstream))
+    return upstream
+  }
+
+  it.each([401, 403])('reports an upstream %i as a 502 so the client does not treat it as a site auth failure', async (status) => {
+    stubUpstreamFailure(status)
+
+    const error = await Promise.resolve(useWAE(event, query)).then(() => null, error => error)
+
+    expect(error).toMatchObject({
+      statusCode: 502,
+      statusMessage: 'Cloudflare API rejected the configured credentials',
+    })
+    expect(error.data).toBeUndefined()
+    expect(JSON.stringify(error)).not.toMatch(/secret-token|upstream-body/)
+  })
+
+  it.each([400, 429, 500])('reports an upstream %i as a 502 without relaying its status or body', async (status) => {
+    stubUpstreamFailure(status)
+
+    const error = await Promise.resolve(useWAE(event, query)).then(() => null, error => error)
+
+    expect(error).toMatchObject({ statusCode: 502, statusMessage: 'Cloudflare API request failed' })
+    expect(error.data).toBeUndefined()
+    expect(JSON.stringify(error)).not.toMatch(/secret-token|upstream-body/)
   })
 })
