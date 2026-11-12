@@ -38,6 +38,7 @@
     "not_found": "Not found.",
     "preview_mode": "This action is disabled in preview mode.",
     "r2_not_configured": "R2 storage is not configured.",
+    "site_token_not_allowed": "The site token is not accepted on the MCP endpoint. Use a connector token.",
     "slug_required": "A slug is required.",
     "token_too_short": "The token is too short.",
     "too_many_links": "Too many links. Maximum {max} links per request.",

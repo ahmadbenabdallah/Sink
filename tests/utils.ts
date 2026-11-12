@@ -1,12 +1,23 @@
 import type { Link } from '../shared/schemas/link'
+import type { McpLevel } from '../shared/types/auth'
 import { env, exports } from 'cloudflare:workers'
 import { eq, inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { expect } from 'vitest'
 import { linkMigrationRuns, links, linkTombstones } from '../server/database/schema'
+import { createToken } from '../server/services/mcp/tokens'
 import { LINK_PASSWORD_HASH_PREFIX, LINK_PASSWORD_MASK_PREFIX } from '../shared/utils/link-password'
 
 export const db = drizzle(env.DB)
+
+/**
+ * Creates a connector token straight in the store and returns its value. The
+ * value is generated at run time, so no token text is ever committed.
+ */
+export async function createTestConnector(level: McpLevel) {
+  const { connector, token } = await createToken(db, { name: `Test ${level} ${crypto.randomUUID().slice(0, 8)}`, level })
+  return { id: connector.id, token }
+}
 
 export async function runScheduledTasks() {
   const pending: Promise<unknown>[] = []

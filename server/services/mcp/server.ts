@@ -1,5 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/server'
 import type { H3Event } from 'h3'
+import type { McpLevel } from '#shared/types/auth'
 import { createMcpHandler, McpServer as SdkMcpServer } from '@modelcontextprotocol/server'
 import { getHeader, getRequestHost, toWebRequest } from 'h3'
 import { version } from '../../../package.json'
@@ -22,14 +23,14 @@ const INSTRUCTIONS = [
  * close over its own `H3Event` so it can call the same server utilities the
  * REST handlers use.
  */
-function createMcpServer(event: H3Event): McpServer {
+function createMcpServer(event: H3Event, level: McpLevel): McpServer {
   const server = new SdkMcpServer(SERVER_INFO, {
     // The tool list is fixed for a connection and the endpoint keeps no stream
     // open to announce a change on.
     capabilities: { tools: { listChanged: false } },
-    instructions: INSTRUCTIONS,
+    instructions: `${INSTRUCTIONS} This connection has the \`${level}\` level; tools outside it are not available.`,
   })
-  registerMcpTools(server, event)
+  registerMcpTools(server, event, level)
   return server
 }
 
@@ -80,7 +81,13 @@ export async function handleMcpRequest(event: H3Event): Promise<Response> {
   if (await isBatchRequest(request))
     return jsonError(400, -32600, 'Batch requests are not supported')
 
-  const handler = createMcpHandler(() => createMcpServer(event), {
+  // The auth middleware sets the caller on this route. Without one there is
+  // no level to serve, so the request is refused instead of defaulting to any.
+  const caller = event.context.mcpCaller
+  if (!caller)
+    return jsonError(401, -32600, 'Unauthorized')
+
+  const handler = createMcpHandler(() => createMcpServer(event, caller.level), {
     legacy: 'stateless',
     onerror: error => console.error('[mcp]', error),
   })

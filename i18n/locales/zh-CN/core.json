@@ -38,6 +38,7 @@
     "not_found": "未找到。",
     "preview_mode": "预览模式下已禁用此操作。",
     "r2_not_configured": "未配置 R2 存储。",
+    "site_token_not_allowed": "MCP 端点不接受站点令牌，请使用连接器令牌。",
     "slug_required": "请填写短链。",
     "token_too_short": "站点令牌太短。",
     "too_many_links": "链接过多，每次请求最多 {max} 个链接。",

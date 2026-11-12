@@ -38,6 +38,7 @@
     "not_found": "Introuvable.",
     "preview_mode": "Cette action est désactivée en mode aperçu.",
     "r2_not_configured": "Le stockage R2 n’est pas configuré.",
+    "site_token_not_allowed": "Le jeton du site n'est pas accepté sur le point de terminaison MCP. Utilisez un jeton de connecteur.",
     "slug_required": "Un slug est requis.",
     "token_too_short": "Le jeton est trop court.",
     "too_many_links": "Trop de liens. Maximum {max} liens par requête.",

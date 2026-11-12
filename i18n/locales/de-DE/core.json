@@ -38,6 +38,7 @@
     "not_found": "Nicht gefunden.",
     "preview_mode": "Diese Aktion ist im Vorschaumodus deaktiviert.",
     "r2_not_configured": "Der R2-Speicher ist nicht konfiguriert.",
+    "site_token_not_allowed": "Das Site-Token wird am MCP-Endpunkt nicht akzeptiert. Verwenden Sie ein Connector-Token.",
     "slug_required": "Ein Slug ist erforderlich.",
     "token_too_short": "Der Token ist zu kurz.",
     "too_many_links": "Zu viele Links. Maximal {max} Links pro Anfrage.",
