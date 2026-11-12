@@ -1,6 +1,8 @@
 import { env } from 'cloudflare:workers'
+import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { clearLinkMigrationState, deleteStoredLinks, expectStoredHashedPassword, fetch, fetchWithAuth, getStoredLink, setLinkStoreD1Mode } from '../utils'
+import { links } from '../../server/database/schema'
+import { clearLinkMigrationState, db, deleteStoredLinks, expectStoredHashedPassword, fetch, fetchWithAuth, getStoredLink, putJson, setLinkStoreD1Mode } from '../utils'
 
 const MCP_PATH = '/api/mcp'
 const PROTOCOL_VERSION = '2025-11-25'
@@ -205,8 +207,8 @@ describe('/api/mcp handshake', () => {
       payload.result?.tools.map((tool: { name: string, inputSchema: any }) => [tool.name, tool.inputSchema]),
     )
 
-    // update_link parses with the edit contract, where password may be cleared.
-    expect(tools.update_link.required).toEqual(expect.arrayContaining(['url', 'slug']))
+    // update_link is a patch: only the slug that identifies the link is required.
+    expect(tools.update_link.required).toEqual(['slug'])
     // create/upsert parse with the create contract, which accepts proxy.
     expect(Object.keys(tools.create_link.properties)).toEqual(expect.arrayContaining(['url', 'proxy', 'password']))
     expect(Object.keys(tools.upsert_link.properties)).toEqual(expect.arrayContaining(['url', 'proxy', 'password']))
@@ -687,6 +689,302 @@ describe('/api/mcp tool input contracts', () => {
     const tools = (await readEnvelope(await postRpc(1, 'tools/list'))).result?.tools as { name: string, description: string }[]
     for (const tool of tools.filter(tool => tool.name.startsWith('get_analytics_')))
       expect(tool.description, tool.name).toContain('supplied by visitors')
+  })
+})
+
+describe('/api/mcp update_link', () => {
+  const FULL_LINK = {
+    url: 'https://example.com/mcp-patch',
+    comment: 'keep me',
+    title: 'Original title',
+    description: 'Original description',
+    tags: ['alpha', 'beta'],
+    geo: { DE: 'https://example.com/de', FR: 'https://example.com/fr' },
+    image: '/_assets/images/mcp-patch/preview.png',
+    apple: 'https://apps.apple.com/app/id1',
+    google: 'https://play.google.com/store/apps/details?id=example',
+    cloaking: true,
+    redirectWithQuery: true,
+    proxy: true,
+    expiration: Math.floor(Date.now() / 1000) + 86400,
+    password: 'secret123',
+  }
+  // Every field a null removes. `tags`, `password` and `unsafe` have their own
+  // rules and tests; `slug` and `url` cannot be removed.
+  const REMOVABLE_FIELDS = ['comment', 'title', 'description', 'geo', 'image', 'apple', 'google', 'cloaking', 'redirectWithQuery', 'proxy', 'expiration'] as const
+
+  async function createFullLink() {
+    const slug = trackSlug(`mcp-patch-${crypto.randomUUID()}`)
+    const created = await callTool('create_link', { ...FULL_LINK, slug })
+    expect(created.payload.result?.isError).toBeUndefined()
+    return slug
+  }
+
+  async function patch(args: Record<string, unknown>) {
+    const { payload } = await callTool('update_link', args)
+    return payload.result
+  }
+
+  it('advertises the same writable fields as create_link', async () => {
+    const payload = await readEnvelope(await postRpc(1, 'tools/list'))
+    const schemas = Object.fromEntries(
+      payload.result?.tools.map((tool: { name: string, inputSchema: any }) => [tool.name, tool.inputSchema]),
+    ) as Record<string, any>
+    expect(Object.keys(schemas.update_link.properties).sort()).toEqual(Object.keys(schemas.create_link.properties).sort())
+    expect(schemas.update_link.properties.tags.default).toBeUndefined()
+
+    // The removable list above must cover the contract, so a field added to it
+    // gets a null test or fails here.
+    const special = ['slug', 'url', 'tags', 'password', 'unsafe']
+    expect([...REMOVABLE_FIELDS, ...special].sort()).toEqual(Object.keys(schemas.update_link.properties).sort())
+  })
+
+  it('describes every field, including what null does', async () => {
+    const payload = await readEnvelope(await postRpc(1, 'tools/list'))
+    const { properties } = payload.result?.tools.find((tool: { name: string }) => tool.name === 'update_link').inputSchema
+    for (const [field, schema] of Object.entries<{ description?: string }>(properties))
+      expect(schema.description, field).toEqual(expect.any(String))
+    for (const field of [...REMOVABLE_FIELDS, 'tags', 'password', 'unsafe'])
+      expect(properties[field].description, field).toContain('null')
+  })
+
+  it('finds the link whatever the case of the slug', async () => {
+    const slug = await createFullLink()
+    expect((await patch({ slug: slug.toUpperCase(), comment: 'found by upper case' }))?.isError).toBeUndefined()
+    expect((await getStoredLink(slug))?.comment).toBe('found by upper case')
+  })
+
+  it('rejects an argument that is not a link field', async () => {
+    const slug = await createFullLink()
+    const result = await patch({ slug, id: 'custom-id' })
+    expect(result?.isError).toBe(true)
+    expect(result?.content[0].text).toContain('"id"')
+  })
+
+  it('keeps every field the caller did not send', async () => {
+    const slug = await createFullLink()
+    const before = await getStoredLink(slug)
+
+    const result = await patch({ slug, url: 'https://example.com/mcp-patch-moved' })
+    expect(result?.isError).toBeUndefined()
+
+    const after = await getStoredLink(slug)
+    expect(after).toEqual({
+      ...before,
+      url: 'https://example.com/mcp-patch-moved',
+      updatedAt: expect.any(Number),
+    })
+    expect(after?.updatedAt).toBeGreaterThan(before!.updatedAt)
+  })
+
+  it('changes nothing but the update time when only the slug is sent', async () => {
+    const slug = await createFullLink()
+    const before = await getStoredLink(slug)
+
+    expect((await patch({ slug }))?.isError).toBeUndefined()
+    expect(await getStoredLink(slug)).toEqual({ ...before, updatedAt: expect.any(Number) })
+  })
+
+  it.each(REMOVABLE_FIELDS)('removes %s when it is sent as null', async (field) => {
+    const slug = await createFullLink()
+    const before = await getStoredLink(slug)
+
+    expect((await patch({ slug, [field]: null }))?.isError).toBeUndefined()
+
+    const { [field]: _removed, ...rest } = before!
+    const after = await getStoredLink(slug)
+    expect(after).toEqual({ ...rest, updatedAt: expect.any(Number) })
+    expect(after).not.toHaveProperty(field)
+  })
+
+  it('empties the tags when they are sent as null', async () => {
+    const slug = await createFullLink()
+    expect((await patch({ slug, tags: null }))?.isError).toBeUndefined()
+    expect((await getStoredLink(slug))?.tags).toEqual([])
+  })
+
+  it('replaces the whole tag list and the whole geo map', async () => {
+    const slug = await createFullLink()
+    expect((await patch({ slug, tags: ['gamma'], geo: { US: 'https://example.com/us' } }))?.isError).toBeUndefined()
+
+    const after = await getStoredLink(slug)
+    expect(after?.tags).toEqual(['gamma'])
+    expect(after?.geo).toEqual({ US: 'https://example.com/us' })
+  })
+
+  it.each([
+    ['null', null],
+    ['an empty string', ''],
+  ])('clears the password when it is sent as %s', async (_label, password) => {
+    const slug = await createFullLink()
+    expect((await patch({ slug, password }))?.isError).toBeUndefined()
+    expect((await getStoredLink(slug))?.password).toBeUndefined()
+  })
+
+  it('stores a new password as a hash and keeps the stored hash otherwise', async () => {
+    const slug = await createFullLink()
+    const original = (await getStoredLink(slug))?.password
+
+    expect((await patch({ slug, comment: 'still protected' }))?.isError).toBeUndefined()
+    expect((await getStoredLink(slug))?.password).toBe(original)
+
+    expect((await patch({ slug, password: 'changed456' }))?.isError).toBeUndefined()
+    await expectStoredHashedPassword(slug, 'changed456')
+    expect((await getStoredLink(slug))?.password).not.toBe(original)
+  })
+
+  it.each([
+    ['a null url', { url: null }, 'url'],
+    ['a missing slug', { slug: undefined, url: 'https://example.com/no-slug' }, 'slug'],
+    ['a null slug', { slug: null }, 'slug'],
+    ['an expiration in the past', { expiration: 1 }, 'expiration'],
+    ['the masked form of a password', { password: '__SINK_MASKED__•••123' }, 'password'],
+  ])('rejects %s', async (_label, args, field) => {
+    const slug = await createFullLink()
+    const before = await getStoredLink(slug)
+
+    const result = await patch({ slug, ...args })
+    expect(result?.isError).toBe(true)
+    expect(result?.content[0].text).toContain(`${field}:`)
+    expect(await getStoredLink(slug)).toEqual(before)
+  })
+
+  it('reports a link that does not exist', async () => {
+    const result = await patch({ slug: `missing-${crypto.randomUUID()}`, comment: 'nobody home' })
+    expect(result?.isError).toBe(true)
+    expect(result?.content[0].text).toContain('404')
+  })
+
+  // The stored expiration is not validated again, so an expired link can be
+  // corrected without also sending a new expiration.
+  it('patches a link whose stored expiration is already in the past', async () => {
+    const slug = await createFullLink()
+    const past = Math.floor(Date.now() / 1000) - 60
+    await db.update(links).set({ expiration: past, effectiveExpiresAt: past }).where(eq(links.slug, slug))
+
+    const result = await patch({ slug, comment: 'fixed after expiry' })
+    expect(result?.isError).toBeUndefined()
+    expect(result?.structuredContent.link.comment).toBe('fixed after expiry')
+    expect(result?.structuredContent.link.expiration).toBe(past)
+  })
+
+  describe('unsafe flag', () => {
+    // Every lookup answers "blocked", so a link is flagged whenever the
+    // safety check runs. `lookups()` counts how often it ran.
+    async function withBlockingLookup(run: (lookups: () => number) => Promise<void>) {
+      const previous = env.NUXT_SAFE_BROWSING_DOH
+      env.NUXT_SAFE_BROWSING_DOH = 'https://doh.test/dns-query'
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => Response.json({ Answer: [{ data: '0.0.0.0' }] }))
+      try {
+        await run(() => fetchSpy.mock.calls.length)
+      }
+      finally {
+        fetchSpy.mockRestore()
+        env.NUXT_SAFE_BROWSING_DOH = previous
+      }
+    }
+
+    it('runs the safety check when the url changes on a link with no flag', async () => {
+      const slug = await createFullLink()
+      expect((await getStoredLink(slug))?.unsafe).toBeUndefined()
+
+      await withBlockingLookup(async (lookups) => {
+        expect((await patch({ slug, url: 'https://blocked.example/landing' }))?.isError).toBeUndefined()
+        expect(lookups()).toBe(1)
+      })
+      expect((await getStoredLink(slug))?.unsafe).toBe(true)
+    })
+
+    // A stored "safe" was a verdict on the old url, so it is checked again.
+    it('checks again when the url changes on a link stored as safe', async () => {
+      const slug = await createFullLink()
+      expect((await patch({ slug, unsafe: false }))?.isError).toBeUndefined()
+
+      await withBlockingLookup(async (lookups) => {
+        expect((await patch({ slug, url: 'https://blocked.example/was-safe' }))?.isError).toBeUndefined()
+        expect(lookups()).toBe(1)
+      })
+      expect((await getStoredLink(slug))?.unsafe).toBe(true)
+    })
+
+    // The lookup is off by default and passes a link when it fails, so a
+    // warning someone set must not depend on it.
+    it('keeps a stored unsafe flag when the url changes and no lookup is configured', async () => {
+      const slug = await createFullLink()
+      expect((await patch({ slug, unsafe: true }))?.isError).toBeUndefined()
+
+      expect((await patch({ slug, url: 'https://example.com/mcp-patch-still-flagged' }))?.isError).toBeUndefined()
+
+      const after = await getStoredLink(slug)
+      expect(after?.url).toBe('https://example.com/mcp-patch-still-flagged')
+      expect(after?.unsafe).toBe(true)
+    })
+
+    it('does not run the safety check when the url is unchanged', async () => {
+      const slug = await createFullLink()
+      await withBlockingLookup(async (lookups) => {
+        expect((await patch({ slug, comment: 'same target' }))?.isError).toBeUndefined()
+        expect(lookups()).toBe(0)
+      })
+      expect((await getStoredLink(slug))?.unsafe).toBeUndefined()
+    })
+
+    it('stores an unsafe flag sent with a new url as sent', async () => {
+      const slug = await createFullLink()
+      await withBlockingLookup(async (lookups) => {
+        expect((await patch({ slug, url: 'https://blocked.example/trusted', unsafe: false }))?.isError).toBeUndefined()
+        expect(lookups()).toBe(0)
+      })
+      expect((await getStoredLink(slug))?.unsafe).toBe(false)
+    })
+
+    // null removes the flag, which leaves the decision to the lookup like a
+    // link that never had one.
+    it('lets the lookup decide when the flag is sent as null with a new url', async () => {
+      const slug = await createFullLink()
+      expect((await patch({ slug, unsafe: true }))?.isError).toBeUndefined()
+
+      await withBlockingLookup(async (lookups) => {
+        expect((await patch({ slug, url: 'https://blocked.example/reset', unsafe: null }))?.isError).toBeUndefined()
+        expect(lookups()).toBe(1)
+      })
+      expect((await getStoredLink(slug))?.unsafe).toBe(true)
+    })
+
+    it('keeps a stored unsafe flag when the url is unchanged and removes it on null', async () => {
+      const slug = await createFullLink()
+      expect((await patch({ slug, unsafe: true }))?.isError).toBeUndefined()
+
+      expect((await patch({ slug, comment: 'still flagged' }))?.isError).toBeUndefined()
+      expect((await getStoredLink(slug))?.unsafe).toBe(true)
+
+      expect((await patch({ slug, unsafe: null }))?.isError).toBeUndefined()
+      expect((await getStoredLink(slug))?.unsafe).toBeUndefined()
+    })
+  })
+
+  it('tells the model that omitted fields are kept', async () => {
+    const initialized = await readEnvelope(await postInitialize(1))
+    expect(initialized.result?.instructions).toContain('omitted fields are kept')
+    expect(initialized.result?.instructions).not.toContain('send it back complete')
+
+    const tools = (await readEnvelope(await postRpc(1, 'tools/list'))).result?.tools as { name: string, description: string }[]
+    const description = tools.find(tool => tool.name === 'update_link')?.description
+    expect(description).toContain('null')
+    expect(description).not.toContain('omitted optional field is cleared')
+  })
+
+  // The REST route keeps replacing the whole link; only the MCP tool changed.
+  it('leaves the REST edit route clearing omitted fields', async () => {
+    const slug = await createFullLink()
+    const response = await putJson('/api/link/edit', { slug, url: 'https://example.com/mcp-rest-edit' })
+    expect(response.status).toBe(201)
+
+    const after = await getStoredLink(slug)
+    expect(after?.url).toBe('https://example.com/mcp-rest-edit')
+    expect(after?.comment).toBeUndefined()
+    expect(after?.tags).toEqual([])
+    expect(after?.geo).toBeUndefined()
   })
 })
 

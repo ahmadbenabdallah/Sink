@@ -11,7 +11,7 @@ import {
 import { useWAE } from '../../utils/cloudflare'
 import { checkLinksPage } from '../../utils/link-check'
 import { sanitizeLinkPassword, sanitizeLinksPassword } from '../../utils/link-password'
-import { removeLink, replaceLink, saveNewLink, upsertLink } from '../../utils/link-processing'
+import { patchLink, removeLink, saveNewLink, upsertLink } from '../../utils/link-processing'
 import { countLinks, getLinkWithMetadata, listLinks, listTags, normalizeSlug, searchLinks } from '../../utils/link-store'
 import { assertLinkStoreReady } from '../link-store/migration'
 import { sanitizeMetricRows } from './metric-names'
@@ -145,11 +145,11 @@ const linkTools: McpToolDefinition[] = [
   }),
   defineTool({
     name: 'update_link',
-    description: 'Replace an existing link identified by slug. Every writable field is overwritten and any omitted optional field is cleared, so read the link with get_link first and send it back complete. An empty password clears protection while an omitted one keeps it.',
+    description: 'Change fields of an existing link identified by slug. Send only the fields to change: omitted fields are kept, and null removes a field. tags and geo are replaced as a whole.',
     inputSchema: McpUpdateLinkSchema,
     annotations: { destructiveHint: true, idempotentHint: true },
     handler(event, args) {
-      return replaceLink(event, args)
+      return patchLink(event, args)
     },
   }),
   defineTool({

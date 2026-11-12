@@ -3,12 +3,14 @@ import { z } from 'zod'
 import {
   CreateLinkSchema,
   DeleteLinkSchema,
-  EditLinkSchema,
+  EditLinkPasswordSchema,
+  LinkFieldsSchema,
   LinkFilterQuerySchema,
   LinkSlugQuerySchema,
   ListLinksQuerySchema,
   NewSlugSchema,
   SearchLinksQuerySchema,
+  TagsFieldSchema,
 } from '#shared/schemas/link'
 import { LinkCheckRequestSchema } from '#shared/schemas/link-check'
 import { FilterQuerySchema } from '#shared/schemas/query'
@@ -46,7 +48,43 @@ export const McpCountLinksSchema = LinkFilterQuerySchema.strict()
 export const McpListTagsSchema = z.object({}).strict()
 export const McpCheckLinksSchema = LinkCheckRequestSchema
 export const McpDeleteLinkSchema = DeleteLinkSchema.strict()
-export const McpUpdateLinkSchema = EditLinkSchema.strict()
+
+const linkFields = LinkFieldsSchema.shape
+
+/**
+ * Makes an optional link field removable with null. The description moves to
+ * the outside and says so; without that it would sit inside the "or null"
+ * alternative, where a client reading the property would not find it.
+ */
+function removable<Field extends z.ZodType>(field: Field) {
+  return field.nullable().describe(`${field.description} null removes it.`)
+}
+
+/**
+ * `update_link` is a patch: a field that is absent is kept and `null` removes
+ * it. Only the slug is required, and the URL cannot be removed. Each field
+ * reuses the shared field schema, so the validation rules are the same as for
+ * an edit. Nothing here has a default: the shared tags schema defaults to an
+ * empty list, which would turn "tags not sent" into "remove all tags".
+ */
+export const McpUpdateLinkSchema = z.object({
+  slug: linkFields.slug,
+  url: linkFields.url.optional(),
+  comment: removable(linkFields.comment),
+  expiration: removable(linkFields.expiration),
+  title: removable(linkFields.title),
+  description: removable(linkFields.description),
+  image: removable(linkFields.image),
+  apple: removable(linkFields.apple),
+  google: removable(linkFields.google),
+  cloaking: removable(linkFields.cloaking),
+  redirectWithQuery: removable(linkFields.redirectWithQuery),
+  proxy: removable(linkFields.proxy),
+  password: EditLinkPasswordSchema.nullable().describe('Password protection for the link. null or an empty string clears it; omitting keeps the stored one.'),
+  unsafe: linkFields.unsafe.nullable().describe('Show a warning page before redirecting. When the url changes and this is not sent, a stored true is kept and a stored false is checked again by the safety lookup. null removes the flag and leaves a changed url to the lookup.'),
+  geo: removable(linkFields.geo),
+  tags: TagsFieldSchema.nullable().optional().describe('Up to 10 normalized link tags, each 1-32 characters. Replaces the whole list; null empties it.'),
+}).strict()
 
 /**
  * `id`, `createdAt` and `updatedAt` are filled by the server. `slug` stays

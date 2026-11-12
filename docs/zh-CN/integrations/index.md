@@ -51,7 +51,7 @@ claude mcp add --transport http sink https://your-domain/api/mcp --header "Autho
 | `count_links`            | 统计匹配关键字、URL、标签或状态的链接数量。 |
 | `list_tags`              | 列出正在使用的标签及其链接数量。            |
 | `create_link`            | 创建链接，未提供 slug 时自动生成。          |
-| `update_link`            | 替换现有链接的全部可写字段。                |
+| `update_link`            | 只修改传入的字段，其余字段保持不变。        |
 | `upsert_link`            | 返回该 slug 的现有链接，不存在时创建。      |
 | `delete_link`            | 永久删除链接。                              |
 | `check_links`            | 按 slug 分页检查已存链接的目标 URL。        |
@@ -60,7 +60,7 @@ claude mcp add --transport http sink https://your-domain/api/mcp --header "Autho
 | `get_analytics_metrics`  | 某个访问日志维度的 Top 值。                 |
 | `get_analytics_heatmap`  | 按星期几和小时分桶的访问量与访客数。        |
 
-写入类工具与 REST API 一样遵循 `NUXT_PUBLIC_PREVIEW_MODE` 和 KV 到 D1 的迁移门控；分析类工具读取与仪表盘相同的采样访问日志，因此结果为估算值。对 `update_link`，`password` 传空字符串会清除访问密码，省略则保留原有密码。
+写入类工具与 REST API 一样遵循 `NUXT_PUBLIC_PREVIEW_MODE` 和 KV 到 D1 的迁移门控；分析类工具读取与仪表盘相同的采样访问日志，因此结果为估算值。`update_link` 只修改传入的字段：省略的字段保持不变，传 `null` 则移除该字段。`tags` 和 `geo` 会整体替换，`password` 传 `null` 或空字符串会清除访问密码。URL 变更且未传 `unsafe` 时，已有的不安全警告会保留。
 
 该端点位于 `/api/` 之下，因此不占用短链接命名空间：slug 不能包含斜杠，所以没有短链接会遮蔽它，也无需保留 slug。升级不会夺走实例上已在使用的任何 slug。
 

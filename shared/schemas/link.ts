@@ -47,11 +47,14 @@ const GeoSchema = z.preprocess((value) => {
   )
 }, z.record(z.string().trim().regex(/^[A-Z]{2}$/), z.string().trim().url().max(MAX_URL_LENGTH)))
 
-const TagsSchema = z.preprocess((value) => {
+/** Tags without the default, for contracts where an omitted list must stay omitted. */
+export const TagsFieldSchema = z.preprocess((value) => {
   if (!Array.isArray(value))
     return value
   return [...new Set(value.map(tag => typeof tag === 'string' ? tag.trim().toLowerCase() : tag))]
-}, z.array(z.string().min(1).max(32)).max(10)).default([])
+}, z.array(z.string().min(1).max(32)).max(10))
+
+const TagsSchema = TagsFieldSchema.default([])
 
 export const LinkPasswordSchema = z.string().trim().min(1).max(LINK_TEXT_MAX_LENGTH.password).refine(
   password => !password.startsWith(LINK_PASSWORD_MASK_PREFIX),
