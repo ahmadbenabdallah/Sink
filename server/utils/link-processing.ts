@@ -17,6 +17,14 @@ const editableOptionalLinkFields = [
   'tags',
 ] as const satisfies readonly (keyof Link)[]
 
+/**
+ * A partial change to a stored link. A field that is absent is kept, and `null`
+ * removes it. The slug identifies the link and the URL cannot be removed.
+ */
+export type LinkPatch = Pick<EditLink, 'slug'>
+  & { url?: EditLink['url'] }
+  & { [Field in Exclude<keyof EditLink, 'slug' | 'url'>]?: EditLink[Field] | null }
+
 export interface LinkResponse {
   link: Link
   shortLink: string
@@ -119,14 +127,63 @@ export async function upsertLink(event: H3Event, link: Link): Promise<LinkRespon
   return { ...buildLinkResponse(event, racedLink), status: 'existing' }
 }
 
-export async function replaceLink(event: H3Event, link: EditLink): Promise<LinkResponse> {
-  assertLinkWritesAllowed(event, 'edit')
-  link.slug = normalizeSlug(event, link.slug)
+/**
+ * Turns a patch into the complete link `editStoredLink` expects, by laying the
+ * sent fields over the stored ones.
+ *
+ * - The stored password hash is left out: an absent password keeps it, exactly
+ *   as it does for a full edit, and `null` clears it like an empty string.
+ * - Tags are always a list, so `null` empties them.
+ * - A stored `unsafe: false` was a verdict on the stored URL. When the URL
+ *   changes and the caller sent no flag, it is dropped so the safety lookup
+ *   decides again. A stored `unsafe: true` is kept: the lookup is optional and
+ *   passes a link when it fails, so a warning must not depend on it.
+ * - `unsafe: null` removes the flag, which leaves a changed URL to the lookup
+ *   exactly like a link that never had one.
+ *
+ * Only the editable fields are read from the patch, so a caller that skipped
+ * the input schema cannot store anything else.
+ */
+function applyLinkPatch(existingLink: Link, patch: LinkPatch): EditLink {
+  const { password: _storedHash, ...stored } = existingLink
+  const link: Record<string, unknown> = stored
 
-  const existingLink = await getAnyAuthoritativeLink(event, link.slug)
+  if (patch.url !== undefined)
+    link.url = patch.url
+
+  for (const field of editableOptionalLinkFields) {
+    const value = patch[field]
+    if (value === undefined)
+      continue
+    if (value !== null)
+      link[field] = value
+    else if (field === 'tags')
+      link.tags = []
+    else
+      delete link[field]
+  }
+
+  const urlChanged = link.url !== existingLink.url
+  if (urlChanged && patch.unsafe === undefined && existingLink.unsafe === false)
+    delete link.unsafe
+
+  return { ...link, password: patch.password === null ? '' : patch.password } as EditLink
+}
+
+/**
+ * The one path that changes a stored link. `resolve` receives the stored link
+ * and returns the complete link to store: a full edit returns what the caller
+ * sent, a patch lays the sent fields over the stored ones.
+ */
+async function editStoredLink(event: H3Event, slug: string, resolve: (existingLink: Link) => EditLink): Promise<LinkResponse> {
+  assertLinkWritesAllowed(event, 'edit')
+  const normalizedSlug = normalizeSlug(event, slug)
+
+  const existingLink = await getAnyAuthoritativeLink(event, normalizedSlug)
   if (!existingLink)
     throw createError({ status: 404, statusText: 'Link not found', data: { code: 'link_not_found' } })
 
+  const link = { ...resolve(existingLink), slug: normalizedSlug }
   if (link.url !== existingLink.url)
     await detectUnsafeLink(event, link)
 
@@ -137,6 +194,16 @@ export async function replaceLink(event: H3Event, link: EditLink): Promise<LinkR
     throw createError({ status: 409, statusText: 'Link was modified or replaced', data: { code: 'link_modified' } })
 
   return buildLinkResponse(event, newLink)
+}
+
+/** Replaces a link: every optional field the caller left out is removed. */
+export function replaceLink(event: H3Event, link: EditLink): Promise<LinkResponse> {
+  return editStoredLink(event, link.slug, () => link)
+}
+
+/** Changes only the fields the caller sent; see `LinkPatch`. */
+export function patchLink(event: H3Event, patch: LinkPatch): Promise<LinkResponse> {
+  return editStoredLink(event, patch.slug, existingLink => applyLinkPatch(existingLink, patch))
 }
 
 export async function removeLink(event: H3Event, slug: string): Promise<void> {
