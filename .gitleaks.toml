@@ -5,7 +5,7 @@ useDefault = true
 # Only these exact fake values are exempt. A new fixture secret must be added
 # here on purpose; a real token pasted into a test is still reported.
 [[allowlists]]
-description = "Known fake passwords and secrets in test fixtures, and the placeholder token in the skill doc"
+description = "Known fake passwords and secrets in test fixtures, and the placeholder tokens in the docs"
 regexTarget = "secret"
 regexes = [
   '''^legacy-plain-123$''',
@@ -15,4 +15,5 @@ regexes = [
   '''^limited-secret123$''',
   '''^whsec_MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=$''',
   '''^YOUR_TOKEN$''',
+  '''^YOUR_SITE_TOKEN$''',
 ]
