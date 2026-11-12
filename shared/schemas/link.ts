@@ -75,7 +75,7 @@ export const SlugSchema = z.string().trim().max(SLUG_MAX_LENGTH).regex(new RegEx
 // case-insensitively because write paths lowercase the slug unless `caseSensitive` is set.
 // Never apply this to stored or legacy KV records: links written before this check must
 // stay readable, exportable, and deletable.
-const NewSlugSchema = SlugSchema.refine(
+export const NewSlugSchema = SlugSchema.refine(
   slug => !reservedSlugs.has(slug.toLowerCase()),
   'slug is reserved',
 )

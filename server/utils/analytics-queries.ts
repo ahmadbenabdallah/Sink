@@ -10,7 +10,7 @@ import { createAnalyticsQuery } from './analytics-sql'
 import { buildAnalyticsFilter } from './query-filter'
 import { getSafeTimezone } from './time'
 
-type MetricType = BlobsMap[keyof BlobsMap] | DoublesMap[keyof DoublesMap]
+export type MetricType = BlobsMap[keyof BlobsMap] | DoublesMap[keyof DoublesMap]
 
 const validMetricTypes = [...Object.values(blobsMap), ...Object.values(doublesMap)] as [MetricType, ...MetricType[]]
 
@@ -35,10 +35,14 @@ export const HeatmapQuerySchema = FilterQuerySchema.extend({
   clientTimezone: ClientTimezoneSchema,
 })
 
-export const StatsExportQuerySchema = FilterQuerySchema.refine(
-  query => query.startAt === undefined || query.endAt === undefined || query.startAt <= query.endAt,
-  { message: 'startAt must be less than or equal to endAt', path: ['startAt'] },
-)
+/** Rejects a window that ends before it starts. Shared by the stats export and the MCP analytics tools. */
+export function isOrderedRange(query: { startAt?: number, endAt?: number }): boolean {
+  return query.startAt === undefined || query.endAt === undefined || query.startAt <= query.endAt
+}
+// `error`, not `message`: zod rewrites a `message` key in place on first use.
+export const ORDERED_RANGE_ISSUE = { error: 'startAt must be less than or equal to endAt', path: ['startAt'] }
+
+export const StatsExportQuerySchema = FilterQuerySchema.refine(isOrderedRange, ORDERED_RANGE_ISSUE)
 
 export type ViewsQuery = z.infer<typeof ViewsQuerySchema>
 export type MetricsQuery = z.infer<typeof MetricsQuerySchema>
