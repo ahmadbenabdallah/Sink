@@ -1,8 +1,23 @@
 import { timingSafeEqual } from 'node:crypto'
 
+/** Window of the `API_AUTH_LIMITER` binding in `wrangler.jsonc`; sent as `Retry-After` when limited. */
+const API_AUTH_LIMIT_PERIOD_SECONDS = 60
+
 export default eventHandler(async (event) => {
   if (!event.path.startsWith('/api/'))
     return
+
+  // Counted before any credential is looked at, and for every request. The
+  // binding has no way to ask "is this address over the limit" without also
+  // counting, so failures cannot be counted on their own: a correct guess
+  // would then always pass. This is therefore a ceiling on requests per client
+  // address, set well above what the dashboard and an agent send together. It
+  // slows guessing of the site token; a long random token is what protects it.
+  const limiter = event.context.cloudflare?.env.API_AUTH_LIMITER
+  if (!await allowAttempt(limiter, clientBucket(getHeader(event, 'cf-connecting-ip')), 'api_auth.limiter.unavailable')) {
+    setResponseHeader(event, 'Retry-After', API_AUTH_LIMIT_PERIOD_SECONDS)
+    throw createError({ status: 429, statusText: 'Too many requests', data: { code: 'too_many_requests' } })
+  }
 
   const token = getHeader(event, 'Authorization')?.replace(/^Bearer\s+/, '')
   if (await verifySiteToken(token, useRuntimeConfig(event).siteToken)) {

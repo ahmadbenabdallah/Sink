@@ -41,6 +41,7 @@
     "slug_required": "Un slug est requis.",
     "token_too_short": "Le jeton est trop court.",
     "too_many_links": "Trop de liens. Maximum {max} liens par requête.",
+    "too_many_requests": "Trop de requêtes. Veuillez patienter un instant et réessayer.",
     "unauthorized": "Connexion requise ou jeton invalide."
   }
 }

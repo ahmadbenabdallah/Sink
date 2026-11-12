@@ -71,6 +71,29 @@ describe('useLinkCheck', () => {
       expect(options.body).not.toHaveProperty('links')
   })
 
+  // Pages are requested back to back otherwise, so a check over fast targets
+  // could send hundreds of requests a minute and run into the API rate limit.
+  it('pauses between pages, but not after the last one', async () => {
+    const page = (slug: string, cursor?: string) => ({
+      results: [{ slug, url: `https://example.com/${slug}`, status: 200, ok: true, duration: 1, checkedAt: 'now' }],
+      cursor,
+      list_complete: !cursor,
+    })
+    useAPIMock
+      .mockResolvedValueOnce({ count: 3 })
+      .mockResolvedValueOnce(page('first', 'page-2'))
+      .mockResolvedValueOnce(page('second', 'page-3'))
+      .mockResolvedValueOnce(page('third'))
+    const delay = vi.fn(async (_ms: number) => {})
+    const linkCheck = useLinkCheck({ delay })
+    await linkCheck.loadLinks()
+
+    await expect(linkCheck.startCheck({ batchSize: 1, timeout: 5 })).resolves.toBe('completed')
+
+    expect(linkCheck.results.value).toHaveLength(3)
+    expect(delay.mock.calls).toEqual([[250], [250]])
+  })
+
   it('does not request another page after stop is requested', async () => {
     const page = createDeferred<{
       results: { slug: string, url: string, status: number, ok: boolean, duration: number, checkedAt: string }[]

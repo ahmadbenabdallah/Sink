@@ -36,11 +36,11 @@ describe('allowLinkPasswordAttempt', () => {
     expect(await allowLinkPasswordAttempt(fakeLimiter(false), 'my-link', '203.0.113.7')).toBe(false)
   })
 
-  it('fails open with a warning when the binding is missing', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  // The warning is logged once per isolate and is covered in rate-limit.spec.ts.
+  it('fails open when the binding is missing', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     expect(await allowLinkPasswordAttempt(undefined, 'my-link', '203.0.113.7')).toBe(true)
-    expect(warn).toHaveBeenCalledTimes(1)
   })
 
   it('fails open with a warning when the limiter throws', async () => {

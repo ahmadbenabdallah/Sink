@@ -46,6 +46,8 @@ description: Sink 支持的全部环境变量——做什么、填在哪、什�
 
 `wrangler.jsonc` 还声明了 `LINK_PASSWORD_LIMITER`（Workers Rate Limiting 绑定）：每个短链、每个客户端 IP 每分钟最多尝试 10 次链接密码。无需额外配置。正确的密码也会计数，因此每次请求都携带 `x-link-password` 的客户端每个 IP 每分钟最多 10 次请求，同一共享 IP 下的访客共用该额度。该绑定仅存在于 Workers 部署中；没有该绑定时（例如 Pages 部署）不限制尝试次数。
 
+它还声明了 `API_AUTH_LIMITER`：每个客户端 IP 每分钟最多向 `/api/` 发送 1200 次请求，在校验令牌之前计数。超出后，API 会返回 `429` 并附带 `Retry-After: 60`，最长持续一分钟。无论令牌是否有效，每次请求都会计数，仪表盘自身的请求也不例外，因此同一 IP 下的所有人（多个用户、脚本或代理）共用该额度，其中任何一方都可能把额度用完。短链接跳转不受影响，只有 `/api/` 受限。计数按 Cloudflare 节点分别统计，且为近似值。该限制只能减缓对 `NUXT_SITE_TOKEN` 的猜测，真正起保护作用的是足够长的随机令牌。与链接密码限流一样，它仅存在于 Workers 部署中。
+
 ## 必须配置
 
 ::: warning `NUXT_SITE_TOKEN`

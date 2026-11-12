@@ -41,6 +41,7 @@
     "slug_required": "請填寫短連結。",
     "token_too_short": "站點密碼太短。",
     "too_many_links": "連結過多，每次請求最多 {max} 個連結。",
+    "too_many_requests": "請求過於頻繁，請稍後再試。",
     "unauthorized": "需要登入，或站點密碼不正確。"
   }
 }

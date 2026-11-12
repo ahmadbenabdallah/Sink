@@ -41,6 +41,7 @@
     "slug_required": "Ein Slug ist erforderlich.",
     "token_too_short": "Der Token ist zu kurz.",
     "too_many_links": "Zu viele Links. Maximal {max} Links pro Anfrage.",
+    "too_many_requests": "Zu viele Anfragen. Bitte warten Sie einen Moment und versuchen Sie es erneut.",
     "unauthorized": "Anmeldung erforderlich oder Token ungültig."
   }
 }

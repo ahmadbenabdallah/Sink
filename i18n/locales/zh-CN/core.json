@@ -41,6 +41,7 @@
     "slug_required": "请填写短链。",
     "token_too_short": "站点令牌太短。",
     "too_many_links": "链接过多，每次请求最多 {max} 个链接。",
+    "too_many_requests": "请求过于频繁，请稍后再试。",
     "unauthorized": "需要登录，或站点令牌无效。"
   }
 }
