@@ -39,7 +39,8 @@ export const HeatmapQuerySchema = FilterQuerySchema.extend({
 export function isOrderedRange(query: { startAt?: number, endAt?: number }): boolean {
   return query.startAt === undefined || query.endAt === undefined || query.startAt <= query.endAt
 }
-export const ORDERED_RANGE_ISSUE = { message: 'startAt must be less than or equal to endAt', path: ['startAt'] }
+// `error`, not `message`: zod rewrites a `message` key in place on first use.
+export const ORDERED_RANGE_ISSUE = { error: 'startAt must be less than or equal to endAt', path: ['startAt'] }
 
 export const StatsExportQuerySchema = FilterQuerySchema.refine(isOrderedRange, ORDERED_RANGE_ISSUE)
 

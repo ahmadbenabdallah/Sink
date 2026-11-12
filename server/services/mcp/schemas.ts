@@ -31,11 +31,12 @@ import {
  *   every request and a caller cannot choose a link's id or timestamps;
  * - smaller pages.
  *
- * REST and the dashboard keep the shared schemas untouched.
+ * REST and the dashboard keep using the shared schemas, whose behaviour is
+ * unchanged.
  */
 
-// The shared limit allows 1000 rows, and every MCP result is sent as both text
-// and structured content.
+// The shared limits allow 500 to 1000 rows, and every MCP result is sent as
+// both text and structured content.
 const McpPageLimitSchema = z.coerce.number().int().min(1).max(100).default(20).describe('Maximum number of results, 1-100.')
 
 export const McpListLinksSchema = ListLinksQuerySchema.extend({ limit: McpPageLimitSchema }).strict()
@@ -59,10 +60,12 @@ export const McpCreateLinkSchema = CreateLinkSchema
   .strict()
 
 /**
- * The access-log dimensions an agent may group by. `ua` and `ip` are left out:
- * the raw user agent is free text any visitor chooses, and neither is needed to
- * answer a traffic question. Listed explicitly so a dimension added to the
- * access log is not offered to agents until it is added here.
+ * The access-log dimensions an agent may group by. Left out: `ua` (the raw user
+ * agent), `ip`, and `device` (a model name captured from the user agent). All
+ * three are text a visitor chooses, with no shape to check it against. The
+ * remaining visitor-influenced dimensions are filtered in `metric-names.ts`.
+ * Listed explicitly so a dimension added to the access log is not offered to
+ * agents until it is added here.
  */
 const MCP_METRIC_TYPES = [
   'slug',
@@ -76,18 +79,21 @@ const MCP_METRIC_TYPES = [
   'os',
   'browser',
   'browserType',
-  'device',
   'deviceType',
   'COLO',
   'latitude',
   'longitude',
 ] as const satisfies readonly MetricType[]
 
-// The range check goes last: zod does not allow extending a refined object.
+// The range check goes last: zod refuses to overwrite a key of a refined
+// object, which the metrics schema does.
 export const McpCountersSchema = FilterQuerySchema.strict().refine(isOrderedRange, ORDERED_RANGE_ISSUE)
 export const McpViewsSchema = ViewsQuerySchema.strict().refine(isOrderedRange, ORDERED_RANGE_ISSUE)
 export const McpHeatmapSchema = HeatmapQuerySchema.strict().refine(isOrderedRange, ORDERED_RANGE_ISSUE)
 export const McpMetricsSchema = MetricsQuerySchema
-  .extend({ type: z.enum(MCP_METRIC_TYPES).describe('The access-log dimension to group by.') })
+  .extend({
+    type: z.enum(MCP_METRIC_TYPES).describe('The access-log dimension to group by.'),
+    limit: McpPageLimitSchema,
+  })
   .strict()
   .refine(isOrderedRange, ORDERED_RANGE_ISSUE)

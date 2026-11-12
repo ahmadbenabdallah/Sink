@@ -3,6 +3,7 @@ import type { H3Event } from 'h3'
 import { createMcpHandler, McpServer as SdkMcpServer } from '@modelcontextprotocol/server'
 import { getHeader, getRequestHost, toWebRequest } from 'h3'
 import { version } from '../../../package.json'
+import { isBatchRequest } from './batch'
 import { registerMcpTools } from './tools'
 
 const SERVER_INFO = { name: 'sink', title: 'Sink', version }
@@ -48,40 +49,6 @@ function isAllowedOrigin(event: H3Event): boolean {
   catch {
     return false
   }
-}
-
-const MAX_BATCH_PROBE_BYTES = 4 * 1024 * 1024
-
-/**
- * Whether the body is a JSON array, which is how JSON-RPC spells a batch. Reads
- * a clone and stops just past the SDK's own 4 MiB body limit, so an oversized
- * or unparseable body is never judged here: the original request goes on to
- * the SDK, which answers those with its own 413 and parse error.
- */
-async function isBatchRequest(request: Request): Promise<boolean> {
-  const reader = request.clone().body?.getReader()
-  if (!reader)
-    return false
-
-  const decoder = new TextDecoder()
-  let text = ''
-  let size = 0
-  while (size <= MAX_BATCH_PROBE_BYTES) {
-    const { done, value } = await reader.read()
-    if (done) {
-      try {
-        return Array.isArray(JSON.parse(text + decoder.decode()))
-      }
-      catch {
-        return false
-      }
-    }
-    text += decoder.decode(value, { stream: true })
-    size += value.byteLength
-  }
-
-  await reader.cancel()
-  return false
 }
 
 function jsonError(status: number, code: number, message: string): Response {
