@@ -89,7 +89,7 @@ describe('/api/connector/create', () => {
       createdAt: expect.any(Number),
       revokedAt: null,
       lastUsedAt: null,
-      calls7d: null,
+      calls7d: 0,
     })
   })
 
@@ -201,15 +201,14 @@ describe('/api/connector/list', () => {
     expect(connectors[position(second.connector.id)]).toEqual(second.connector)
   })
 
-  // The site token is always a caller of its own. Usage is filled in by a
-  // later change; until then it is reported as unknown, not as zero.
+  // The site token is always a caller of its own.
   it('lists the site token as the only reserved caller when Cloudflare Access is not configured', async () => {
     const previous = { teamDomain: env.NUXT_CF_ACCESS_TEAM_DOMAIN, audience: env.NUXT_CF_ACCESS_AUD }
     env.NUXT_CF_ACCESS_TEAM_DOMAIN = ''
     env.NUXT_CF_ACCESS_AUD = ''
 
     try {
-      expect((await listConnectors()).reserved).toEqual([{ id: 'site-token', lastUsedAt: null, calls7d: null }])
+      expect((await listConnectors()).reserved).toEqual([{ id: 'site-token', lastUsedAt: expect.toBeOneOf([null, expect.any(Number)]), calls7d: expect.any(Number) }])
     }
     finally {
       env.NUXT_CF_ACCESS_TEAM_DOMAIN = previous.teamDomain

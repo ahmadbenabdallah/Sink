@@ -12,6 +12,7 @@ interface __BaseEnv_Env {
 	ASSETS: Fetcher;
 	NUXT_SITE_TOKEN: string;
 	NUXT_MCP_ALLOW_SITE_TOKEN: string;
+	NUXT_MCP_DAILY_CALL_LIMIT: string;
 	DEPLOY_D1_DATABASE_ID: string;
 	DEPLOY_KV_NAMESPACE_ID: string;
 	DEPLOY_KV_PREVIEW_NAMESPACE_ID: string;

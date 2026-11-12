@@ -1,6 +1,6 @@
 import type { H3Event } from 'h3'
 import type { AuthMethod } from '#shared/types/auth'
-import type { ConnectorView } from '#shared/types/connector'
+import type { ConnectorUsage, ConnectorView } from '#shared/types/connector'
 import type { Connector } from '../services/mcp/tokens'
 import { drizzle } from 'drizzle-orm/d1'
 import { createError, getHeader } from 'h3'
@@ -49,13 +49,16 @@ export function assertConnectorChangesAllowed(event: H3Event): void {
   }
 }
 
+/** Usage of a caller that has never made a call. */
+export const NO_USAGE: ConnectorUsage = { lastUsedAt: null, calls7d: 0 }
+/** Usage that could not be read. A client must not show it as zero. */
+export const UNKNOWN_USAGE: ConnectorUsage = { lastUsedAt: null, calls7d: null }
+
 /**
  * The connector as the API returns it. The fields are picked one by one, so a
- * column added to the table later is not sent out by accident. Usage is not
- * recorded yet and is reported as unknown (`null`), which a client must not
- * show as zero.
+ * column added to the table later is not sent out by accident.
  */
-export function toConnectorView(connector: Connector): ConnectorView {
+export function toConnectorView(connector: Connector, usage: ConnectorUsage): ConnectorView {
   return {
     id: connector.id,
     name: connector.name,
@@ -63,7 +66,7 @@ export function toConnectorView(connector: Connector): ConnectorView {
     level: connector.level,
     createdAt: connector.createdAt,
     revokedAt: connector.revokedAt,
-    lastUsedAt: null,
-    calls7d: null,
+    lastUsedAt: usage.lastUsedAt,
+    calls7d: usage.calls7d,
   }
 }

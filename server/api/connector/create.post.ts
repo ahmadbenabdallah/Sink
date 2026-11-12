@@ -38,5 +38,5 @@ export default eventHandler(async (event): Promise<ConnectorCreateResponse> => {
   // The body holds a credential: no cache or proxy may keep a copy of it.
   setResponseHeader(event, 'Cache-Control', 'no-store')
   setResponseStatus(event, 201)
-  return { connector: toConnectorView(connector), token }
+  return { connector: toConnectorView(connector, NO_USAGE), token }
 })

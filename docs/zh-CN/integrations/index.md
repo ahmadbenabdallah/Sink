@@ -70,6 +70,8 @@ claude mcp add --transport http sink https://your-domain/api/mcp --header "Autho
 
 `GET /api/connector/list` 列出连接器，`POST /api/connector/revoke`（请求体 `{"id":"..."}`）撤销连接器；被撤销的令牌从下一次请求起即被拒绝。连接器令牌只能用于 `/api/mcp`：不能调用 REST API、不能登录仪表盘，也不能管理连接器。
 
+每个连接器每个 UTC 日最多可进行 5,000 次工具调用；`GET /api/connector/list` 会显示最近七天的调用次数以及每个连接器最近一次使用的时间。调整上限请参阅 [MCP 用量与 D1 写入配额](/zh-CN/deployment/workers#mcp-用量与-d1-写入配额)。
+
 当所有代理都改用连接器令牌后，设置 `NUXT_MCP_ALLOW_SITE_TOKEN=false`，`/api/mcp` 将不再接受站点令牌。
 
 ::: warning

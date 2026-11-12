@@ -1,6 +1,10 @@
 import type { McpLevel } from './auth'
 
-/** Usage of the MCP endpoint by one caller. Both values are `null` when usage is not known, which is different from zero. */
+/**
+ * Usage of the MCP endpoint by one caller. Both values are `null` when usage
+ * could not be read, which is different from zero. `lastUsedAt` alone is `null`
+ * for a caller that has never made a call.
+ */
 export interface ConnectorUsage {
   /** Unix seconds of the caller's most recent tool call. */
   lastUsedAt: number | null
@@ -30,6 +34,8 @@ export interface ConnectorListResponse {
   /** Newest first, revoked ones included. */
   connectors: ConnectorView[]
   reserved: ReservedCallerView[]
+  /** Tool calls each caller may make per UTC day. */
+  dailyCallLimit: number
 }
 
 export interface ConnectorCreateResponse {

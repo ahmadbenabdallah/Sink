@@ -3,6 +3,7 @@ import type { McpLevel } from '#shared/types/auth'
 import { and, desc, eq, isNull, sql } from 'drizzle-orm'
 import { customAlphabet } from 'nanoid'
 import { mcpTokens } from '../../database/schema'
+import { describeFailure } from './failure'
 import { isMcpLevel } from './levels'
 
 /**
@@ -101,15 +102,10 @@ export async function findActiveToken(db: DrizzleD1Database, token: string): Pro
     return connector
   }
   catch (error) {
-    // The driver's own message holds the query and with it the token hash, so
-    // only the underlying cause is logged. That is where "no such table" is,
-    // which is what a deployment without the migration looks like.
-    const cause = (error as { cause?: { message?: unknown } } | null)?.cause?.message
-    console.error({
-      event: 'mcp_token.lookup_failed',
-      errorName: error instanceof Error ? error.name : typeof error,
-      cause: typeof cause === 'string' ? cause.slice(0, 300) : undefined,
-    })
+    // Never the error itself: for a failed query its message holds the token
+    // hash. The description carries the cause, which is where "no such table"
+    // is when a deployment has not run the migration.
+    console.error({ event: 'mcp_token.lookup_failed', ...describeFailure(error) })
     return null
   }
 }

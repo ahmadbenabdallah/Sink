@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/server'
 import type { H3Event } from 'h3'
-import type { McpLevel } from '#shared/types/auth'
+import type { McpCaller } from '#shared/types/auth'
 import { createMcpHandler, McpServer as SdkMcpServer } from '@modelcontextprotocol/server'
 import { getHeader, getRequestHost, toWebRequest } from 'h3'
 import { version } from '../../../package.json'
@@ -23,14 +23,14 @@ const INSTRUCTIONS = [
  * close over its own `H3Event` so it can call the same server utilities the
  * REST handlers use.
  */
-function createMcpServer(event: H3Event, level: McpLevel): McpServer {
+function createMcpServer(event: H3Event, caller: McpCaller): McpServer {
   const server = new SdkMcpServer(SERVER_INFO, {
     // The tool list is fixed for a connection and the endpoint keeps no stream
     // open to announce a change on.
     capabilities: { tools: { listChanged: false } },
-    instructions: `${INSTRUCTIONS} This connection has the \`${level}\` level; tools outside it are not available.`,
+    instructions: `${INSTRUCTIONS} This connection has the \`${caller.level}\` level; tools outside it are not available.`,
   })
-  registerMcpTools(server, event, level)
+  registerMcpTools(server, event, caller)
   return server
 }
 
@@ -87,9 +87,11 @@ export async function handleMcpRequest(event: H3Event): Promise<Response> {
   if (!caller)
     return jsonError(401, -32600, 'Unauthorized')
 
-  const handler = createMcpHandler(() => createMcpServer(event, caller.level), {
+  const handler = createMcpHandler(() => createMcpServer(event, caller), {
     legacy: 'stateless',
-    onerror: error => console.error('[mcp]', error),
+    // The SDK's messages name the method or header at fault. The error object
+    // itself is not logged: it can carry parts of the request.
+    onerror: error => console.error({ event: 'mcp.transport_error', errorName: error.name, message: error.message.slice(0, 300) }),
   })
 
   try {

@@ -112,6 +112,7 @@ Workers 要在 Builds 和运行时填相同值。Pages 只填一次，然后重�
 | `NUXT_WEBHOOK_URL`                                  | [点击 Webhook](./webhooks) 的 HTTP(S) 地址                     |
 | `NUXT_WEBHOOK_SECRET`                               | 可选签名密钥，以 `whsec_` 开头                                 |
 | `NUXT_MCP_ALLOW_SITE_TOKEN`                         | 设为 `false` 时，`/api/mcp` 拒绝站点令牌；其他接口不受影响     |
+| `NUXT_MCP_DAILY_CALL_LIMIT`                         | 每个 MCP 调用方每个 UTC 日可进行的工具调用次数，默认 `5000`    |
 
 安全浏览示例：Cloudflare Family DNS `https://family.cloudflare-dns.com/dns-query`。另见[链接功能](/zh-CN/features/links)。
 

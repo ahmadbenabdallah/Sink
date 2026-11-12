@@ -57,6 +57,21 @@ Analytics details: [Analytics and Realtime](/features/analytics). Full list: [co
 
 Confirm bindings use the exact names `DB`, `KV`, `ANALYTICS`, `R2`, and `AI`.
 
+### MCP usage and the D1 write quota
+
+If you connect AI agents through the [MCP endpoint](/integrations/#mcp-server), Sink counts their tool calls so the dashboard can show usage per connector. Each counted call writes one row to D1.
+
+Cloudflare's free plan allows 100,000 D1 row writes per day, shared with link creation and edits. To keep one busy agent from using it up, each caller may make 5,000 tool calls per UTC day. Past that, its tool calls are refused with a message until 00:00 UTC; other callers are not affected.
+
+A caller is one connector token. The site token is one caller, and so is Cloudflare Access: everyone who reaches MCP through Access shares one budget, and an agent that uses the site token can use up the budget of anything else that uses it. Give each agent its own connector token.
+
+Change the number with `NUXT_MCP_DAILY_CALL_LIMIT`:
+
+- On a paid Workers plan, raise it.
+- With many active connectors on the free plan, lower it: ten callers at 5,000 use half of the daily quota.
+
+The limit is set for the D1 quota. Creating or editing a link also writes to KV, where the free plan allows 1,000 writes per day, so a caller that only creates links can reach that quota well before its call limit.
+
 ## 4. Deploy and first use
 
 Start a build from `master` and wait until it finishes.
