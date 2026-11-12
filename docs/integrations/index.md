@@ -41,6 +41,43 @@ Any client that supports an HTTP transport with custom headers can connect the s
 }
 ```
 
+### Connector tokens
+
+A connector token is a credential for the MCP endpoint only. Use one per agent, so the dashboard password never sits in an agent's configuration, and so one agent can be cut off without affecting the others.
+
+Each token has a level:
+
+| Level    | The agent can                                          |
+| -------- | ------------------------------------------------------ |
+| `read`   | Read links and analytics.                              |
+| `create` | Also create links.                                     |
+| `full`   | Also change and delete links, and check their targets. |
+
+Create one with the site token. The token is shown in this response only:
+
+```sh
+curl -X POST https://your-domain/api/connector/create \
+  -H "Authorization: Bearer YOUR_SITE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Claude Code","level":"read"}'
+```
+
+Then connect the agent with it:
+
+```sh
+claude mcp add --transport http sink https://your-domain/api/mcp --header "Authorization: Bearer sink_mcp_..."
+```
+
+`GET /api/connector/list` lists connectors, and `POST /api/connector/revoke` with `{"id":"..."}` revokes one; a revoked token is refused from the next request on. A connector token works on `/api/mcp` only: it cannot call the REST API, sign in to the dashboard, or manage connectors.
+
+Once every agent uses a connector token, set `NUXT_MCP_ALLOW_SITE_TOKEN=false` so the site token is no longer accepted on `/api/mcp`.
+
+::: warning
+Connectors outlive a change of `NUXT_SITE_TOKEN`. If the site token may have leaked, change it and also review the connector list, revoking any you do not recognise.
+
+With [Cloudflare Access](/configuration/cloudflare-access) in front of Sink, a request that carries an Access identity has every right whatever token it also sends, so a level restricts only callers that reach Sink without one.
+:::
+
 ### Tools
 
 | Tool                     | Description                                           |

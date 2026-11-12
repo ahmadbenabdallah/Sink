@@ -24,6 +24,7 @@
     "ai_not_enabled": "이 인스턴스에서는 AI가 활성화되어 있지 않습니다.",
     "cloudflare_credentials_rejected": "Cloudflare가 설정된 API 자격 증명을 거부했습니다.",
     "cloudflare_request_failed": "Cloudflare API 요청에 실패했습니다.",
+    "connector_not_found": "커넥터를 찾을 수 없습니다.",
     "file_required": "파일이 필요합니다.",
     "file_too_large": "파일이 {max}MB 제한을 초과했습니다.",
     "forbidden": "이 작업을 수행할 권한이 없습니다.",

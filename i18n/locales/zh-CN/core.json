@@ -24,6 +24,7 @@
     "ai_not_enabled": "此实例未启用 AI。",
     "cloudflare_credentials_rejected": "Cloudflare 拒绝了已配置的 API 凭据。",
     "cloudflare_request_failed": "请求 Cloudflare API 失败。",
+    "connector_not_found": "未找到连接器。",
     "file_required": "请选择文件。",
     "file_too_large": "文件超过 {max} MB 的大小限制。",
     "forbidden": "你无权执行此操作。",

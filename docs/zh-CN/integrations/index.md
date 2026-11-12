@@ -41,6 +41,43 @@ claude mcp add --transport http sink https://your-domain/api/mcp --header "Autho
 }
 ```
 
+### 连接器令牌
+
+连接器令牌是仅用于 MCP 端点的凭据。为每个代理单独创建一个，这样仪表盘密码就不会出现在代理的配置里，也可以单独停用某个代理而不影响其他代理。
+
+每个令牌都有一个级别：
+
+| 级别     | 代理可以                               |
+| -------- | -------------------------------------- |
+| `read`   | 读取链接和分析数据。                   |
+| `create` | 还可以创建链接。                       |
+| `full`   | 还可以修改、删除链接，并检查链接目标。 |
+
+使用站点令牌创建。令牌只会在这次响应中出现一次：
+
+```sh
+curl -X POST https://your-domain/api/connector/create \
+  -H "Authorization: Bearer YOUR_SITE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Claude Code","level":"read"}'
+```
+
+然后用它连接代理：
+
+```sh
+claude mcp add --transport http sink https://your-domain/api/mcp --header "Authorization: Bearer sink_mcp_..."
+```
+
+`GET /api/connector/list` 列出连接器，`POST /api/connector/revoke`（请求体 `{"id":"..."}`）撤销连接器；被撤销的令牌从下一次请求起即被拒绝。连接器令牌只能用于 `/api/mcp`：不能调用 REST API、不能登录仪表盘，也不能管理连接器。
+
+当所有代理都改用连接器令牌后，设置 `NUXT_MCP_ALLOW_SITE_TOKEN=false`，`/api/mcp` 将不再接受站点令牌。
+
+::: warning
+更换 `NUXT_SITE_TOKEN` 不会使已有的连接器失效。如果站点令牌可能已泄露，请更换它，并检查连接器列表，撤销所有不认识的连接器。
+
+如果 Sink 前面启用了 [Cloudflare Access](/configuration/cloudflare-access)，携带 Access 身份的请求无论同时发送什么令牌都拥有全部权限，因此级别只对不经过 Access 的调用方生效。
+:::
+
 ### 工具
 
 | 工具                     | 说明                                        |

@@ -24,6 +24,7 @@
     "ai_not_enabled": "AI chưa được bật trên phiên bản này.",
     "cloudflare_credentials_rejected": "Cloudflare đã từ chối thông tin xác thực API đã cấu hình.",
     "cloudflare_request_failed": "Yêu cầu tới API Cloudflare đã thất bại.",
+    "connector_not_found": "Không tìm thấy kết nối.",
     "file_required": "Cần có tệp.",
     "file_too_large": "Tệp vượt quá giới hạn {max} MB.",
     "forbidden": "Bạn không được phép thực hiện thao tác này.",

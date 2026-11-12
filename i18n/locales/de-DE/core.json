@@ -24,6 +24,7 @@
     "ai_not_enabled": "KI ist auf dieser Instanz nicht aktiviert.",
     "cloudflare_credentials_rejected": "Cloudflare hat die konfigurierten API-Zugangsdaten abgelehnt.",
     "cloudflare_request_failed": "Die Anfrage an die Cloudflare-API ist fehlgeschlagen.",
+    "connector_not_found": "Connector nicht gefunden.",
     "file_required": "Eine Datei ist erforderlich.",
     "file_too_large": "Die Datei überschreitet das Limit von {max} MB.",
     "forbidden": "Sie sind dazu nicht berechtigt.",

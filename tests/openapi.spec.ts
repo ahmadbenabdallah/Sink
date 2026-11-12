@@ -86,6 +86,20 @@ describe('/_docs/openapi.json', () => {
     expect(search?.properties?.limit?.maximum).toBe(1000)
   })
 
+  it('documents the connector routes', async () => {
+    const spec = await getOpenApiSpec()
+
+    for (const [path, method] of [['/api/connector/list', 'get'], ['/api/connector/create', 'post'], ['/api/connector/revoke', 'post']] as const) {
+      const operation = spec.paths?.[path]?.[method]
+      expect(operation, `${method.toUpperCase()} ${path}`).toBeTruthy()
+      expect(operation.security).toEqual([{ bearerAuth: [] }])
+      expect(operation.description).toEqual(expect.any(String))
+    }
+
+    expect(jsonBodySchema(spec, '/api/connector/create', 'post').required).toEqual(['name', 'level'])
+    expect(jsonBodySchema(spec, '/api/connector/revoke', 'post').required).toEqual(['id'])
+  })
+
   it('keeps the bearerAuth security scheme', async () => {
     const spec = await getOpenApiSpec()
     expect(spec.components?.securitySchemes?.bearerAuth).toEqual({
