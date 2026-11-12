@@ -1,0 +1,76 @@
+{
+  "connectors": {
+    "title": "Connettori",
+    "description": "Assegna a ogni agente IA un token proprio per l'endpoint MCP, così la password della dashboard non finisce mai nella configurazione di un agente.",
+    "daily_limit": "Ogni connettore può effettuare {limit} chiamate agli strumenti al giorno.",
+    "create": "Nuovo connettore",
+    "empty": "Ancora nessun connettore",
+    "empty_description": "Creane uno per collegare un agente senza condividere la password della dashboard.",
+    "load_failed": "Impossibile caricare i connettori",
+    "usage_unavailable": "Non disponibile",
+    "never_used": "Mai",
+    "table": {
+      "name": "Nome",
+      "level": "Livello",
+      "created": "Creato",
+      "last_used": "Ultimo utilizzo",
+      "calls_7d": "Chiamate (7 giorni)",
+      "status": "Stato",
+      "actions": "Azioni"
+    },
+    "status": {
+      "active": "Attivo",
+      "revoked": "Revocato"
+    },
+    "reserved": {
+      "site_token": "Token del sito",
+      "access": "Cloudflare Access"
+    },
+    "level": {
+      "read": {
+        "label": "Lettura",
+        "description": "Leggere link e statistiche."
+      },
+      "create": {
+        "label": "Lettura + creazione",
+        "description": "Anche creare link."
+      },
+      "full": {
+        "label": "Completo",
+        "description": "Anche modificare ed eliminare link."
+      },
+      "full_warning": "Può reindirizzare, far scadere o eliminare qualsiasi link."
+    },
+    "form": {
+      "name": "Nome",
+      "name_placeholder": "Claude Code",
+      "name_invalid": "Inserisci un nome da 1 a {max} caratteri.",
+      "level": "Livello",
+      "submit": "Crea connettore",
+      "submitting": "Creazione…"
+    },
+    "create_dialog": {
+      "title": "Nuovo connettore",
+      "description": "Il token viene mostrato una sola volta, subito dopo la creazione.",
+      "failed": "Impossibile creare il connettore"
+    },
+    "reveal": {
+      "title": "Copia il token adesso",
+      "once_notice": "Questa è l'unica volta in cui il token viene mostrato. Se lo perdi, revoca questo connettore e creane uno nuovo.",
+      "token": "Token",
+      "copy": "Copia",
+      "copied": "Copiato",
+      "claude_code": "Claude Code",
+      "json_config": "Altri client MCP (JSON)",
+      "done": "Fatto"
+    },
+    "revoke": {
+      "action": "Revoca",
+      "title": "Revocare {name}?",
+      "description": "Il suo token smette subito di funzionare. L'operazione non può essere annullata.",
+      "confirm": "Revoca",
+      "success": "Connettore revocato",
+      "failed": "Impossibile revocare il connettore"
+    }
+  }
+}

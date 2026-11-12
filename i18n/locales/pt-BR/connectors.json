@@ -1,0 +1,76 @@
+{
+  "connectors": {
+    "title": "Conectores",
+    "description": "Dê a cada agente de IA um token próprio para o endpoint MCP, para que a senha do painel nunca fique na configuração de um agente.",
+    "daily_limit": "Cada conector pode fazer {limit} chamadas de ferramentas por dia.",
+    "create": "Novo conector",
+    "empty": "Nenhum conector ainda",
+    "empty_description": "Crie um para conectar um agente sem compartilhar a senha do painel.",
+    "load_failed": "Não foi possível carregar os conectores",
+    "usage_unavailable": "Indisponível",
+    "never_used": "Nunca",
+    "table": {
+      "name": "Nome",
+      "level": "Nível",
+      "created": "Criado",
+      "last_used": "Último uso",
+      "calls_7d": "Chamadas (7 dias)",
+      "status": "Status",
+      "actions": "Ações"
+    },
+    "status": {
+      "active": "Ativo",
+      "revoked": "Revogado"
+    },
+    "reserved": {
+      "site_token": "Token do site",
+      "access": "Cloudflare Access"
+    },
+    "level": {
+      "read": {
+        "label": "Leitura",
+        "description": "Ler links e análises."
+      },
+      "create": {
+        "label": "Leitura + criação",
+        "description": "Também criar links."
+      },
+      "full": {
+        "label": "Completo",
+        "description": "Também alterar e excluir links."
+      },
+      "full_warning": "Pode redirecionar, expirar ou excluir qualquer link."
+    },
+    "form": {
+      "name": "Nome",
+      "name_placeholder": "Claude Code",
+      "name_invalid": "Digite um nome de 1 a {max} caracteres.",
+      "level": "Nível",
+      "submit": "Criar conector",
+      "submitting": "Criando…"
+    },
+    "create_dialog": {
+      "title": "Novo conector",
+      "description": "O token é exibido uma única vez, logo após a criação.",
+      "failed": "Não foi possível criar o conector"
+    },
+    "reveal": {
+      "title": "Copie o token agora",
+      "once_notice": "Esta é a única vez que o token é exibido. Se você o perder, revogue este conector e crie um novo.",
+      "token": "Token",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "claude_code": "Claude Code",
+      "json_config": "Outros clientes MCP (JSON)",
+      "done": "Concluir"
+    },
+    "revoke": {
+      "action": "Revogar",
+      "title": "Revogar {name}?",
+      "description": "O token deixa de funcionar imediatamente. Esta ação não pode ser desfeita.",
+      "confirm": "Revogar",
+      "success": "Conector revogado",
+      "failed": "Não foi possível revogar o conector"
+    }
+  }
+}

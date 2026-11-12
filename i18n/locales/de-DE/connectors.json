@@ -1,0 +1,76 @@
+{
+  "connectors": {
+    "title": "Connectors",
+    "description": "Geben Sie jedem KI-Agenten einen eigenen Token für den MCP-Endpunkt, damit das Dashboard-Passwort nie in der Konfiguration eines Agenten steht.",
+    "daily_limit": "Jeder Connector darf {limit} Tool-Aufrufe pro Tag ausführen.",
+    "create": "Neuer Connector",
+    "empty": "Noch keine Connectors",
+    "empty_description": "Erstellen Sie einen, um einen Agenten zu verbinden, ohne das Dashboard-Passwort weiterzugeben.",
+    "load_failed": "Connectors konnten nicht geladen werden",
+    "usage_unavailable": "Nicht verfügbar",
+    "never_used": "Nie",
+    "table": {
+      "name": "Name",
+      "level": "Stufe",
+      "created": "Erstellt",
+      "last_used": "Zuletzt verwendet",
+      "calls_7d": "Aufrufe (7 Tage)",
+      "status": "Status",
+      "actions": "Aktionen"
+    },
+    "status": {
+      "active": "Aktiv",
+      "revoked": "Widerrufen"
+    },
+    "reserved": {
+      "site_token": "Site-Token",
+      "access": "Cloudflare Access"
+    },
+    "level": {
+      "read": {
+        "label": "Lesen",
+        "description": "Links und Analysen lesen."
+      },
+      "create": {
+        "label": "Lesen + Erstellen",
+        "description": "Zusätzlich Links erstellen."
+      },
+      "full": {
+        "label": "Voll",
+        "description": "Zusätzlich Links ändern und löschen."
+      },
+      "full_warning": "Kann jeden Link umleiten, ablaufen lassen oder löschen."
+    },
+    "form": {
+      "name": "Name",
+      "name_placeholder": "Claude Code",
+      "name_invalid": "Geben Sie einen Namen mit 1 bis {max} Zeichen ein.",
+      "level": "Stufe",
+      "submit": "Connector erstellen",
+      "submitting": "Wird erstellt…"
+    },
+    "create_dialog": {
+      "title": "Neuer Connector",
+      "description": "Der Token wird nur einmal angezeigt, direkt nach dem Erstellen.",
+      "failed": "Connector konnte nicht erstellt werden"
+    },
+    "reveal": {
+      "title": "Token jetzt kopieren",
+      "once_notice": "Der Token wird nur dieses eine Mal angezeigt. Wenn Sie ihn verlieren, widerrufen Sie diesen Connector und erstellen Sie einen neuen.",
+      "token": "Token",
+      "copy": "Kopieren",
+      "copied": "Kopiert",
+      "claude_code": "Claude Code",
+      "json_config": "Andere MCP-Clients (JSON)",
+      "done": "Fertig"
+    },
+    "revoke": {
+      "action": "Widerrufen",
+      "title": "{name} widerrufen?",
+      "description": "Der Token funktioniert sofort nicht mehr. Dies kann nicht rückgängig gemacht werden.",
+      "confirm": "Widerrufen",
+      "success": "Connector widerrufen",
+      "failed": "Connector konnte nicht widerrufen werden"
+    }
+  }
+}

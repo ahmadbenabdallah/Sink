@@ -53,7 +53,7 @@ claude mcp add --transport http sink https://your-domain/api/mcp --header "Autho
 | `create` | 还可以创建链接。                       |
 | `full`   | 还可以修改、删除链接，并检查链接目标。 |
 
-使用站点令牌创建。令牌只会在这次响应中出现一次：
+可以在仪表盘的 **设置 → 连接器** 中创建，那里还会显示每个连接器的用量，并可撤销连接器。也可以使用站点令牌通过 API 完成同样的操作。令牌只会在这次响应中出现一次：
 
 ```sh
 curl -X POST https://your-domain/api/connector/create \

@@ -53,7 +53,7 @@ Each token has a level:
 | `create` | Also create links.                                     |
 | `full`   | Also change and delete links, and check their targets. |
 
-Create one with the site token. The token is shown in this response only:
+Create one in the dashboard under **Settings → Connectors**, which also lists each connector's usage and lets you revoke it. The same can be done through the API with the site token. The token is shown in this response only:
 
 ```sh
 curl -X POST https://your-domain/api/connector/create \

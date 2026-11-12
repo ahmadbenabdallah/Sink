@@ -1,0 +1,76 @@
+{
+  "connectors": {
+    "title": "連接器",
+    "description": "為每個 AI 代理單獨建立用於 MCP 端點的權杖，這樣儀表板密碼就不會出現在代理的設定裡。",
+    "daily_limit": "每個連接器每天最多可進行 {limit} 次工具呼叫。",
+    "create": "新增連接器",
+    "empty": "尚無連接器",
+    "empty_description": "建立一個連接器，無須分享儀表板密碼即可連接代理。",
+    "load_failed": "無法載入連接器",
+    "usage_unavailable": "無法取得",
+    "never_used": "從未使用",
+    "table": {
+      "name": "名稱",
+      "level": "層級",
+      "created": "建立時間",
+      "last_used": "最近使用",
+      "calls_7d": "呼叫次數（7 天）",
+      "status": "狀態",
+      "actions": "操作"
+    },
+    "status": {
+      "active": "有效",
+      "revoked": "已撤銷"
+    },
+    "reserved": {
+      "site_token": "站點密碼",
+      "access": "Cloudflare Access"
+    },
+    "level": {
+      "read": {
+        "label": "讀取",
+        "description": "讀取連結與分析資料。"
+      },
+      "create": {
+        "label": "讀取 + 建立",
+        "description": "還可以建立連結。"
+      },
+      "full": {
+        "label": "完整",
+        "description": "還可以修改與刪除連結。"
+      },
+      "full_warning": "可以重新導向、設為過期或刪除任何連結。"
+    },
+    "form": {
+      "name": "名稱",
+      "name_placeholder": "Claude Code",
+      "name_invalid": "請輸入 1 到 {max} 個字元的名稱。",
+      "level": "層級",
+      "submit": "建立連接器",
+      "submitting": "正在建立…"
+    },
+    "create_dialog": {
+      "title": "新增連接器",
+      "description": "權杖只會在建立後顯示一次。",
+      "failed": "無法建立連接器"
+    },
+    "reveal": {
+      "title": "請立即複製權杖",
+      "once_notice": "權杖只會顯示這一次。如果遺失，請撤銷此連接器並重新建立。",
+      "token": "權杖",
+      "copy": "複製",
+      "copied": "已複製",
+      "claude_code": "Claude Code",
+      "json_config": "其他 MCP 用戶端（JSON）",
+      "done": "完成"
+    },
+    "revoke": {
+      "action": "撤銷",
+      "title": "撤銷 {name}？",
+      "description": "其權杖會立即失效，且無法復原。",
+      "confirm": "撤銷",
+      "success": "連接器已撤銷",
+      "failed": "無法撤銷連接器"
+    }
+  }
+}
