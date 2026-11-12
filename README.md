@@ -139,9 +139,9 @@ npx skills add miantiao-me/sink
 
 ## 🧰 MCP
 
-Sink serves a built-in MCP endpoint at `POST /api/mcp`, using the official `@modelcontextprotocol/server` SDK v2, serving modern clients over the per-request transport and 2025-era clients over a stateless fallback with JSON responses.
+Sink serves a built-in MCP endpoint at `POST /api/mcp`, using the official `@modelcontextprotocol/server` SDK v2, serving modern clients over the per-request transport and 2025-era clients over a stateless fallback.
 
-> Replace the domain below with your own instance, and use the `NUXT_SITE_TOKEN` from your instance's environment variables as the bearer token.
+> Replace the domain below with your own instance. As the bearer token, use a connector token created in the dashboard under **Settings → Connectors**: one per agent, each with its own level (`read`, `create` or `full`), usage count and revoke button. The `NUXT_SITE_TOKEN` also works unless `NUXT_MCP_ALLOW_SITE_TOKEN` is `false`.
 
 ```sh
 claude mcp add --transport http sink https://sink.cool/api/mcp --header "Authorization: Bearer SinkCool"
@@ -163,7 +163,7 @@ Any client that supports an HTTP transport with custom headers can connect the s
 }
 ```
 
-It exposes tools for managing links (list, search, read, count, tag, create, update, upsert, delete) and for reading analytics (counters, views over time, and top values per dimension). See the [integrations documentation](https://docs.sink.cool/integrations/) for the full list.
+It exposes tools for managing links (list, search, read, count, tag, create, update, upsert, delete) and for reading analytics (counters, views over time, and top values per dimension). See the [integrations documentation](https://docs.sink.cool/integrations/) for the full list, the level each tool needs, and the notes for upgrading from an earlier version.
 
 ## 🙋🏻 FAQs
 

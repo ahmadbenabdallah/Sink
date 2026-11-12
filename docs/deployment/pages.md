@@ -88,3 +88,9 @@ Until storage setup finishes, creating links may fail with â€œstorage not readyâ
 :::
 
 Manual [backups](/features/backups) work on Pages; automatic daily backups are configured for Workers only in this repo.
+
+::: tip MCP on Pages
+If you connect AI agents through the [MCP endpoint](/integrations/#mcp-server), each counted tool call writes one row to D1. The free plan allows 100,000 row writes per day, shared with link creation, so each caller is limited to 5,000 calls per UTC day; change it with `NUXT_MCP_DAILY_CALL_LIMIT`. See [MCP usage and the D1 write quota](/deployment/workers#mcp-usage-and-the-d1-write-quota).
+
+This repo declares its rate-limit bindings for Workers deployments only. On Pages, the per-minute limits on `/api/` requests and on link password attempts are not applied.
+:::
