@@ -24,6 +24,7 @@
     "ai_not_enabled": "AI tidak diaktifkan pada instans ini.",
     "cloudflare_credentials_rejected": "Cloudflare menolak kredensial API yang dikonfigurasi.",
     "cloudflare_request_failed": "Permintaan ke API Cloudflare gagal.",
+    "connector_not_found": "Konektor tidak ditemukan.",
     "file_required": "File wajib disertakan.",
     "file_too_large": "Ukuran file melebihi batas {max} MB.",
     "forbidden": "Anda tidak diizinkan melakukan tindakan ini.",

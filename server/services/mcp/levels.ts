@@ -1,7 +1,10 @@
-import type { McpLevel } from '#shared/types/auth'
+import type { McpLevel } from '../../../shared/types/auth'
+// A relative path, not the #shared alias: tests load this file directly and
+// only resolve the alias for types.
+import { MCP_LEVELS } from '../../../shared/types/auth'
 
 /** Each level includes the ones before it. */
-const LEVELS: readonly McpLevel[] = ['read', 'create', 'full']
+const LEVELS: readonly McpLevel[] = MCP_LEVELS
 
 /** Whether a value read from storage or a request is one of the known levels. */
 export function isMcpLevel(value: unknown): value is McpLevel {

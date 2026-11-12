@@ -24,6 +24,7 @@
     "ai_not_enabled": "A IA não está ativada nesta instância.",
     "cloudflare_credentials_rejected": "A Cloudflare rejeitou as credenciais de API configuradas.",
     "cloudflare_request_failed": "O pedido à API da Cloudflare falhou.",
+    "connector_not_found": "Conector não encontrado.",
     "file_required": "É necessário um ficheiro.",
     "file_too_large": "O ficheiro excede o limite de {max} MB.",
     "forbidden": "Não tem permissão para efetuar esta ação.",

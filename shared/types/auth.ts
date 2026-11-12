@@ -5,7 +5,8 @@ export type AuthMethod = 'site-token' | 'access-user' | 'access-service' | 'conn
  * `read` reads links and analytics, `create` also creates links, `full` also
  * changes and deletes them and can check their targets.
  */
-export type McpLevel = 'read' | 'create' | 'full'
+export const MCP_LEVELS = ['read', 'create', 'full'] as const
+export type McpLevel = typeof MCP_LEVELS[number]
 
 /** Who sent an MCP request. The tool list, and later usage and logs, are decided from this record alone. */
 export interface McpCaller {

@@ -8,6 +8,7 @@ export const API_ERROR_CODES = [
   'ai_not_enabled',
   'cloudflare_credentials_rejected',
   'cloudflare_request_failed',
+  'connector_not_found',
   'file_required',
   'file_too_large',
   'forbidden',
