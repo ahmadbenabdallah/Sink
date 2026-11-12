@@ -46,6 +46,8 @@ Analytics is optional. Without it, short links and the dashboard still work; cha
 
 `wrangler.jsonc` also declares `LINK_PASSWORD_LIMITER`, a Workers Rate Limiting binding that allows 10 link-password attempts per minute per short link and client IP. It needs no setup. Correct passwords count too, so a client that sends `x-link-password` on every request is limited to 10 requests per minute per IP, and visitors behind one shared IP share the budget. The binding exists on Workers deployments only: where it is absent (for example a Pages deployment), attempts are not limited.
 
+It also declares `API_AUTH_LIMITER`, which allows 1200 requests per minute per client IP to `/api/`, counted before the token is checked. Above that, the API answers `429` with `Retry-After: 60` for up to a minute. Every request counts, valid or not, including the dashboard's own, so everyone behind one IP (several people, scripts or agents) shares the budget, and one of them can use it up for the others. Short links keep redirecting; only `/api/` is limited. Counters are kept per Cloudflare location and are approximate. The limit slows guessing of `NUXT_SITE_TOKEN`; a long random token is what protects it. Like the link-password limiter, it exists on Workers deployments only.
+
 ## Required
 
 ::: warning `NUXT_SITE_TOKEN`

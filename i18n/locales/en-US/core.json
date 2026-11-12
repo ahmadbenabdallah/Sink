@@ -41,6 +41,7 @@
     "slug_required": "A slug is required.",
     "token_too_short": "The token is too short.",
     "too_many_links": "Too many links. Maximum {max} links per request.",
+    "too_many_requests": "Too many requests. Please wait a moment and try again.",
     "unauthorized": "Sign-in is required or the token is invalid."
   }
 }

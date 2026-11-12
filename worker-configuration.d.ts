@@ -7,6 +7,7 @@ interface __BaseEnv_Env {
 	DB: D1Database;
 	ANALYTICS: AnalyticsEngineDataset;
 	LINK_PASSWORD_LIMITER: RateLimit;
+	API_AUTH_LIMITER: RateLimit;
 	AI: Ai;
 	ASSETS: Fetcher;
 	NUXT_SITE_TOKEN: string;

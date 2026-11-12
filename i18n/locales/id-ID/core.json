@@ -41,6 +41,7 @@
     "slug_required": "Slug wajib diisi.",
     "token_too_short": "Token terlalu pendek.",
     "too_many_links": "Terlalu banyak tautan. Maksimal {max} tautan per permintaan.",
+    "too_many_requests": "Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.",
     "unauthorized": "Perlu masuk, atau token tidak valid."
   }
 }

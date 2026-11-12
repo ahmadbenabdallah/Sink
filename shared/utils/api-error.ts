@@ -25,6 +25,7 @@ export const API_ERROR_CODES = [
   'slug_required',
   'token_too_short',
   'too_many_links',
+  'too_many_requests',
   'unauthorized',
 ] as const
 

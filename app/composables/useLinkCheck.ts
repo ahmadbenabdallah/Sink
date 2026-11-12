@@ -7,7 +7,19 @@ interface LinkCountResponse {
   count: number
 }
 
-export function useLinkCheck() {
+/**
+ * Pause between pages of a check. Without it the pages are requested back to
+ * back, and a check over fast targets can send hundreds of requests a minute
+ * and run into the API rate limit, which it cannot resume from.
+ */
+const PAGE_DELAY_MS = 250
+
+interface LinkCheckOptions {
+  delay?: (ms: number) => Promise<void>
+}
+
+export function useLinkCheck(options: LinkCheckOptions = {}) {
+  const delay = options.delay ?? (ms => new Promise<void>(resolve => setTimeout(resolve, ms)))
   const results = ref<LinkCheckResult[]>([])
   const totalCount = shallowRef(0)
   const loadingLinks = shallowRef(false)
@@ -78,6 +90,7 @@ export function useLinkCheck() {
         if (!response.cursor)
           throw new Error('Incomplete link check response is missing a cursor')
         nextCursor.value = response.cursor
+        await delay(PAGE_DELAY_MS)
       }
 
       wasStopped.value = stopRequested.value

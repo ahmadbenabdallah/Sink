@@ -25,11 +25,26 @@ export async function runScheduledTasks() {
   await Promise.all(pending)
 }
 
+/**
+ * `/api/` requests are rate-limited per client address, and requests without one
+ * share a single bucket. The whole suite runs against one Worker, so each API
+ * request gets an address of its own unless the test sets one. Other paths are
+ * left alone: some tests check what happens when no address is sent.
+ */
+function withClientAddress(path: string, headers: HeadersInit | undefined): HeadersInit | undefined {
+  if (!path.startsWith('/api/'))
+    return headers
+  const octet = () => Math.floor(Math.random() * 256)
+  // 198.18.0.0/15 is reserved for benchmarking, so it cannot collide with a
+  // documentation address a test picks on purpose.
+  return { 'cf-connecting-ip': `198.18.${octet()}.${octet()}`, ...headers }
+}
+
 export function fetchWithAuth(path: string, options?: RequestInit): Promise<Response> {
   const request = new Request(`http://localhost${path}`, {
     ...options,
     headers: {
-      ...options?.headers,
+      ...withClientAddress(path, options?.headers),
       Authorization: `Bearer ${import.meta.env.NUXT_SITE_TOKEN}`,
     },
   })
@@ -37,7 +52,7 @@ export function fetchWithAuth(path: string, options?: RequestInit): Promise<Resp
 }
 
 export function fetch(path: string, options?: RequestInit): Promise<Response> {
-  return exports.default.fetch(new Request(`http://localhost${path}`, options))
+  return exports.default.fetch(new Request(`http://localhost${path}`, { ...options, headers: withClientAddress(path, options?.headers) }))
 }
 
 export function postJson(path: string, body: unknown, withAuth = true): Promise<Response> {

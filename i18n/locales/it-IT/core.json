@@ -41,6 +41,7 @@
     "slug_required": "È necessario uno slug.",
     "token_too_short": "Il token è troppo corto.",
     "too_many_links": "Troppi link. Massimo {max} link per richiesta.",
+    "too_many_requests": "Troppe richieste. Attendi un momento e riprova.",
     "unauthorized": "Accesso richiesto o token non valido."
   }
 }

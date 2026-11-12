@@ -41,6 +41,7 @@
     "slug_required": "Cần có slug.",
     "token_too_short": "Token quá ngắn.",
     "too_many_links": "Quá nhiều liên kết. Tối đa {max} liên kết mỗi yêu cầu.",
+    "too_many_requests": "Quá nhiều yêu cầu. Vui lòng đợi một lát rồi thử lại.",
     "unauthorized": "Cần đăng nhập hoặc token không hợp lệ."
   }
 }

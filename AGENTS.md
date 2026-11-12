@@ -54,7 +54,7 @@ pnpm test --run -t 'creates new link'     # tests matching a name
 - D1 is the authoritative link store. KV is a write-through read cache and the temporary source for pre-D1 links until D1 records a completed KV-to-D1 migration run. Route link persistence through `server/utils/link-store.ts`; direct KV-only writes can lose authoritative data.
 - Link validation has separate create, edit, import, stored, and legacy-KV contracts in `shared/schemas/link.ts`. Do not merge them or remove legacy KV parsing without explicit confirmation that every deployed instance has completed KV-to-D1 migration.
 - `server/middleware/1.redirect.ts` intentionally runs before `2.auth.ts`: public short-link resolution happens first, while every `/api/**` request is authenticated by site token or allowed Cloudflare Access identity.
-- Cloudflare bindings are declared in `wrangler.jsonc`: `DB`, `KV`, `ANALYTICS`, `AI`, `R2`, `ASSETS`, and the `LINK_PASSWORD_LIMITER` rate limit. Regenerate `worker-configuration.d.ts` with `pnpm gen:types` after changing bindings.
+- Cloudflare bindings are declared in `wrangler.jsonc`: `DB`, `KV`, `ANALYTICS`, `AI`, `R2`, `ASSETS`, and the `LINK_PASSWORD_LIMITER` and `API_AUTH_LIMITER` rate limits. Regenerate `worker-configuration.d.ts` with `pnpm gen:types` after changing bindings.
 - The realtime dashboard is intentionally pseudo-live: it polls analytics every 10 seconds, then replays the initial and newly discovered access events through a bounded client-side queue at roughly one event per second. Pausing stops polling, queue replay, and WebGL motion; it is not an SSE or WebSocket stream.
 
 ## Database and deployment

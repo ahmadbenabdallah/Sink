@@ -61,14 +61,25 @@
       "bucket_name": "sink" // Override with DEPLOY_R2_BUCKET_NAME
     }
   ],
-  // Link-password guesses per slug and client IP (server/utils/link-password-limit.ts).
   // namespace_id is any positive integer unique within the account; period must be 10 or 60.
   "ratelimits": [
+    // Link-password guesses per slug and client IP (server/utils/link-password-limit.ts).
     {
       "name": "LINK_PASSWORD_LIMITER",
       "namespace_id": "1001",
       "simple": {
         "limit": 10,
+        "period": 60
+      }
+    },
+    // Requests to /api/ per client IP, counted before the token check (server/middleware/2.auth.ts).
+    // 1200 leaves room for the dashboard plus an MCP agent on the same address: a session
+    // stays under about 100 a minute, and an agent calling tools back to back reaches 300 to 600.
+    {
+      "name": "API_AUTH_LIMITER",
+      "namespace_id": "1002",
+      "simple": {
+        "limit": 1200,
         "period": 60
       }
     }
