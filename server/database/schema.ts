@@ -1,6 +1,6 @@
 import type { Link } from '../../shared/schemas/link'
 import { sql } from 'drizzle-orm'
-import { index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { check, index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 export const links = sqliteTable('links', {
   slug: text().primaryKey(),
@@ -46,6 +46,25 @@ export const linkTombstones = sqliteTable('link_tombstones', {
   slug: text().primaryKey(),
   deletedAt: integer('deleted_at').notNull(),
 })
+
+/**
+ * Connector tokens for the MCP endpoint. Only the SHA-256 of a token is kept;
+ * `hint` is the first characters after its prefix, shown so tokens can be told
+ * apart. A revoked token keeps its row so its name still resolves.
+ */
+export const mcpTokens = sqliteTable('mcp_tokens', {
+  id: text().primaryKey(),
+  name: text().notNull(),
+  tokenHash: text('token_hash').notNull().unique(),
+  hint: text().notNull(),
+  level: text({ enum: ['read', 'create', 'full'] }).notNull(),
+  createdAt: integer('created_at').notNull(),
+  revokedAt: integer('revoked_at'),
+}, table => [
+  // The level decides which tools a caller gets, so the database refuses a
+  // value the code does not know instead of trusting every writer.
+  check('mcp_tokens_level_check', sql`${table.level} in ('read', 'create', 'full')`),
+])
 
 export const linkMigrationRuns = sqliteTable('link_migration_runs', {
   id: text().primaryKey(),

@@ -22,6 +22,7 @@ export const API_ERROR_CODES = [
   'not_found',
   'preview_mode',
   'r2_not_configured',
+  'site_token_not_allowed',
   'slug_required',
   'token_too_short',
   'too_many_links',

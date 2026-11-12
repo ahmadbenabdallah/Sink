@@ -38,6 +38,7 @@
     "not_found": "找不到。",
     "preview_mode": "預覽模式下已停用此操作。",
     "r2_not_configured": "尚未設定 R2 儲存空間。",
+    "site_token_not_allowed": "MCP 端點不接受站點權杖，請使用連接器權杖。",
     "slug_required": "請填寫短連結。",
     "token_too_short": "站點密碼太短。",
     "too_many_links": "連結過多，每次請求最多 {max} 個連結。",

@@ -38,6 +38,7 @@
     "not_found": "Não encontrado.",
     "preview_mode": "Esta ação está desativada no modo de visualização.",
     "r2_not_configured": "O armazenamento R2 não está configurado.",
+    "site_token_not_allowed": "O token do site não é aceito no endpoint MCP. Use um token de conector.",
     "slug_required": "Um slug é obrigatório.",
     "token_too_short": "O token é muito curto.",
     "too_many_links": "Links demais. Máximo de {max} links por requisição.",

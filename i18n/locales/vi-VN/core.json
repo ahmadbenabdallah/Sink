@@ -38,6 +38,7 @@
     "not_found": "Không tìm thấy.",
     "preview_mode": "Thao tác này bị tắt trong chế độ xem trước.",
     "r2_not_configured": "Chưa cấu hình bộ lưu trữ R2.",
+    "site_token_not_allowed": "Token trang web không được chấp nhận tại điểm cuối MCP. Hãy dùng token kết nối.",
     "slug_required": "Cần có slug.",
     "token_too_short": "Token quá ngắn.",
     "too_many_links": "Quá nhiều liên kết. Tối đa {max} liên kết mỗi yêu cầu.",

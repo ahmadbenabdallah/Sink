@@ -11,8 +11,10 @@ describe('/api rate limit', () => {
     const limited = `198.51.100.${1 + Math.floor(Math.random() * 250)}`
     const request = () => fetch('/api/verify', { headers: { 'cf-connecting-ip': limited } })
 
-    for (let sent = 0; sent < 1200; sent += 50) {
-      const statuses = await Promise.all(Array.from({ length: 50 }, async () => (await request()).status))
+    // Sent in a few large groups: the whole budget has to be spent inside one
+    // minute, and small groups take most of a minute on a slow machine.
+    for (let sent = 0; sent < 1200; sent += 400) {
+      const statuses = await Promise.all(Array.from({ length: 400 }, async () => (await request()).status))
       expect(new Set(statuses)).toEqual(new Set([401]))
     }
 

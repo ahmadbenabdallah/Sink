@@ -40,6 +40,8 @@ export default defineNuxtConfig({
     safeBrowsingDoh: '', // Set to DoH URL to enable auto-detection, e.g. https://family.cloudflare-dns.com/dns-query
     webhookUrl: '',
     webhookSecret: '',
+    // Set NUXT_MCP_ALLOW_SITE_TOKEN=false to refuse the site token on /api/mcp once agents use connector tokens.
+    mcpAllowSiteToken: true,
     public: {
       previewMode: '',
       slugDefaultLength: '6',

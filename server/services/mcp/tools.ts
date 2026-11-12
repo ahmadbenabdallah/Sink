@@ -1,5 +1,6 @@
 import type { CallToolResult, McpServer, StandardSchemaWithJSON, ToolAnnotations } from '@modelcontextprotocol/server'
 import type { H3Event } from 'h3'
+import type { McpLevel } from '#shared/types/auth'
 import { createError, isError } from 'h3'
 import { CreateLinkSchema } from '#shared/schemas/link'
 import {
@@ -14,6 +15,7 @@ import { sanitizeLinkPassword, sanitizeLinksPassword } from '../../utils/link-pa
 import { patchLink, removeLink, saveNewLink, upsertLink } from '../../utils/link-processing'
 import { countLinks, getLinkWithMetadata, listLinks, listTags, normalizeSlug, searchLinks } from '../../utils/link-store'
 import { assertLinkStoreReady } from '../link-store/migration'
+import { levelAllows } from './levels'
 import { sanitizeMetricRows } from './metric-names'
 import {
   McpCheckLinksSchema,
@@ -33,6 +35,11 @@ import {
 
 interface McpToolDefinition {
   name: string
+  /**
+   * The lowest level a caller needs for this tool. Required, so a tool cannot
+   * be added without deciding who may call it.
+   */
+  level: McpLevel
   description: string
   /**
    * The zod contract the SDK advertises verbatim and validates arguments
@@ -76,6 +83,7 @@ const FILTER_NOTE = 'Every filter accepts a comma-separated list of values. Retu
 const linkTools: McpToolDefinition[] = [
   defineTool({
     name: 'list_links',
+    level: 'read',
     description: 'List short links newest first, with cursor pagination. Use search_links when looking for a specific link.',
     inputSchema: McpListLinksSchema,
     annotations: { readOnlyHint: true },
@@ -86,6 +94,7 @@ const linkTools: McpToolDefinition[] = [
   }),
   defineTool({
     name: 'search_links',
+    level: 'read',
     description: 'Search links by keyword or destination URL. One of `q` or `url` is required; without either the result is empty. A `url` search ignores the query string, so compare the returned `url` with the one you want.',
     inputSchema: McpSearchLinksSchema,
     annotations: { readOnlyHint: true },
@@ -96,6 +105,7 @@ const linkTools: McpToolDefinition[] = [
   }),
   defineTool({
     name: 'get_link',
+    level: 'read',
     description: 'Read a single short link by slug, including its stored metadata.',
     inputSchema: McpGetLinkSchema,
     annotations: { readOnlyHint: true },
@@ -109,6 +119,7 @@ const linkTools: McpToolDefinition[] = [
   }),
   defineTool({
     name: 'count_links',
+    level: 'read',
     description: 'Count links matching an optional keyword, URL, tag, or expiration status.',
     inputSchema: McpCountLinksSchema,
     annotations: { readOnlyHint: true },
@@ -118,6 +129,7 @@ const linkTools: McpToolDefinition[] = [
   }),
   defineTool({
     name: 'list_tags',
+    level: 'read',
     description: 'List every tag currently in use, with the number of links carrying it.',
     inputSchema: McpListTagsSchema,
     annotations: { readOnlyHint: true },
@@ -127,6 +139,8 @@ const linkTools: McpToolDefinition[] = [
   }),
   defineTool({
     name: 'check_links',
+    // Fetches up to ten stored targets per call, so it is not offered to a read-only caller.
+    level: 'full',
     description: 'Fetch the target URL of each stored link, alphabetically by slug with cursor pagination, and report its HTTP status. A link that could not be fetched has status 0 and an errorCode: blocked (not a public HTTP(S) URL), timeout, too_many_redirects or network.',
     inputSchema: McpCheckLinksSchema,
     annotations: { readOnlyHint: true, openWorldHint: true },
@@ -136,6 +150,7 @@ const linkTools: McpToolDefinition[] = [
   }),
   defineTool({
     name: 'create_link',
+    level: 'create',
     description: 'Create a short link. Fails when the slug is already taken; use upsert_link to reuse an existing link instead.',
     inputSchema: McpCreateLinkSchema,
     annotations: { destructiveHint: false, idempotentHint: false },
@@ -145,6 +160,7 @@ const linkTools: McpToolDefinition[] = [
   }),
   defineTool({
     name: 'update_link',
+    level: 'full',
     description: 'Change fields of an existing link identified by slug. Send only the fields to change: omitted fields are kept, and null removes a field. tags and geo are replaced as a whole.',
     inputSchema: McpUpdateLinkSchema,
     annotations: { destructiveHint: true, idempotentHint: true },
@@ -154,6 +170,7 @@ const linkTools: McpToolDefinition[] = [
   }),
   defineTool({
     name: 'upsert_link',
+    level: 'create',
     description: 'Return the existing link for a slug, or create it when absent. The result reports whether it was `created` or `existing`.',
     inputSchema: McpCreateLinkSchema,
     annotations: { destructiveHint: false, idempotentHint: true },
@@ -163,6 +180,7 @@ const linkTools: McpToolDefinition[] = [
   }),
   defineTool({
     name: 'delete_link',
+    level: 'full',
     description: 'Permanently delete a short link. Existing traffic to the slug stops resolving immediately. The result reports `deleted: false` when no link had that slug.',
     inputSchema: McpDeleteLinkSchema,
     annotations: { destructiveHint: true, idempotentHint: true },
@@ -175,6 +193,7 @@ const linkTools: McpToolDefinition[] = [
 const analyticsTools: McpToolDefinition[] = [
   defineTool({
     name: 'get_analytics_counters',
+    level: 'read',
     description: `Total visits, unique visitors, and referer counts over the access log. ${FILTER_NOTE}`,
     inputSchema: McpCountersSchema,
     annotations: { readOnlyHint: true },
@@ -184,6 +203,7 @@ const analyticsTools: McpToolDefinition[] = [
   }),
   defineTool({
     name: 'get_analytics_views',
+    level: 'read',
     description: `Visits and visitors bucketed over time by minute, hour, or day. ${FILTER_NOTE}`,
     inputSchema: McpViewsSchema,
     annotations: { readOnlyHint: true },
@@ -193,6 +213,7 @@ const analyticsTools: McpToolDefinition[] = [
   }),
   defineTool({
     name: 'get_analytics_metrics',
+    level: 'read',
     description: `Top values for one access-log dimension, ordered by visits. ${FILTER_NOTE}`,
     inputSchema: McpMetricsSchema,
     annotations: { readOnlyHint: true },
@@ -203,6 +224,7 @@ const analyticsTools: McpToolDefinition[] = [
   }),
   defineTool({
     name: 'get_analytics_heatmap',
+    level: 'read',
     description: `Visits and visitors bucketed by weekday and hour of day in the given timezone. ${FILTER_NOTE}`,
     inputSchema: McpHeatmapSchema,
     annotations: { readOnlyHint: true },
@@ -231,9 +253,16 @@ function toolErrorText(toolName: string, error: unknown): string {
  * zod contracts directly and validates arguments before the callback runs, so
  * handlers receive the parsed output. Business failures are returned with
  * `isError` so the calling model can self-correct.
+ *
+ * Only the tools the caller's level allows are registered. A tool above it is
+ * absent from `tools/list`, and a call to it gets the SDK's tool-not-found
+ * answer: this is the one place a level is enforced.
  */
-export function registerMcpTools(server: McpServer, event: H3Event): void {
+export function registerMcpTools(server: McpServer, event: H3Event, level: McpLevel): void {
   for (const tool of [...linkTools, ...analyticsTools]) {
+    if (!levelAllows(level, tool.level))
+      continue
+
     server.registerTool(tool.name, {
       // Titles are the display form of the name (`list_links` → `List links`),
       // and annotations fall back to the hints every Sink tool shares.

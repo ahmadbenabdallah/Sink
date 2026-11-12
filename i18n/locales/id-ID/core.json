@@ -38,6 +38,7 @@
     "not_found": "Tidak ditemukan.",
     "preview_mode": "Tindakan ini dinonaktifkan dalam mode pratinjau.",
     "r2_not_configured": "Penyimpanan R2 belum dikonfigurasi.",
+    "site_token_not_allowed": "Token situs tidak diterima di endpoint MCP. Gunakan token konektor.",
     "slug_required": "Slug wajib diisi.",
     "token_too_short": "Token terlalu pendek.",
     "too_many_links": "Terlalu banyak tautan. Maksimal {max} tautan per permintaan.",

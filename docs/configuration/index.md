@@ -111,6 +111,7 @@ Click analytics store the target URL in Workers Analytics Engine, which limits a
 | `NUXT_SAFE_BROWSING_DOH`                            | DNS-over-HTTPS URL used to check unsafe domains when `unsafe` is not set |
 | `NUXT_WEBHOOK_URL`                                  | HTTP(S) URL for [click webhooks](./webhooks)                             |
 | `NUXT_WEBHOOK_SECRET`                               | Optional signing secret starting with `whsec_`                           |
+| `NUXT_MCP_ALLOW_SITE_TOKEN`                         | `false` refuses the site token on `/api/mcp`; it keeps working elsewhere |
 
 Safe browsing example: Cloudflare Family DNS `https://family.cloudflare-dns.com/dns-query`. See also [Link Features](/features/links).
 
