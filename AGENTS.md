@@ -38,7 +38,7 @@ pnpm test --run -t 'creates new link'     # tests matching a name
 
 - ESLint and TypeScript extend generated `.nuxt` files. If they are missing, run `pnpm postinstall` (or `pnpm install`) before diagnosing config errors.
 - Authenticated tests need `NUXT_SITE_TOKEN`; local values are loaded from `.env`, with `.env.example` as the template. The template sets `NUXT_PUBLIC_PREVIEW_MODE=true`, which makes edit, delete, and import tests return 403; leave it empty in the `.env` used for tests.
-- `.github/workflows/fork-ci.yml` runs lint, typecheck, locale check, build, and tests on every pull request and push to `master`. It only reports; it does not block merges or deploy. Run the same commands locally before pushing.
+- `.github/workflows/fork-ci.yml` runs lint, typecheck, locale check, build, and tests on every pull request and push to `master`. It does not deploy. Its five jobs (Lint and type check, Build and test, Dependency review, Secret scan (gitleaks), Semgrep (project rules)) are required checks on `master`, and the branch must be up to date before merging. Run the same commands locally before pushing.
 - `fork-ci` also runs dependency review (pull requests only), a gitleaks secret scan over the full history (`.gitleaks.toml`), and the project Semgrep rules in `.semgrep/rules`. Server code must not call raw `fetch()`; use `fetchPublicHttpUrl` for user-supplied URLs.
 - Tests run with `remoteBindings: false` (`vitest.config.ts`), so they need no Cloudflare login or API token.
 - On Windows, `pnpm build` fails under cmd or PowerShell because the script sets `NODE_OPTIONS=` inline. Run it from a POSIX shell such as Git Bash: `node scripts/build-sphere.js && NODE_OPTIONS=--max-old-space-size=8192 npx nuxt build`.

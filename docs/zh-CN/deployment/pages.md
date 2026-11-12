@@ -88,3 +88,9 @@ Pages 会把仪表盘中的这套变量同时提供给构建和运行环境，�
 :::
 
 Pages 支持手动[备份](/zh-CN/features/backups)；本仓库里每日自动备份只为 Workers 配置。
+
+::: tip Pages 上的 MCP
+如果通过 [MCP 端点](/zh-CN/integrations/#mcp-server)连接 AI 代理，每次计数的工具调用都会向 D1 写入一行。免费套餐每天允许 100,000 次行写入，与创建链接共用，因此每个调用方每个 UTC 日限 5,000 次调用，可通过 `NUXT_MCP_DAILY_CALL_LIMIT` 调整。详见 [MCP 用量与 D1 写入配额](/zh-CN/deployment/workers#mcp-用量与-d1-写入配额)。
+
+本仓库只为 Workers 部署声明了速率限制绑定。在 Pages 上，`/api/` 请求和链接密码尝试的每分钟限制不会生效。
+:::
