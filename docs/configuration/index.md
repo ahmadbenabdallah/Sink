@@ -112,6 +112,7 @@ Click analytics store the target URL in Workers Analytics Engine, which limits a
 | `NUXT_WEBHOOK_URL`                                  | HTTP(S) URL for [click webhooks](./webhooks)                             |
 | `NUXT_WEBHOOK_SECRET`                               | Optional signing secret starting with `whsec_`                           |
 | `NUXT_MCP_ALLOW_SITE_TOKEN`                         | `false` refuses the site token on `/api/mcp`; it keeps working elsewhere |
+| `NUXT_MCP_DAILY_CALL_LIMIT`                         | Tool calls one MCP caller may make per UTC day; default `5000`           |
 
 Safe browsing example: Cloudflare Family DNS `https://family.cloudflare-dns.com/dns-query`. See also [Link Features](/features/links).
 

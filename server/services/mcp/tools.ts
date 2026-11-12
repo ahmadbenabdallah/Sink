@@ -1,8 +1,9 @@
 import type { CallToolResult, McpServer, StandardSchemaWithJSON, ToolAnnotations } from '@modelcontextprotocol/server'
 import type { H3Event } from 'h3'
-import type { McpLevel } from '#shared/types/auth'
+import type { McpCaller, McpLevel } from '#shared/types/auth'
+import { drizzle } from 'drizzle-orm/d1'
 import { createError, isError } from 'h3'
-import { CreateLinkSchema } from '#shared/schemas/link'
+import { CreateLinkSchema, SlugSchema } from '#shared/schemas/link'
 import {
   buildCountersQuery,
   buildHeatmapQuery,
@@ -15,6 +16,7 @@ import { sanitizeLinkPassword, sanitizeLinksPassword } from '../../utils/link-pa
 import { patchLink, removeLink, saveNewLink, upsertLink } from '../../utils/link-processing'
 import { countLinks, getLinkWithMetadata, listLinks, listTags, normalizeSlug, searchLinks } from '../../utils/link-store'
 import { assertLinkStoreReady } from '../link-store/migration'
+import { describeFailure } from './failure'
 import { levelAllows } from './levels'
 import { sanitizeMetricRows } from './metric-names'
 import {
@@ -32,6 +34,7 @@ import {
   McpUpdateLinkSchema,
   McpViewsSchema,
 } from './schemas'
+import { reserveToolCall, resolveDailyCallLimit } from './usage'
 
 interface McpToolDefinition {
   name: string
@@ -236,15 +239,37 @@ const analyticsTools: McpToolDefinition[] = [
 
 const linkToolNames = new Set(linkTools.map(tool => tool.name))
 
-/** Explicit 4xx business errors reach the model verbatim; anything else is logged once and reported generically. */
-function toolErrorText(toolName: string, error: unknown): string {
+type ToolCallOutcome = 'ok' | 'error' | 'internal_error' | 'capped'
+
+function errorResult(text: string): CallToolResult {
+  return { content: [{ type: 'text', text }], isError: true }
+}
+
+/**
+ * Explicit 4xx business errors reach the model verbatim; anything else is
+ * logged once and reported generically. The log holds a description of the
+ * error, not the error itself: see `describeFailure`.
+ */
+function toolFailure(toolName: string, error: unknown): { outcome: ToolCallOutcome, text: string } {
   if (isError(error)) {
     const statusCode = error.statusCode ?? 500
     if (statusCode < 500)
-      return `${toolName} failed: ${statusCode} ${error.statusMessage || error.message}`
+      return { outcome: 'error', text: `${toolName} failed: ${statusCode} ${error.statusMessage || error.message}` }
   }
-  console.error(`MCP tool ${toolName} failed`, error)
-  return `${toolName} failed: internal error`
+
+  console.error({ event: 'mcp.tool_failed', tool: toolName, ...describeFailure(error) })
+  return { outcome: 'internal_error', text: `${toolName} failed: internal error` }
+}
+
+/**
+ * The slug a call is about, in its stored form. It is the only argument that
+ * is logged, and only when it has the shape of a slug: some tools take a
+ * `slug` that is free text (a search filter, a slug to look up), and a caller
+ * must not be able to write what it likes into the log.
+ */
+function slugArgument(event: H3Event, args: unknown): string | undefined {
+  const slug = SlugSchema.min(1).safeParse((args as { slug?: unknown } | null)?.slug)
+  return slug.success ? normalizeSlug(event, slug.data) : undefined
 }
 
 /**
@@ -257,10 +282,34 @@ function toolErrorText(toolName: string, error: unknown): string {
  * Only the tools the caller's level allows are registered. A tool above it is
  * absent from `tools/list`, and a call to it gets the SDK's tool-not-found
  * answer: this is the one place a level is enforced.
+ *
+ * Every call that reaches a tool is counted against the caller's daily limit
+ * and logged, here and nowhere else. A call the SDK refuses first (a tool
+ * above the level, invalid arguments) never gets here, so it is neither
+ * counted nor logged.
  */
-export function registerMcpTools(server: McpServer, event: H3Event, level: McpLevel): void {
+export function registerMcpTools(server: McpServer, event: H3Event, caller: McpCaller): void {
+  const db = drizzle(event.context.cloudflare.env.DB)
+  const dailyLimit = resolveDailyCallLimit(useRuntimeConfig(event).mcpDailyCallLimit)
+
+  /**
+   * Counts the call if the caller is under today's limit. When the count
+   * cannot be written the call is let through, uncounted, and the failure is
+   * logged: the limit guards a write quota, and a database that is failing
+   * must not also stop every agent.
+   */
+  async function countCall(): Promise<boolean> {
+    try {
+      return await reserveToolCall(db, caller.id, dailyLimit)
+    }
+    catch (error) {
+      console.error({ event: 'mcp_usage.count_failed', callerId: caller.id, ...describeFailure(error) })
+      return true
+    }
+  }
+
   for (const tool of [...linkTools, ...analyticsTools]) {
-    if (!levelAllows(level, tool.level))
+    if (!levelAllows(caller.level, tool.level))
       continue
 
     server.registerTool(tool.name, {
@@ -271,6 +320,29 @@ export function registerMcpTools(server: McpServer, event: H3Event, level: McpLe
       inputSchema: tool.inputSchema,
       annotations: { readOnlyHint: false, openWorldHint: false, ...tool.annotations },
     }, async (args): Promise<CallToolResult> => {
+      const startedAt = Date.now()
+      const slug = slugArgument(event, args)
+      // No argument but the slug, and nothing about the credential.
+      const logCall = (outcome: ToolCallOutcome) => console.log({
+        event: 'mcp.tool_call',
+        tool: tool.name,
+        callerKind: caller.kind,
+        callerId: caller.id,
+        ...(slug === undefined ? {} : { slug }),
+        outcome,
+        ms: Date.now() - startedAt,
+      })
+
+      // Counted before the tool runs, so the count cannot be skipped by a
+      // caller that goes away. A call past the limit is not counted and does
+      // not run.
+      if (!await countCall()) {
+        logCall('capped')
+        return errorResult(`Daily call limit of ${dailyLimit} reached for this connection. It resets at 00:00 UTC.`)
+      }
+
+      let outcome: ToolCallOutcome = 'ok'
+      let result: CallToolResult
       try {
         if (linkToolNames.has(tool.name))
           await assertLinkStoreReady(event)
@@ -278,11 +350,16 @@ export function registerMcpTools(server: McpServer, event: H3Event, level: McpLe
         const data = await tool.handler(event, args)
         // The payload also ships as `structuredContent`, so the text block stays
         // compact; it exists for clients that predate structured results.
-        return { content: [{ type: 'text', text: JSON.stringify(data) }], structuredContent: data }
+        result = { content: [{ type: 'text', text: JSON.stringify(data) }], structuredContent: data }
       }
       catch (error) {
-        return { content: [{ type: 'text', text: toolErrorText(tool.name, error) }], isError: true }
+        const failure = toolFailure(tool.name, error)
+        outcome = failure.outcome
+        result = errorResult(failure.text)
       }
+
+      logCall(outcome)
+      return result
     })
   }
 }

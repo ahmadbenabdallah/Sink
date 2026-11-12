@@ -1,5 +1,7 @@
 import type { ConnectorListResponse } from '#shared/types/connector'
+import { describeFailure } from '../../services/mcp/failure'
 import { listTokens } from '../../services/mcp/tokens'
+import { resolveDailyCallLimit, usageSummary } from '../../services/mcp/usage'
 
 defineRouteMeta({
   openAPI: {
@@ -10,16 +12,26 @@ defineRouteMeta({
 
 export default eventHandler(async (event): Promise<ConnectorListResponse> => {
   assertConnectorManager(event)
-  const { cfAccessTeamDomain, cfAccessAud } = useRuntimeConfig(event)
-  const connectors = await listTokens(useConnectorDatabase(event))
+  const { cfAccessTeamDomain, cfAccessAud, mcpDailyCallLimit } = useRuntimeConfig(event)
+  const db = useConnectorDatabase(event)
+  const connectors = await listTokens(db)
+
+  // The list is still worth showing when usage cannot be read. It is then
+  // reported as unknown for everyone, never as zero.
+  const usage = await usageSummary(db).catch((error: unknown) => {
+    console.error({ event: 'mcp_usage.summary_failed', ...describeFailure(error) })
+    return null
+  })
+  const usageOf = (id: string) => usage ? usage.get(id) ?? NO_USAGE : UNKNOWN_USAGE
 
   return {
-    connectors: connectors.map(toConnectorView),
+    connectors: connectors.map(connector => toConnectorView(connector, usageOf(connector.id))),
     // Callers of the MCP endpoint that are not connectors. Cloudflare Access is
     // one only where it is configured.
     reserved: [
-      { id: 'site-token', lastUsedAt: null, calls7d: null },
-      ...(isCloudflareAccessConfigured(cfAccessTeamDomain, cfAccessAud) ? [{ id: 'access' as const, lastUsedAt: null, calls7d: null }] : []),
+      { id: 'site-token', ...usageOf('site-token') },
+      ...(isCloudflareAccessConfigured(cfAccessTeamDomain, cfAccessAud) ? [{ id: 'access' as const, ...usageOf('access') }] : []),
     ],
+    dailyCallLimit: resolveDailyCallLimit(mcpDailyCallLimit),
   }
 })

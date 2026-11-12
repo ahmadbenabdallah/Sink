@@ -66,6 +66,20 @@ export const mcpTokens = sqliteTable('mcp_tokens', {
   check('mcp_tokens_level_check', sql`${table.level} in ('read', 'create', 'full')`),
 ])
 
+/**
+ * Tool calls on the MCP endpoint, one row per caller per UTC day. `callerId` is
+ * a connector's id, or `site-token`, or `access`. It is not a foreign key: the
+ * two fixed callers have no row in `mcp_tokens`.
+ */
+export const mcpUsage = sqliteTable('mcp_usage', {
+  callerId: text('caller_id').notNull(),
+  day: text().notNull(),
+  calls: integer().notNull(),
+  lastUsedAt: integer('last_used_at').notNull(),
+}, table => [
+  primaryKey({ columns: [table.callerId, table.day] }),
+])
+
 export const linkMigrationRuns = sqliteTable('link_migration_runs', {
   id: text().primaryKey(),
   expectedCursor: text('expected_cursor'),

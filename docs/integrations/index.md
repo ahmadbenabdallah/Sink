@@ -70,6 +70,8 @@ claude mcp add --transport http sink https://your-domain/api/mcp --header "Autho
 
 `GET /api/connector/list` lists connectors, and `POST /api/connector/revoke` with `{"id":"..."}` revokes one; a revoked token is refused from the next request on. A connector token works on `/api/mcp` only: it cannot call the REST API, sign in to the dashboard, or manage connectors.
 
+Each connector may make 5,000 tool calls per UTC day; `GET /api/connector/list` shows the calls of the last seven days and when each connector was last used. See [MCP usage and the D1 write quota](/deployment/workers#mcp-usage-and-the-d1-write-quota) to change the limit.
+
 Once every agent uses a connector token, set `NUXT_MCP_ALLOW_SITE_TOKEN=false` so the site token is no longer accepted on `/api/mcp`.
 
 ::: warning

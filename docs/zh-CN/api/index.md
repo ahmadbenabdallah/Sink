@@ -23,7 +23,7 @@ description: Sink 的 OpenAPI 文档、身份认证、CORS 与端点索引。
 Authorization: Bearer YOUR_SITE_TOKEN
 ```
 
-（`Bearer` 的意思是「后面是令牌」。）必须与 `NUXT_SITE_TOKEN` 完全一致（至少 8 个字符）。启用 [Cloudflare Access](/zh-CN/configuration/cloudflare-access) 后，浏览器也可以用已验证的 Access 登录访问 API。位于 `/api/mcp` 的 [MCP 端点](/zh-CN/integrations/#mcp-server) 使用同一个令牌。
+（`Bearer` 的意思是「后面是令牌」。）必须与 `NUXT_SITE_TOKEN` 完全一致（至少 8 个字符）。启用 [Cloudflare Access](/zh-CN/configuration/cloudflare-access) 后，浏览器也可以用已验证的 Access 登录访问 API。位于 `/api/mcp` 的 [MCP 端点](/zh-CN/integrations/#mcp-server) 也接受同一个令牌，除非 `NUXT_MCP_ALLOW_SITE_TOKEN` 设为 `false`。
 
 ## CORS
 

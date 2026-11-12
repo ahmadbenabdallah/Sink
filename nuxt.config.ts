@@ -42,6 +42,8 @@ export default defineNuxtConfig({
     webhookSecret: '',
     // Set NUXT_MCP_ALLOW_SITE_TOKEN=false to refuse the site token on /api/mcp once agents use connector tokens.
     mcpAllowSiteToken: true,
+    // Tool calls one MCP caller may make per UTC day. Each counted call is one D1 row write.
+    mcpDailyCallLimit: 5000,
     public: {
       previewMode: '',
       slugDefaultLength: '6',
