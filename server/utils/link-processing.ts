@@ -206,7 +206,8 @@ export function patchLink(event: H3Event, patch: LinkPatch): Promise<LinkRespons
   return editStoredLink(event, patch.slug, existingLink => applyLinkPatch(existingLink, patch))
 }
 
-export async function removeLink(event: H3Event, slug: string): Promise<void> {
+/** Resolves to whether a link was there to delete. */
+export async function removeLink(event: H3Event, slug: string): Promise<boolean> {
   assertLinkWritesAllowed(event, 'delete')
-  await deleteLink(event, normalizeSlug(event, slug))
+  return await deleteLink(event, normalizeSlug(event, slug))
 }

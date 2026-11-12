@@ -1,10 +1,11 @@
 import type { H3Event } from 'h3'
 import type { Link } from '../../shared/schemas/link'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createLinks } from '../../server/utils/link-store'
+import { createLinks, deleteLink } from '../../server/utils/link-store'
 
 const mocks = vi.hoisted(() => ({
   d1CreateLinks: vi.fn(),
+  d1DeleteLink: vi.fn(),
   d1GetActiveLinkVersions: vi.fn(),
   deleteLinkCache: vi.fn(),
   putLinkCache: vi.fn(),
@@ -16,7 +17,7 @@ vi.mock('../../server/services/link-store/d1', () => ({
   d1CountLinks: vi.fn(),
   d1CreateLink: vi.fn(),
   d1CreateLinks: mocks.d1CreateLinks,
-  d1DeleteLink: vi.fn(),
+  d1DeleteLink: mocks.d1DeleteLink,
   d1GetActiveLink: vi.fn(),
   d1GetActiveLinkVersions: mocks.d1GetActiveLinkVersions,
   d1GetAnyLink: vi.fn(),
@@ -40,6 +41,20 @@ vi.mock('../../server/services/link-store/migration', () => ({
   insertMigratedKvLink: vi.fn(),
   readCompletedLinkMigrationMarker: vi.fn(),
 }))
+
+describe('deleteLink', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it.each([true, false])('reports %s from the store and clears the cache either way', async (removed) => {
+    mocks.d1DeleteLink.mockResolvedValue(removed)
+
+    await expect(deleteLink({} as H3Event, 'gone')).resolves.toBe(removed)
+
+    expect(mocks.deleteLinkCache).toHaveBeenCalledWith(expect.anything(), 'gone')
+  })
+})
 
 describe('createLinks', () => {
   afterEach(() => {
