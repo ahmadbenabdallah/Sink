@@ -1,0 +1,76 @@
+{
+  "connectors": {
+    "title": "Kết nối",
+    "description": "Cấp cho mỗi tác nhân AI một token riêng cho điểm cuối MCP, để mật khẩu bảng điều khiển không bao giờ nằm trong cấu hình của tác nhân.",
+    "daily_limit": "Mỗi kết nối được thực hiện {limit} lượt gọi công cụ mỗi ngày.",
+    "create": "Kết nối mới",
+    "empty": "Chưa có kết nối nào",
+    "empty_description": "Tạo một kết nối để nối tác nhân mà không cần chia sẻ mật khẩu bảng điều khiển.",
+    "load_failed": "Không thể tải danh sách kết nối",
+    "usage_unavailable": "Không có dữ liệu",
+    "never_used": "Chưa dùng",
+    "table": {
+      "name": "Tên",
+      "level": "Cấp độ",
+      "created": "Ngày tạo",
+      "last_used": "Lần dùng gần nhất",
+      "calls_7d": "Lượt gọi (7 ngày)",
+      "status": "Trạng thái",
+      "actions": "Thao tác"
+    },
+    "status": {
+      "active": "Đang hoạt động",
+      "revoked": "Đã thu hồi"
+    },
+    "reserved": {
+      "site_token": "Token trang",
+      "access": "Cloudflare Access"
+    },
+    "level": {
+      "read": {
+        "label": "Đọc",
+        "description": "Đọc liên kết và số liệu phân tích."
+      },
+      "create": {
+        "label": "Đọc + tạo",
+        "description": "Có thể tạo thêm liên kết."
+      },
+      "full": {
+        "label": "Toàn quyền",
+        "description": "Có thể sửa và xóa liên kết."
+      },
+      "full_warning": "Có thể chuyển hướng, làm hết hạn hoặc xóa bất kỳ liên kết nào."
+    },
+    "form": {
+      "name": "Tên",
+      "name_placeholder": "Claude Code",
+      "name_invalid": "Nhập tên dài từ 1 đến {max} ký tự.",
+      "level": "Cấp độ",
+      "submit": "Tạo kết nối",
+      "submitting": "Đang tạo…"
+    },
+    "create_dialog": {
+      "title": "Kết nối mới",
+      "description": "Token chỉ hiển thị một lần, ngay sau khi tạo.",
+      "failed": "Không thể tạo kết nối"
+    },
+    "reveal": {
+      "title": "Sao chép token ngay",
+      "once_notice": "Đây là lần duy nhất token được hiển thị. Nếu làm mất, hãy thu hồi kết nối này và tạo kết nối mới.",
+      "token": "Token",
+      "copy": "Sao chép",
+      "copied": "Đã sao chép",
+      "claude_code": "Claude Code",
+      "json_config": "Ứng dụng MCP khác (JSON)",
+      "done": "Xong"
+    },
+    "revoke": {
+      "action": "Thu hồi",
+      "title": "Thu hồi {name}?",
+      "description": "Token sẽ ngừng hoạt động ngay lập tức. Không thể hoàn tác.",
+      "confirm": "Thu hồi",
+      "success": "Đã thu hồi kết nối",
+      "failed": "Không thể thu hồi kết nối"
+    }
+  }
+}

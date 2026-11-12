@@ -1,0 +1,76 @@
+{
+  "connectors": {
+    "title": "Connecteurs",
+    "description": "Donnez à chaque agent IA son propre jeton pour le point de terminaison MCP, afin que le mot de passe du tableau de bord ne figure jamais dans la configuration d'un agent.",
+    "daily_limit": "Chaque connecteur peut effectuer {limit} appels d'outils par jour.",
+    "create": "Nouveau connecteur",
+    "empty": "Aucun connecteur pour l'instant",
+    "empty_description": "Créez-en un pour connecter un agent sans partager le mot de passe du tableau de bord.",
+    "load_failed": "Impossible de charger les connecteurs",
+    "usage_unavailable": "Indisponible",
+    "never_used": "Jamais",
+    "table": {
+      "name": "Nom",
+      "level": "Niveau",
+      "created": "Créé",
+      "last_used": "Dernière utilisation",
+      "calls_7d": "Appels (7 jours)",
+      "status": "Statut",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Actif",
+      "revoked": "Révoqué"
+    },
+    "reserved": {
+      "site_token": "Jeton du site",
+      "access": "Cloudflare Access"
+    },
+    "level": {
+      "read": {
+        "label": "Lecture",
+        "description": "Lire les liens et les statistiques."
+      },
+      "create": {
+        "label": "Lecture + création",
+        "description": "Créer aussi des liens."
+      },
+      "full": {
+        "label": "Complet",
+        "description": "Modifier et supprimer aussi des liens."
+      },
+      "full_warning": "Peut rediriger, faire expirer ou supprimer n'importe quel lien."
+    },
+    "form": {
+      "name": "Nom",
+      "name_placeholder": "Claude Code",
+      "name_invalid": "Saisissez un nom de 1 à {max} caractères.",
+      "level": "Niveau",
+      "submit": "Créer le connecteur",
+      "submitting": "Création…"
+    },
+    "create_dialog": {
+      "title": "Nouveau connecteur",
+      "description": "Le jeton n'est affiché qu'une fois, juste après sa création.",
+      "failed": "Impossible de créer le connecteur"
+    },
+    "reveal": {
+      "title": "Copiez le jeton maintenant",
+      "once_notice": "C'est la seule fois où le jeton est affiché. Si vous le perdez, révoquez ce connecteur et créez-en un nouveau.",
+      "token": "Jeton",
+      "copy": "Copier",
+      "copied": "Copié",
+      "claude_code": "Claude Code",
+      "json_config": "Autres clients MCP (JSON)",
+      "done": "Terminé"
+    },
+    "revoke": {
+      "action": "Révoquer",
+      "title": "Révoquer {name} ?",
+      "description": "Son jeton cesse de fonctionner immédiatement. Cette action est irréversible.",
+      "confirm": "Révoquer",
+      "success": "Connecteur révoqué",
+      "failed": "Impossible de révoquer le connecteur"
+    }
+  }
+}

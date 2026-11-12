@@ -1,0 +1,76 @@
+{
+  "connectors": {
+    "title": "Connectors",
+    "description": "Give each AI agent its own token for the MCP endpoint, so the site token never sits in an agent's configuration.",
+    "daily_limit": "Each connector may make {limit} tool calls per day.",
+    "create": "New connector",
+    "empty": "No connectors yet",
+    "empty_description": "Create one to connect an agent without sharing the site token.",
+    "load_failed": "Could not load connectors",
+    "usage_unavailable": "Unavailable",
+    "never_used": "Never",
+    "table": {
+      "name": "Name",
+      "level": "Level",
+      "created": "Created",
+      "last_used": "Last used",
+      "calls_7d": "Calls (7 days)",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "revoked": "Revoked"
+    },
+    "reserved": {
+      "site_token": "Site token",
+      "access": "Cloudflare Access"
+    },
+    "level": {
+      "read": {
+        "label": "Read",
+        "description": "Read links and analytics."
+      },
+      "create": {
+        "label": "Read + create",
+        "description": "Also create links."
+      },
+      "full": {
+        "label": "Full",
+        "description": "Also change and delete links."
+      },
+      "full_warning": "Can redirect, expire or delete any link."
+    },
+    "form": {
+      "name": "Name",
+      "name_placeholder": "Claude Code",
+      "name_invalid": "Enter a name of 1 to {max} characters.",
+      "level": "Level",
+      "submit": "Create connector",
+      "submitting": "Creating…"
+    },
+    "create_dialog": {
+      "title": "New connector",
+      "description": "The token is shown once, right after you create it.",
+      "failed": "Could not create the connector"
+    },
+    "reveal": {
+      "title": "Copy the token now",
+      "once_notice": "This is the only time the token is shown. If you lose it, revoke this connector and create a new one.",
+      "token": "Token",
+      "copy": "Copy",
+      "copied": "Copied",
+      "claude_code": "Claude Code",
+      "json_config": "Other MCP clients (JSON)",
+      "done": "Done"
+    },
+    "revoke": {
+      "action": "Revoke",
+      "title": "Revoke {name}?",
+      "description": "Its token stops working at once. This cannot be undone.",
+      "confirm": "Revoke",
+      "success": "Connector revoked",
+      "failed": "Could not revoke the connector"
+    }
+  }
+}

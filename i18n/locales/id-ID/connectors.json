@@ -1,0 +1,76 @@
+{
+  "connectors": {
+    "title": "Konektor",
+    "description": "Beri setiap agen AI token sendiri untuk endpoint MCP, sehingga kata sandi dasbor tidak pernah berada di konfigurasi agen.",
+    "daily_limit": "Setiap konektor dapat melakukan {limit} panggilan alat per hari.",
+    "create": "Konektor baru",
+    "empty": "Belum ada konektor",
+    "empty_description": "Buat satu untuk menghubungkan agen tanpa membagikan kata sandi dasbor.",
+    "load_failed": "Tidak dapat memuat konektor",
+    "usage_unavailable": "Tidak tersedia",
+    "never_used": "Belum pernah",
+    "table": {
+      "name": "Nama",
+      "level": "Tingkat",
+      "created": "Dibuat",
+      "last_used": "Terakhir digunakan",
+      "calls_7d": "Panggilan (7 hari)",
+      "status": "Status",
+      "actions": "Tindakan"
+    },
+    "status": {
+      "active": "Aktif",
+      "revoked": "Dicabut"
+    },
+    "reserved": {
+      "site_token": "Token situs",
+      "access": "Cloudflare Access"
+    },
+    "level": {
+      "read": {
+        "label": "Baca",
+        "description": "Membaca tautan dan analitik."
+      },
+      "create": {
+        "label": "Baca + buat",
+        "description": "Juga membuat tautan."
+      },
+      "full": {
+        "label": "Penuh",
+        "description": "Juga mengubah dan menghapus tautan."
+      },
+      "full_warning": "Dapat mengalihkan, mengakhiri masa berlaku, atau menghapus tautan apa pun."
+    },
+    "form": {
+      "name": "Nama",
+      "name_placeholder": "Claude Code",
+      "name_invalid": "Masukkan nama 1 sampai {max} karakter.",
+      "level": "Tingkat",
+      "submit": "Buat konektor",
+      "submitting": "Membuat…"
+    },
+    "create_dialog": {
+      "title": "Konektor baru",
+      "description": "Token hanya ditampilkan sekali, tepat setelah dibuat.",
+      "failed": "Tidak dapat membuat konektor"
+    },
+    "reveal": {
+      "title": "Salin token sekarang",
+      "once_notice": "Ini satu-satunya saat token ditampilkan. Jika hilang, cabut konektor ini dan buat yang baru.",
+      "token": "Token",
+      "copy": "Salin",
+      "copied": "Disalin",
+      "claude_code": "Claude Code",
+      "json_config": "Klien MCP lain (JSON)",
+      "done": "Selesai"
+    },
+    "revoke": {
+      "action": "Cabut",
+      "title": "Cabut {name}?",
+      "description": "Tokennya langsung berhenti berfungsi. Tindakan ini tidak dapat dibatalkan.",
+      "confirm": "Cabut",
+      "success": "Konektor dicabut",
+      "failed": "Tidak dapat mencabut konektor"
+    }
+  }
+}

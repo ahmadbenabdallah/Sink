@@ -1,0 +1,76 @@
+{
+  "connectors": {
+    "title": "连接器",
+    "description": "为每个 AI 代理单独创建用于 MCP 端点的令牌，这样仪表盘密码就不会出现在代理的配置里。",
+    "daily_limit": "每个连接器每天最多可进行 {limit} 次工具调用。",
+    "create": "新建连接器",
+    "empty": "还没有连接器",
+    "empty_description": "创建一个连接器，无需共享仪表盘密码即可连接代理。",
+    "load_failed": "无法加载连接器",
+    "usage_unavailable": "不可用",
+    "never_used": "从未使用",
+    "table": {
+      "name": "名称",
+      "level": "级别",
+      "created": "创建时间",
+      "last_used": "最近使用",
+      "calls_7d": "调用次数（7 天）",
+      "status": "状态",
+      "actions": "操作"
+    },
+    "status": {
+      "active": "有效",
+      "revoked": "已撤销"
+    },
+    "reserved": {
+      "site_token": "站点令牌",
+      "access": "Cloudflare Access"
+    },
+    "level": {
+      "read": {
+        "label": "读取",
+        "description": "读取链接和分析数据。"
+      },
+      "create": {
+        "label": "读取 + 创建",
+        "description": "还可以创建链接。"
+      },
+      "full": {
+        "label": "完全",
+        "description": "还可以修改和删除链接。"
+      },
+      "full_warning": "可以重定向、设为过期或删除任何链接。"
+    },
+    "form": {
+      "name": "名称",
+      "name_placeholder": "Claude Code",
+      "name_invalid": "请输入 1 到 {max} 个字符的名称。",
+      "level": "级别",
+      "submit": "创建连接器",
+      "submitting": "正在创建…"
+    },
+    "create_dialog": {
+      "title": "新建连接器",
+      "description": "令牌只会在创建后显示一次。",
+      "failed": "无法创建连接器"
+    },
+    "reveal": {
+      "title": "请立即复制令牌",
+      "once_notice": "令牌只会显示这一次。如果丢失，请撤销此连接器并重新创建。",
+      "token": "令牌",
+      "copy": "复制",
+      "copied": "已复制",
+      "claude_code": "Claude Code",
+      "json_config": "其他 MCP 客户端（JSON）",
+      "done": "完成"
+    },
+    "revoke": {
+      "action": "撤销",
+      "title": "撤销 {name}？",
+      "description": "其令牌会立即失效，且无法恢复。",
+      "confirm": "撤销",
+      "success": "连接器已撤销",
+      "failed": "无法撤销连接器"
+    }
+  }
+}
