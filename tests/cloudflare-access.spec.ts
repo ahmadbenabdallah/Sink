@@ -1,12 +1,14 @@
+import type { JSONWebKeySet } from 'jose'
+import { env } from 'cloudflare:workers'
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from 'jose'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import {
   isCloudflareAccessConfigured,
   isCloudflareAccessRequestSafe,
   mapCloudflareAccessIdentity,
   verifyCloudflareAccessToken,
 } from '../server/utils/cloudflare-access'
-import { fetchWithAuth, setLinkStoreD1Mode } from './utils'
+import { fetch, fetchWithAuth, setLinkStoreD1Mode } from './utils'
 
 const issuer = 'https://sink.cloudflareaccess.com'
 const audience = 'sink-audience'
@@ -14,20 +16,22 @@ const keyId = 'sink-test-key'
 
 let privateKey: CryptoKey
 let localJwks: ReturnType<typeof createLocalJWKSet>
+let publicJwks: JSONWebKeySet
 
 beforeAll(async () => {
   const keyPair = await generateKeyPair('RS256', { extractable: true })
   privateKey = keyPair.privateKey
 
   const publicJwk = await exportJWK(keyPair.publicKey)
-  localJwks = createLocalJWKSet({
+  publicJwks = {
     keys: [{
       ...publicJwk,
       alg: 'RS256',
       kid: keyId,
       use: 'sig',
     }],
-  })
+  }
+  localJwks = createLocalJWKSet(publicJwks)
 })
 
 interface TokenOptions {
@@ -247,5 +251,46 @@ describe('cloudflare Access request authentication', () => {
     })
 
     expect([401, 403]).not.toContain(response.status)
+  })
+
+  // The Worker fetches the Access signing keys from the team domain, so the
+  // key set is served through a stubbed fetch. The team domain is unique to
+  // this test because the Worker caches one key set per domain.
+  it('lets a Cloudflare Access identity call MCP tools', async () => {
+    await setLinkStoreD1Mode()
+    const teamDomain = 'https://sink-mcp-test.cloudflareaccess.com'
+    const previous = { teamDomain: env.NUXT_CF_ACCESS_TEAM_DOMAIN, audience: env.NUXT_CF_ACCESS_AUD }
+    env.NUXT_CF_ACCESS_TEAM_DOMAIN = teamDomain
+    env.NUXT_CF_ACCESS_AUD = audience
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = input instanceof Request ? input.url : String(input)
+      if (url === `${teamDomain}/cdn-cgi/access/certs`)
+        return Response.json(publicJwks)
+      throw new Error(`Blocked test outbound request to ${url}`)
+    })
+
+    try {
+      const response = await fetch('/api/mcp', {
+        method: 'POST',
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'count_links', arguments: {} } }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json, text/event-stream',
+          'Mcp-Protocol-Version': '2025-11-25',
+          'Cf-Access-Jwt-Assertion': await createToken({ iss: teamDomain }),
+        },
+      })
+      expect(response.status).toBe(200)
+
+      const dataLine = (await response.text()).split('\n').find(line => line.startsWith('data:'))
+      const payload = JSON.parse(dataLine!.slice(5)) as { result?: { isError?: boolean, structuredContent?: { count?: unknown } } }
+      expect(payload.result?.isError).toBeUndefined()
+      expect(typeof payload.result?.structuredContent?.count).toBe('number')
+    }
+    finally {
+      fetchSpy.mockRestore()
+      env.NUXT_CF_ACCESS_TEAM_DOMAIN = previous.teamDomain
+      env.NUXT_CF_ACCESS_AUD = previous.audience
+    }
   })
 })

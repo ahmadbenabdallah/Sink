@@ -399,3 +399,211 @@ describe('/api/mcp slug isolation', () => {
     expect((await postRpc(1, 'tools/list')).status).toBe(200)
   })
 })
+
+// Characterisation of behaviour that later changes build on. Each expectation
+// records what the endpoint does now; a test that pins something due to
+// change says so, and the pull request that changes it updates the test.
+const MODERN_VERSION = '2026-07-28'
+const MODERN_ENVELOPE = {
+  'io.modelcontextprotocol/protocolVersion': MODERN_VERSION,
+  'io.modelcontextprotocol/clientCapabilities': {},
+  'io.modelcontextprotocol/clientInfo': { name: 'test-client', version: '1.0.0' },
+}
+
+// A 2026-07-28 request carries its envelope in `params._meta` and repeats the
+// version, method, and tool name in headers, which the SDK cross-checks.
+function postModern(method: string, params: Record<string, unknown> = {}, toolName?: string) {
+  return postMcp(
+    { jsonrpc: '2.0', id: 1, method, params: { ...params, _meta: MODERN_ENVELOPE } },
+    baseHeaders({
+      'Mcp-Protocol-Version': MODERN_VERSION,
+      'Mcp-Method': method,
+      ...(toolName ? { 'Mcp-Name': toolName } : {}),
+    }),
+  )
+}
+
+function callModernTool(name: string, args: Record<string, unknown>) {
+  return postModern('tools/call', { name, arguments: args }, name)
+}
+
+describe('/api/mcp protocol version 2026-07-28', () => {
+  it('lists the tools as a plain JSON body', async () => {
+    const response = await postModern('tools/list')
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('application/json')
+
+    const payload = await response.json() as JsonRpcEnvelope
+    expect(payload.result?.tools).toHaveLength(14)
+  })
+
+  it('calls a tool and marks the result complete', async () => {
+    const response = await callModernTool('count_links', {})
+    expect(response.status).toBe(200)
+
+    const payload = await response.json() as JsonRpcEnvelope
+    expect(typeof payload.result?.structuredContent.count).toBe('number')
+    expect(payload.result?.resultType).toBe('complete')
+  })
+
+  it('reports invalid arguments as a tool error', async () => {
+    const payload = await (await callModernTool('create_link', { url: 'not-a-url' })).json() as JsonRpcEnvelope
+    expect(payload.result?.isError).toBe(true)
+    expect(payload.result?.content[0].text).toContain('Invalid arguments')
+  })
+
+  it('reports an unknown tool as a protocol error', async () => {
+    const response = await callModernTool('no_such_tool', {})
+    expect(response.status).toBe(200)
+
+    const payload = await response.json() as JsonRpcEnvelope
+    expect(payload.error?.code).toBe(-32602)
+    expect(payload.error?.message).toContain('not found')
+  })
+
+  it('rejects a tool call whose Mcp-Name header is missing', async () => {
+    const response = await postModern('tools/call', { name: 'count_links', arguments: {} })
+    expect(response.status).toBe(400)
+    expect((await response.json() as JsonRpcEnvelope).error?.code).toBe(-32020)
+  })
+
+  // The handshake and ping belong to the 2025 revisions; this one replaces
+  // them with `server/discover`.
+  it.each(['ping', 'initialize'])('answers %s as method not found', async (method) => {
+    const response = await postModern(method)
+    expect(response.status).toBe(404)
+    expect((await response.json() as JsonRpcEnvelope).error?.code).toBe(-32601)
+  })
+
+  it('answers server/discover with the served version', async () => {
+    const payload = await (await postModern('server/discover')).json() as JsonRpcEnvelope
+    expect(payload.result?.supportedVersions).toEqual([MODERN_VERSION])
+    expect(payload.result?.capabilities.tools).toBeDefined()
+  })
+
+  it('refuses a batch', async () => {
+    const request = { jsonrpc: '2.0', method: 'server/discover', params: { _meta: MODERN_ENVELOPE } }
+    const response = await postMcp(
+      [{ ...request, id: 1 }, { ...request, id: 2 }],
+      baseHeaders({ 'Mcp-Protocol-Version': MODERN_VERSION, 'Mcp-Method': 'server/discover' }),
+    )
+    expect(response.status).toBe(400)
+    expect((await response.json() as JsonRpcEnvelope).error?.code).toBe(-32600)
+  })
+})
+
+describe('/api/mcp current transport limits', () => {
+  it('rejects a body over 4 MiB with 413', async () => {
+    const response = await postMcp(
+      { jsonrpc: '2.0', id: 1, method: 'ping', params: { pad: 'x'.repeat(5 * 1024 * 1024) } },
+      baseHeaders(),
+    )
+    expect(response.status).toBe(413)
+    expect(await response.json()).toEqual({
+      jsonrpc: '2.0',
+      error: { code: -32000, message: 'Payload Too Large: Request body must not exceed 4194304 bytes' },
+      id: null,
+    })
+  })
+
+  // Pins current behaviour: batches were removed from the protocol in
+  // 2025-06-18 but the 2025-era path still answers them.
+  it('answers a 2025-era batch with one result per request', async () => {
+    const response = await postMcp(
+      [{ jsonrpc: '2.0', id: 1, method: 'ping' }, { jsonrpc: '2.0', id: 2, method: 'ping' }],
+      baseHeaders({ 'Mcp-Protocol-Version': PROTOCOL_VERSION }),
+    )
+    expect(response.status).toBe(200)
+
+    const ids = (await response.text())
+      .split('\n')
+      .filter(line => line.startsWith('data:'))
+      .map(line => (JSON.parse(line.slice(5)) as JsonRpcEnvelope).id)
+    expect(ids).toEqual([1, 2])
+  })
+
+  // Pins current behaviour: the advertised create schema carries generated
+  // values, so the tool list differs between requests.
+  it('advertises generated defaults in the create_link schema', async () => {
+    const payload = await readEnvelope(await postRpc(1, 'tools/list'))
+    const { properties } = payload.result?.tools.find((tool: { name: string }) => tool.name === 'create_link').inputSchema
+    expect(properties.slug.default).toEqual(expect.any(String))
+    expect(properties.id.default).toEqual(expect.any(String))
+    expect(properties.createdAt.default).toEqual(expect.any(Number))
+    expect(properties.updatedAt.default).toEqual(expect.any(Number))
+  })
+})
+
+describe('/api/mcp link tools, current behaviour', () => {
+  it('upserts by creating once and then returning the stored link unchanged', async () => {
+    const slug = trackSlug(`mcp-${crypto.randomUUID()}`)
+
+    const first = await callTool('upsert_link', { url: 'https://example.com/upsert-first', slug, comment: 'first' })
+    expect(first.payload.result?.structuredContent.status).toBe('created')
+
+    const second = await callTool('upsert_link', { url: 'https://example.com/upsert-second', slug, comment: 'second' })
+    expect(second.payload.result?.structuredContent.status).toBe('existing')
+    expect(second.payload.result?.structuredContent.link.url).toBe('https://example.com/upsert-first')
+
+    const stored = await getStoredLink(slug)
+    expect(stored?.url).toBe('https://example.com/upsert-first')
+    expect(stored?.comment).toBe('first')
+  })
+
+  it('pages through list_links with the returned cursor', async () => {
+    const tag = `page-${crypto.randomUUID().slice(0, 8)}`
+    const slugs = ['a', 'b', 'c'].map(suffix => trackSlug(`mcp-${tag}-${suffix}`))
+    for (const slug of slugs)
+      await callTool('create_link', { url: 'https://example.com/mcp-page', slug, tags: [tag] })
+
+    const first = (await callTool('list_links', { limit: 2, tag, sort: 'az' })).payload.result?.structuredContent
+    expect(first.links.map((link: { slug: string }) => link.slug)).toEqual(slugs.slice(0, 2))
+    expect(first.list_complete).toBe(false)
+    expect(first.cursor).toEqual(expect.any(String))
+
+    const second = (await callTool('list_links', { limit: 2, tag, sort: 'az', cursor: first.cursor })).payload.result?.structuredContent
+    expect(second.links.map((link: { slug: string }) => link.slug)).toEqual(slugs.slice(2))
+    expect(second.list_complete).toBe(true)
+  })
+
+  // The dashboard reads this REST route, so it is the proof that a link an
+  // agent creates shows up there.
+  it('returns a link created through MCP from the REST list route', async () => {
+    const tag = `rest-${crypto.randomUUID().slice(0, 8)}`
+    const slug = trackSlug(`mcp-${tag}`)
+    await callTool('create_link', { url: 'https://example.com/mcp-visible', slug, tags: [tag] })
+
+    const response = await fetchWithAuth(`/api/link/list?tag=${tag}`)
+    expect(response.status).toBe(200)
+
+    const { links } = await response.json() as { links: { slug: string, url: string }[] }
+    expect(links).toEqual([expect.objectContaining({ slug, url: 'https://example.com/mcp-visible' })])
+  })
+
+  // Preview instances cap link lifetime instead of refusing creation, so only
+  // changes to existing links are refused.
+  it('refuses edits and deletes in preview mode but still creates', async () => {
+    const slug = trackSlug(`mcp-${crypto.randomUUID()}`)
+    await callTool('create_link', { url: 'https://example.com/mcp-preview', slug })
+    const previewMode = env.NUXT_PUBLIC_PREVIEW_MODE
+    env.NUXT_PUBLIC_PREVIEW_MODE = 'true'
+
+    try {
+      const updated = await callTool('update_link', { url: 'https://example.com/mcp-preview-edit', slug })
+      expect(updated.payload.result?.isError).toBe(true)
+      expect(updated.payload.result?.content[0].text).toContain('403')
+
+      const deleted = await callTool('delete_link', { slug })
+      expect(deleted.payload.result?.isError).toBe(true)
+      expect(deleted.payload.result?.content[0].text).toContain('403')
+
+      const created = await callTool('create_link', { url: 'https://example.com/mcp-preview-new', slug: trackSlug(`mcp-${crypto.randomUUID()}`) })
+      expect(created.payload.result?.isError).toBeUndefined()
+    }
+    finally {
+      env.NUXT_PUBLIC_PREVIEW_MODE = previewMode
+    }
+
+    expect((await getStoredLink(slug))?.url).toBe('https://example.com/mcp-preview')
+  })
+})
