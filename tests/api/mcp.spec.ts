@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:workers'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { links } from '../../server/database/schema'
+import { links, linkTombstones } from '../../server/database/schema'
 import { clearLinkMigrationState, db, deleteStoredLinks, expectStoredHashedPassword, fetch, fetchWithAuth, getStoredLink, putJson, setLinkStoreD1Mode } from '../utils'
 
 const MCP_PATH = '/api/mcp'
@@ -985,6 +985,117 @@ describe('/api/mcp update_link', () => {
     expect(after?.comment).toBeUndefined()
     expect(after?.tags).toEqual([])
     expect(after?.geo).toBeUndefined()
+  })
+})
+
+describe('/api/mcp accurate results', () => {
+  it('reports whether delete_link removed a link', async () => {
+    const slug = trackSlug(`mcp-${crypto.randomUUID()}`)
+    await callTool('create_link', { url: 'https://example.com/mcp-delete-twice', slug })
+
+    const first = await callTool('delete_link', { slug })
+    expect(first.payload.result?.isError).toBeUndefined()
+    expect(first.payload.result?.structuredContent).toEqual({ slug, deleted: true })
+
+    // Deleting again is not an error, so the tool stays safe to repeat, but it
+    // must not claim to have removed something.
+    const second = await callTool('delete_link', { slug })
+    expect(second.payload.result?.isError).toBeUndefined()
+    expect(second.payload.result?.structuredContent).toEqual({ slug, deleted: false })
+  })
+
+  // Slugs are tracked even though no link exists: a delete always records a
+  // tombstone, which the cleanup removes.
+  it('reports deleted false for a link that never existed and still records the tombstone', async () => {
+    const slug = trackSlug(`missing-${crypto.randomUUID()}`)
+    const { payload } = await callTool('delete_link', { slug })
+    expect(payload.result?.isError).toBeUndefined()
+    expect(payload.result?.structuredContent).toEqual({ slug, deleted: false })
+
+    const tombstones = await db.select().from(linkTombstones).where(eq(linkTombstones.slug, slug))
+    expect(tombstones).toHaveLength(1)
+  })
+
+  it('still answers the REST delete route with an empty body for a missing link', async () => {
+    const response = await fetchWithAuth('/api/link/delete', {
+      method: 'POST',
+      body: JSON.stringify({ slug: trackSlug(`missing-${crypto.randomUUID()}`) }),
+      headers: { 'Content-Type': 'application/json' },
+    })
+    expect(response.status).toBe(204)
+    expect(await response.text()).toBe('')
+  })
+
+  describe('search_links', () => {
+    const TARGET = 'https://example.com/mcp-search-target?ref=agent&utm_source=mcp'
+
+    async function createSearchableLink() {
+      const slug = trackSlug(`mcp-find-${crypto.randomUUID()}`)
+      await callTool('create_link', { url: TARGET, slug, comment: 'searchable', tags: ['findme'] })
+      return slug
+    }
+
+    it('returns the stored url, query string included', async () => {
+      const slug = await createSearchableLink()
+
+      const { payload } = await callTool('search_links', { q: slug })
+      expect(payload.result?.structuredContent.links).toEqual([
+        { slug, url: TARGET, comment: 'searchable', tags: ['findme'] },
+      ])
+    })
+
+    // The url filter ignores the query string, so a link whose query differs
+    // from the one searched for is a match. Returning the stored url is what
+    // lets the caller see that it is not the same target.
+    it('matches a url whatever its query string and returns the stored one', async () => {
+      const tag = `url-${crypto.randomUUID().slice(0, 8)}`
+      const slug = trackSlug(`mcp-find-${crypto.randomUUID()}`)
+      await callTool('create_link', { url: TARGET, slug, tags: [tag] })
+
+      const { payload } = await callTool('search_links', { url: 'https://example.com/mcp-search-target?ref=someone-else', tag })
+      expect(payload.result?.structuredContent.links).toEqual([{ slug, url: TARGET, tags: [tag] }])
+
+      const other = await callTool('search_links', { url: 'https://example.com/another-target', tag })
+      expect(other.payload.result?.structuredContent.links).toEqual([])
+    })
+
+    it('says that the url filter ignores the query string', async () => {
+      const tools = (await readEnvelope(await postRpc(1, 'tools/list'))).result?.tools as { name: string, description: string, inputSchema: any }[]
+      for (const name of ['search_links', 'count_links']) {
+        const tool = tools.find(tool => tool.name === name)
+        expect(tool?.inputSchema.properties.url.description, name).toContain('query string')
+      }
+      expect(tools.find(tool => tool.name === 'search_links')?.description).not.toContain('exact')
+    })
+
+    // The dashboard search reads these routes and shows the url without its
+    // query string; that is not changed, and a client cannot switch it.
+    const REST_RESULT = { url: 'https://example.com/mcp-search-target', comment: 'searchable', tags: ['findme'] }
+
+    it.each([
+      ['GET', (slug: string) => fetchWithAuth(`/api/link/search?q=${slug}`)],
+      ['GET with a storedUrl parameter', (slug: string) => fetchWithAuth(`/api/link/search?q=${slug}&storedUrl=true`)],
+    ] as const)('leaves the REST search route (%s) returning the url without its query string', async (_label, search) => {
+      const slug = await createSearchableLink()
+
+      const response = await search(slug)
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual([{ slug, ...REST_RESULT }])
+    })
+
+    it('leaves the REST exact-url search returning the url without its query string', async () => {
+      const slug = await createSearchableLink()
+
+      const response = await fetchWithAuth('/api/link/search', {
+        method: 'POST',
+        body: JSON.stringify({ url: TARGET, storedUrl: true }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      expect(response.status).toBe(200)
+
+      const matches = await response.json() as { slug: string, url: string }[]
+      expect(matches.find(match => match.slug === slug)?.url).toBe(REST_RESULT.url)
+    })
   })
 })
 

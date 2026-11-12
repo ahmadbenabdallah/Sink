@@ -86,11 +86,11 @@ const linkTools: McpToolDefinition[] = [
   }),
   defineTool({
     name: 'search_links',
-    description: 'Search links by keyword or exact destination URL. One of `q` or `url` is required; without either the result is empty.',
+    description: 'Search links by keyword or destination URL. One of `q` or `url` is required; without either the result is empty. A `url` search ignores the query string, so compare the returned `url` with the one you want.',
     inputSchema: McpSearchLinksSchema,
     annotations: { readOnlyHint: true },
     async handler(event, args) {
-      const links = args.q || args.url ? await searchLinks(event, args) : []
+      const links = args.q || args.url ? await searchLinks(event, { ...args, storedUrl: true }) : []
       return { links }
     },
   }),
@@ -163,12 +163,11 @@ const linkTools: McpToolDefinition[] = [
   }),
   defineTool({
     name: 'delete_link',
-    description: 'Permanently delete a short link. Existing traffic to the slug stops resolving immediately.',
+    description: 'Permanently delete a short link. Existing traffic to the slug stops resolving immediately. The result reports `deleted: false` when no link had that slug.',
     inputSchema: McpDeleteLinkSchema,
     annotations: { destructiveHint: true, idempotentHint: true },
     async handler(event, args) {
-      await removeLink(event, args.slug)
-      return { slug: args.slug, deleted: true }
+      return { slug: args.slug, deleted: await removeLink(event, args.slug) }
     },
   }),
 ]

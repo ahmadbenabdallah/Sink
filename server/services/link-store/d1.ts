@@ -42,6 +42,12 @@ export interface LinkFilterOptions {
 
 export interface SearchLinksOptions extends LinkFilterOptions {
   limit?: number
+  /**
+   * Return each link's stored target instead of the copy without its query
+   * string. The dashboard search shows the shorter form; a caller that goes on
+   * to use the URL needs the real one.
+   */
+  storedUrl?: boolean
 }
 
 interface D1Cursor {
@@ -297,16 +303,18 @@ export async function d1UpdateLink(event: H3Event, link: Link, expected?: Expect
   return { updated: updated.length > 0, effectiveExpiresAt: values.effectiveExpiresAt }
 }
 
-export async function d1DeleteLink(event: H3Event, slug: string): Promise<void> {
+/** Deletes a link and records the tombstone either way. Resolves to whether a link was there to delete. */
+export async function d1DeleteLink(event: H3Event, slug: string): Promise<boolean> {
   const db = getDatabase(event)
   const now = Math.floor(Date.now() / 1000)
-  await db.batch([
-    db.delete(links).where(eq(links.slug, slug)),
+  const [deleted] = await db.batch([
+    db.delete(links).where(eq(links.slug, slug)).returning({ slug: links.slug }),
     db.insert(linkTombstones).values({ slug, deletedAt: now }).onConflictDoUpdate({
       target: linkTombstones.slug,
       set: { deletedAt: now },
     }),
   ])
+  return deleted.length > 0
 }
 
 function encodeCursor(cursor: D1Cursor): string {
@@ -424,7 +432,7 @@ function linkFilterCondition(db: ReturnType<typeof getDatabase>, options: LinkFi
 
 export async function d1SearchLinks(event: H3Event, options: SearchLinksOptions): Promise<LinkSearchItem[]> {
   const db = getDatabase(event)
-  let query = db.select({ slug: links.slug, url: links.normalizedUrl, comment: links.comment }).from(links).where(linkFilterCondition(db, options)).orderBy(asc(links.slug)).$dynamic()
+  let query = db.select({ slug: links.slug, url: options.storedUrl ? links.url : links.normalizedUrl, comment: links.comment }).from(links).where(linkFilterCondition(db, options)).orderBy(asc(links.slug)).$dynamic()
   if (options.limit)
     query = query.limit(options.limit)
   const rows = await query

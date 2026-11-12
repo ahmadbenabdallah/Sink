@@ -42,9 +42,14 @@ import {
 const McpPageLimitSchema = z.coerce.number().int().min(1).max(100).default(20).describe('Maximum number of results, 1-100.')
 
 export const McpListLinksSchema = ListLinksQuerySchema.extend({ limit: McpPageLimitSchema }).strict()
-export const McpSearchLinksSchema = SearchLinksQuerySchema.extend({ limit: McpPageLimitSchema }).strict()
+// The store compares target URLs without their query string, so two links that
+// differ only there both match. The shared description calls the match exact,
+// which would let an agent treat the first match as the link it asked about.
+const McpUrlFilterSchema = LinkFilterQuerySchema.shape.url.describe('Target URL to match. The query string is ignored, so links that differ only there also match.')
+
+export const McpSearchLinksSchema = SearchLinksQuerySchema.extend({ limit: McpPageLimitSchema, url: McpUrlFilterSchema }).strict()
 export const McpGetLinkSchema = LinkSlugQuerySchema.strict()
-export const McpCountLinksSchema = LinkFilterQuerySchema.strict()
+export const McpCountLinksSchema = LinkFilterQuerySchema.extend({ url: McpUrlFilterSchema }).strict()
 export const McpListTagsSchema = z.object({}).strict()
 export const McpCheckLinksSchema = LinkCheckRequestSchema
 export const McpDeleteLinkSchema = DeleteLinkSchema.strict()

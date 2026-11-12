@@ -145,9 +145,11 @@ export async function updateLink(event: H3Event, link: Link, expected?: Expected
   return true
 }
 
-export async function deleteLink(event: H3Event, slug: string): Promise<void> {
-  await d1DeleteLink(event, slug)
+/** Resolves to whether a link was there to delete. The cache entry is cleared either way. */
+export async function deleteLink(event: H3Event, slug: string): Promise<boolean> {
+  const deleted = await d1DeleteLink(event, slug)
   await deleteLinkCache(event, slug)
+  return deleted
 }
 
 export async function listLinks(event: H3Event, options: ListLinksOptions): Promise<ListLinksResult> {
