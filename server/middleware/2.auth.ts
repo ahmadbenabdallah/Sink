@@ -1,5 +1,4 @@
 import type { H3Event } from 'h3'
-import type { McpCaller } from '#shared/types/auth'
 import { timingSafeEqual } from 'node:crypto'
 import { drizzle } from 'drizzle-orm/d1'
 import { findActiveToken, MCP_TOKEN_PREFIX } from '../services/mcp/tokens'
@@ -34,7 +33,7 @@ export default eventHandler(async (event) => {
     // leaked agent config can no longer hold it.
     // This is refused before an Access identity is looked at: the request
     // presented a credential that is switched off here.
-    if (onMcpRoute && config.mcpAllowSiteToken === false) {
+    if (onMcpRoute && !isSiteTokenAllowedOnMcp(config.mcpAllowSiteToken)) {
       setResponseHeader(event, 'WWW-Authenticate', 'Bearer')
       throw createError({ status: 401, statusText: 'Site token is not accepted on MCP', data: { code: 'site_token_not_allowed' } })
     }
@@ -47,8 +46,40 @@ export default eventHandler(async (event) => {
     return
   }
 
-  // An Access identity has every right on every route, whatever bearer the
-  // request also carries: connector levels do not narrow it.
+  // A connector token is a credential for the MCP endpoint and nothing else.
+  // It is looked at only for a POST to that route, so on every other route it
+  // is an unknown bearer and falls through to the 401 below.
+  //
+  // It is resolved before an Access identity. Where Access sits in front of
+  // the endpoint, an agent's request carries both, and the connector is the
+  // narrower identity: the one with a level, a usage count and a revoke
+  // button. A connector token that does not resolve is refused outright, so
+  // revoking it cuts the agent off whatever else the request carries. A header
+  // that holds a connector token written any other way (lower-case scheme,
+  // extra spaces, no scheme) is refused too, rather than passed over for an
+  // Access identity with every right.
+  if (onMcpRoute && event.method === 'POST') {
+    if (authorization?.includes(MCP_TOKEN_PREFIX)) {
+      const connectorToken = connectorTokenOf(authorization)
+      const connector = connectorToken ? await findActiveToken(drizzle(event.context.cloudflare.env.DB), connectorToken) : null
+      if (!connector) {
+        // Nothing of the token is logged. A refused token is otherwise
+        // invisible, and probing with a revoked one should leave a trace.
+        console.warn({ event: 'mcp_token.refused' })
+        setResponseHeader(event, 'WWW-Authenticate', 'Bearer')
+        throw createError({ status: 401, statusText: 'Unauthorized', data: { code: 'unauthorized' } })
+      }
+
+      event.context.authMethod = 'connector'
+      event.context.userID = connector.id
+      event.context.userEmail = `${connector.id}@${getRequestURL(event).hostname}`
+      event.context.mcpCaller = { kind: 'connector', ...connector }
+      return
+    }
+  }
+
+  // Without a connector token, an Access identity has every right on every
+  // route.
   const accessIdentity = await verifyCloudflareAccess(event)
   if (accessIdentity) {
     if (isCloudflareAccessRequestAllowed(event)) {
@@ -66,20 +97,6 @@ export default eventHandler(async (event) => {
       statusText: 'Forbidden',
       data: { code: 'forbidden' },
     })
-  }
-
-  // A connector token is a credential for the MCP endpoint and nothing else.
-  // It is looked up only for a POST to that route, so on every other route it
-  // is an unknown bearer and falls through to the 401 below.
-  if (onMcpRoute && event.method === 'POST') {
-    const connector = await findConnector(event, authorization)
-    if (connector) {
-      event.context.authMethod = 'connector'
-      event.context.userID = connector.id
-      event.context.userEmail = `${connector.id}@${getRequestURL(event).hostname}`
-      event.context.mcpCaller = connector
-      return
-    }
   }
 
   setResponseHeader(event, 'WWW-Authenticate', 'Bearer')
@@ -111,16 +128,13 @@ function isMcpRoute(event: H3Event): boolean {
 }
 
 /**
- * Resolves `Authorization: Bearer sink_mcp_...` to its connector. The scheme
- * is required: unlike the site token, a connector token is not accepted bare.
+ * The connector token in `Authorization: Bearer sink_mcp_...`, if that is what
+ * the header holds. The scheme is required: unlike the site token, a connector
+ * token is not accepted bare, and the header must be written exactly this way.
  */
-async function findConnector(event: H3Event, authorization: string | undefined): Promise<McpCaller | null> {
+function connectorTokenOf(authorization: string | undefined): string | undefined {
   const token = /^Bearer (\S+)$/.exec(authorization ?? '')?.[1]
-  if (!token?.startsWith(MCP_TOKEN_PREFIX))
-    return null
-
-  const connector = await findActiveToken(drizzle(event.context.cloudflare.env.DB), token)
-  return connector && { kind: 'connector', ...connector }
+  return token?.startsWith(MCP_TOKEN_PREFIX) ? token : undefined
 }
 
 async function verifySiteToken(provided: string | undefined, expected: string): Promise<boolean> {
@@ -132,7 +146,7 @@ async function verifySiteToken(provided: string | undefined, expected: string): 
 
   const encoder = new TextEncoder()
   const [providedHash, expectedHash] = await Promise.all([
-    crypto.subtle.digest('SHA-256', encoder.encode(provided || '')),
+    crypto.subtle.digest('SHA-256', encoder.encode(provided)),
     crypto.subtle.digest('SHA-256', encoder.encode(expected)),
   ])
   return timingSafeEqual(new Uint8Array(providedHash), new Uint8Array(expectedHash))

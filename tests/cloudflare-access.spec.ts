@@ -2,13 +2,14 @@ import type { JSONWebKeySet } from 'jose'
 import { env } from 'cloudflare:workers'
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from 'jose'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { revokeToken } from '../server/services/mcp/tokens'
 import {
   isCloudflareAccessConfigured,
   isCloudflareAccessRequestSafe,
   mapCloudflareAccessIdentity,
   verifyCloudflareAccessToken,
 } from '../server/utils/cloudflare-access'
-import { fetch, fetchWithAuth, setLinkStoreD1Mode } from './utils'
+import { createTestConnector, db, fetch, fetchWithAuth, setLinkStoreD1Mode } from './utils'
 
 const issuer = 'https://sink.cloudflareaccess.com'
 const audience = 'sink-audience'
@@ -286,6 +287,69 @@ describe('cloudflare Access request authentication', () => {
       const payload = JSON.parse(dataLine!.slice(5)) as { result?: { isError?: boolean, structuredContent?: { count?: unknown } } }
       expect(payload.result?.isError).toBeUndefined()
       expect(typeof payload.result?.structuredContent?.count).toBe('number')
+    }
+    finally {
+      fetchSpy.mockRestore()
+      env.NUXT_CF_ACCESS_TEAM_DOMAIN = previous.teamDomain
+      env.NUXT_CF_ACCESS_AUD = previous.audience
+    }
+  })
+
+  // With Access in front of the MCP endpoint, an agent's request carries an
+  // Access identity as well as its connector token. The connector is the
+  // narrower identity, and the one the owner can revoke and count.
+  it('gives a request with a connector token the rights of the connector, even with an Access identity', async () => {
+    await setLinkStoreD1Mode()
+    const teamDomain = 'https://sink-mcp-connector-test.cloudflareaccess.com'
+    const previous = { teamDomain: env.NUXT_CF_ACCESS_TEAM_DOMAIN, audience: env.NUXT_CF_ACCESS_AUD }
+    env.NUXT_CF_ACCESS_TEAM_DOMAIN = teamDomain
+    env.NUXT_CF_ACCESS_AUD = audience
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = input instanceof Request ? input.url : String(input)
+      if (url === `${teamDomain}/cdn-cgi/access/certs`)
+        return Response.json(publicJwks)
+      throw new Error(`Blocked test outbound request to ${url}`)
+    })
+    const assertion = await createToken({ iss: teamDomain })
+    const listTools = (authorization?: string) => fetch('/api/mcp', {
+      method: 'POST',
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json, text/event-stream',
+        'Mcp-Protocol-Version': '2025-11-25',
+        'Cf-Access-Jwt-Assertion': assertion,
+        ...(authorization ? { Authorization: authorization } : {}),
+      },
+    })
+    const toolNames = async (response: Response) => {
+      const dataLine = (await response.text()).split('\n').find(line => line.startsWith('data:'))
+      return (JSON.parse(dataLine!.slice(5)) as { result: { tools: { name: string }[] } }).result.tools.map(tool => tool.name)
+    }
+
+    try {
+      // Proof that the Access identity alone is accepted here, with every tool.
+      const accessOnly = await listTools()
+      expect(accessOnly.status).toBe(200)
+      expect(await toolNames(accessOnly)).toContain('delete_link')
+
+      const { id, token } = await createTestConnector('read')
+      const withConnector = await listTools(`Bearer ${token}`)
+      expect(withConnector.status).toBe(200)
+      const names = await toolNames(withConnector)
+      expect(names).toContain('list_links')
+      expect(names).not.toContain('create_link')
+      expect(names).not.toContain('delete_link')
+
+      // A connector token written any other way is refused, not passed over
+      // for the Access identity: a misspelt header must not quietly turn a
+      // read agent into a full one.
+      for (const authorization of [`bearer ${token}`, `Bearer  ${token}`, token])
+        expect((await listTools(authorization)).status).toBe(401)
+
+      // Revoking cuts the agent off, Access identity or not.
+      await revokeToken(db, id)
+      expect((await listTools(`Bearer ${token}`)).status).toBe(401)
     }
     finally {
       fetchSpy.mockRestore()

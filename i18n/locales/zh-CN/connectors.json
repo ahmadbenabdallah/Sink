@@ -60,6 +60,7 @@
       "token": "令牌",
       "copy": "复制",
       "copied": "已复制",
+      "copy_failed": "复制失败。请选中文本后手动复制。",
       "claude_code": "Claude Code",
       "json_config": "其他 MCP 客户端（JSON）",
       "done": "完成"

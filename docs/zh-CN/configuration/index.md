@@ -104,15 +104,15 @@ Workers 要在 Builds 和运行时填相同值。Pages 只填一次，然后重�
 
 ### 运行时选项
 
-| 变量                                                | 用途                                                           |
-| --------------------------------------------------- | -------------------------------------------------------------- |
-| `NUXT_NOT_FOUND_REDIRECT`                           | 未知短链码跳到哪里（**始终 HTTP 302**）                        |
-| `NUXT_CF_ACCESS_TEAM_DOMAIN` + `NUXT_CF_ACCESS_AUD` | 两个都设 → 启用 [Cloudflare Access](./cloudflare-access)       |
-| `NUXT_SAFE_BROWSING_DOH`                            | 用于检查不安全域名的 DNS-over-HTTPS 地址（未设置 `unsafe` 时） |
-| `NUXT_WEBHOOK_URL`                                  | [点击 Webhook](./webhooks) 的 HTTP(S) 地址                     |
-| `NUXT_WEBHOOK_SECRET`                               | 可选签名密钥，以 `whsec_` 开头                                 |
-| `NUXT_MCP_ALLOW_SITE_TOKEN`                         | 设为 `false` 时，`/api/mcp` 拒绝站点令牌；其他接口不受影响     |
-| `NUXT_MCP_DAILY_CALL_LIMIT`                         | 每个 MCP 调用方每个 UTC 日可进行的工具调用次数，默认 `5000`    |
+| 变量                                                | 用途                                                                                                    |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `NUXT_NOT_FOUND_REDIRECT`                           | 未知短链码跳到哪里（**始终 HTTP 302**）                                                                 |
+| `NUXT_CF_ACCESS_TEAM_DOMAIN` + `NUXT_CF_ACCESS_AUD` | 两个都设 → 启用 [Cloudflare Access](./cloudflare-access)                                                |
+| `NUXT_SAFE_BROWSING_DOH`                            | 用于检查不安全域名的 DNS-over-HTTPS 地址（未设置 `unsafe` 时）                                          |
+| `NUXT_WEBHOOK_URL`                                  | [点击 Webhook](./webhooks) 的 HTTP(S) 地址                                                              |
+| `NUXT_WEBHOOK_SECRET`                               | 可选签名密钥，以 `whsec_` 开头                                                                          |
+| `NUXT_MCP_ALLOW_SITE_TOKEN`                         | 设为 `false` 时，`/api/mcp` 拒绝站点令牌；其他接口不受影响。除 `true`、`1` 或空值以外的任何值同样会拒绝 |
+| `NUXT_MCP_DAILY_CALL_LIMIT`                         | 每个 MCP 调用方每个 UTC 日可进行的工具调用次数，默认 `5000`                                             |
 
 安全浏览示例：Cloudflare Family DNS `https://family.cloudflare-dns.com/dns-query`。另见[链接功能](/zh-CN/features/links)。
 

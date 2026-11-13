@@ -60,6 +60,7 @@
       "token": "Token",
       "copy": "Salin",
       "copied": "Disalin",
+      "copy_failed": "Tidak dapat menyalin. Pilih teksnya dan salin sendiri.",
       "claude_code": "Claude Code",
       "json_config": "Klien MCP lain (JSON)",
       "done": "Selesai"

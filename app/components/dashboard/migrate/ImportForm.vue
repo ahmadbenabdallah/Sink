@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { AlertCircle, CheckCircle, Download, SkipForward, Upload, XCircle } from '@lucide/vue'
 
-const { previewMode } = useRuntimeConfig().public
+// An empty string (preview mode off) on `disabled` would disable the controls.
+const previewMode = !!useRuntimeConfig().public.previewMode
 const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
 const {
   selectedFile,

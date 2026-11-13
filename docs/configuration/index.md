@@ -104,15 +104,15 @@ Click analytics store the target URL in Workers Analytics Engine, which limits a
 
 ### Runtime options
 
-| Variable                                            | Purpose                                                                  |
-| --------------------------------------------------- | ------------------------------------------------------------------------ |
-| `NUXT_NOT_FOUND_REDIRECT`                           | Where to send unknown short codes (**always HTTP 302**)                  |
-| `NUXT_CF_ACCESS_TEAM_DOMAIN` + `NUXT_CF_ACCESS_AUD` | Both set → enable [Cloudflare Access](./cloudflare-access)               |
-| `NUXT_SAFE_BROWSING_DOH`                            | DNS-over-HTTPS URL used to check unsafe domains when `unsafe` is not set |
-| `NUXT_WEBHOOK_URL`                                  | HTTP(S) URL for [click webhooks](./webhooks)                             |
-| `NUXT_WEBHOOK_SECRET`                               | Optional signing secret starting with `whsec_`                           |
-| `NUXT_MCP_ALLOW_SITE_TOKEN`                         | `false` refuses the site token on `/api/mcp`; it keeps working elsewhere |
-| `NUXT_MCP_DAILY_CALL_LIMIT`                         | Tool calls one MCP caller may make per UTC day; default `5000`           |
+| Variable                                            | Purpose                                                                                                                             |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `NUXT_NOT_FOUND_REDIRECT`                           | Where to send unknown short codes (**always HTTP 302**)                                                                             |
+| `NUXT_CF_ACCESS_TEAM_DOMAIN` + `NUXT_CF_ACCESS_AUD` | Both set → enable [Cloudflare Access](./cloudflare-access)                                                                          |
+| `NUXT_SAFE_BROWSING_DOH`                            | DNS-over-HTTPS URL used to check unsafe domains when `unsafe` is not set                                                            |
+| `NUXT_WEBHOOK_URL`                                  | HTTP(S) URL for [click webhooks](./webhooks)                                                                                        |
+| `NUXT_WEBHOOK_SECRET`                               | Optional signing secret starting with `whsec_`                                                                                      |
+| `NUXT_MCP_ALLOW_SITE_TOKEN`                         | `false` refuses the site token on `/api/mcp`; it keeps working elsewhere. Any value other than `true`, `1` or empty also refuses it |
+| `NUXT_MCP_DAILY_CALL_LIMIT`                         | Tool calls one MCP caller may make per UTC day; default `5000`                                                                      |
 
 Safe browsing example: Cloudflare Family DNS `https://family.cloudflare-dns.com/dns-query`. See also [Link Features](/features/links).
 

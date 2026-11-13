@@ -79,7 +79,7 @@ Once every agent uses a connector token, set `NUXT_MCP_ALLOW_SITE_TOKEN=false` s
 ::: warning
 Connectors outlive a change of `NUXT_SITE_TOKEN`. If the site token may have leaked, change it and also review the connector list, revoking any you do not recognise.
 
-With [Cloudflare Access](/configuration/cloudflare-access) in front of Sink, a request that carries an Access identity has every right whatever token it also sends, so a level restricts only callers that reach Sink without one.
+With [Cloudflare Access](/configuration/cloudflare-access) in front of Sink, a request that sends a connector token has that connector's level, and is refused once the connector is revoked, even when it also carries an Access identity. A request with an Access identity and no connector token has every right, so a level holds only against a client that cannot pass Access without its connector token. Do not give an agent Access credentials of its own if its level is meant to hold.
 :::
 
 ### Tools
@@ -103,7 +103,7 @@ An agent sees only the tools its level allows. A tool above the level is not lis
 | `delete_link`            | `full`   | Permanently delete a link.                                            |
 | `check_links`            | `full`   | Fetch stored link targets and report their status, paginated by slug. |
 
-The site token, where it is accepted on the MCP endpoint, and a Cloudflare Access identity have every tool.
+The site token, where it is accepted on the MCP endpoint, and a Cloudflare Access identity without a connector token have every tool.
 
 ::: warning Visitor data reaches the agent
 Analytics values such as referers, languages and browser names come from your visitors, and link comments, titles and descriptions come from whoever created the link. An agent reads them as part of its input. Sink tells the agent to treat them as data and filters values that do not have the expected shape, but no wording makes text safe for a model to read.

@@ -18,6 +18,24 @@ describe('sanitizeMetricRows', () => {
     ])
   })
 
+  // The tool promises rows ordered by visits; the merged row grows after it is placed.
+  it('keeps the rows ordered by count after merging', () => {
+    expect(sanitizeMetricRows('referer', [
+      { name: 'a.com', count: 10 },
+      { name: 'not a host 1', count: 6 },
+      { name: 'b.com', count: 6 },
+      { name: 'not a host 2', count: 6 },
+    ])).toEqual([
+      { name: '(not a hostname)', count: 12 },
+      { name: 'a.com', count: 10 },
+      { name: 'b.com', count: 6 },
+    ])
+  })
+
+  it('passes over a row that is not an object while sorting', () => {
+    expect(sanitizeMetricRows('referer', [null, { name: 'a b', count: 1 }])).toEqual([{ name: '(not a hostname)', count: 1 }, null])
+  })
+
   it('keeps language tags and replaces anything longer', () => {
     expect(sanitizeMetricRows('language', [
       { name: 'en-US', count: 4 },
