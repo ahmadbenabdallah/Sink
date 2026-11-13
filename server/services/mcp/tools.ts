@@ -188,7 +188,7 @@ const linkTools: McpToolDefinition[] = [
     inputSchema: McpDeleteLinkSchema,
     annotations: { destructiveHint: true, idempotentHint: true },
     async handler(event, args) {
-      return { slug: args.slug, deleted: await removeLink(event, args.slug) }
+      return { slug: normalizeSlug(event, args.slug), deleted: await removeLink(event, args.slug) }
     },
   }),
 ]

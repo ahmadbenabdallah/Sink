@@ -35,7 +35,11 @@ const revealItems = computed(() => token.value && snippets.value
 
 async function copy(key: string, text: string) {
   clearTimeout(copiedTimer)
-  copiedKey.value = await copyToClipboard(text) ? key : null
+  const copied = await copyToClipboard(text)
+  copiedKey.value = copied ? key : null
+  // The text stays on screen, so it can still be selected and copied by hand.
+  if (!copied)
+    toast.error(t('connectors.reveal.copy_failed'))
   copiedTimer = setTimeout(() => {
     copiedKey.value = null
   }, 2000)

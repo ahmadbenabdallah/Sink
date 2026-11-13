@@ -77,6 +77,7 @@ function updateOpen(value: boolean) {
     v-else
     :open="open"
     :should-scale-background="nestedDrawer ? false : undefined"
+    :dismissible="!preventClose"
     @update:open="updateOpen"
   >
     <DrawerTrigger v-if="slots.trigger" as-child>

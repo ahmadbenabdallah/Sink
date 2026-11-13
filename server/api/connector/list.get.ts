@@ -12,7 +12,7 @@ defineRouteMeta({
 
 export default eventHandler(async (event): Promise<ConnectorListResponse> => {
   assertConnectorManager(event)
-  const { cfAccessTeamDomain, cfAccessAud, mcpDailyCallLimit } = useRuntimeConfig(event)
+  const { cfAccessTeamDomain, cfAccessAud, mcpDailyCallLimit, mcpAllowSiteToken } = useRuntimeConfig(event)
   const db = useConnectorDatabase(event)
   const connectors = await listTokens(db)
 
@@ -26,10 +26,10 @@ export default eventHandler(async (event): Promise<ConnectorListResponse> => {
 
   return {
     connectors: connectors.map(connector => toConnectorView(connector, usageOf(connector.id))),
-    // Callers of the MCP endpoint that are not connectors. Cloudflare Access is
-    // one only where it is configured.
+    // Callers of the MCP endpoint that are not connectors: the site token
+    // unless it is refused there, and Cloudflare Access where it is configured.
     reserved: [
-      { id: 'site-token', ...usageOf('site-token') },
+      ...(isSiteTokenAllowedOnMcp(mcpAllowSiteToken) ? [{ id: 'site-token' as const, ...usageOf('site-token') }] : []),
       ...(isCloudflareAccessConfigured(cfAccessTeamDomain, cfAccessAud) ? [{ id: 'access' as const, ...usageOf('access') }] : []),
     ],
     dailyCallLimit: resolveDailyCallLimit(mcpDailyCallLimit),

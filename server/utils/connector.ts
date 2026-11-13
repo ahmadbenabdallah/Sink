@@ -14,6 +14,18 @@ export function useConnectorDatabase(event: H3Event) {
 }
 
 /**
+ * Whether `NUXT_MCP_ALLOW_SITE_TOKEN` leaves the site token usable on the MCP
+ * endpoint. Unset and empty mean yes, which is the default. Otherwise only a
+ * value that clearly says yes does: someone who wrote `off` or `0` meant to
+ * switch it off, and a typo must not leave the dashboard password accepted.
+ */
+export function isSiteTokenAllowedOnMcp(value: unknown): boolean {
+  if (value === undefined || value === null || value === true || value === 1)
+    return true
+  return typeof value === 'string' && ['', 'true', '1'].includes(value.trim().toLowerCase())
+}
+
+/**
  * Refuses anyone who is not signed in as the owner.
  *
  * The auth middleware already keeps connector tokens off every route but the

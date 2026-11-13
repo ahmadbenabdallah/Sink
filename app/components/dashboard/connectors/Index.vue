@@ -3,6 +3,10 @@ import type { ConnectorUsage, ConnectorView } from '#shared/types/connector'
 import { Plus, RefreshCw } from '@lucide/vue'
 
 const { t, locale } = useI18n()
+// The server refuses to create or revoke in preview mode; say so up front.
+// The setting is a string that is empty when off, and an empty string on
+// `disabled` would disable the button, so it is turned into a boolean here.
+const previewMode = !!useRuntimeConfig().public.previewMode
 const { connectors, reserved, dailyCallLimit, loading, loaded, loadError, load, create, revoke } = useConnectors()
 
 const createOpen = shallowRef(false)
@@ -51,7 +55,7 @@ onMounted(load)
             {{ $t('connectors.daily_limit', { limit: formatNumber(dailyCallLimit, locale) }) }}
           </CardDescription>
         </div>
-        <Button ref="createButton" @click="createOpen = true">
+        <Button ref="createButton" :disabled="previewMode" @click="createOpen = true">
           <Plus aria-hidden="true" class="mr-2 size-4" />
           {{ $t('connectors.create') }}
         </Button>
@@ -95,7 +99,7 @@ onMounted(load)
           </TableRow>
         </TableHeader>
         <TableBody>
-          <!-- Callers that are not connectors: always present, never revocable. -->
+          <!-- Callers that are not connectors: never revocable. -->
           <TableRow
             v-for="caller in reserved" :key="caller.id" class="
               text-muted-foreground
@@ -149,6 +153,7 @@ onMounted(load)
             <TableCell class="text-right">
               <Button
                 v-if="connector.revokedAt === null"
+                :disabled="previewMode"
                 variant="outline"
                 size="sm"
                 :aria-label="$t('connectors.revoke.title', { name: connector.name })"

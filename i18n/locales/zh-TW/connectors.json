@@ -60,6 +60,7 @@
       "token": "權杖",
       "copy": "複製",
       "copied": "已複製",
+      "copy_failed": "複製失敗。請選取文字後手動複製。",
       "claude_code": "Claude Code",
       "json_config": "其他 MCP 用戶端（JSON）",
       "done": "完成"

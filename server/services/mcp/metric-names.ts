@@ -33,7 +33,8 @@ const NAME_RULES: Record<string, { pattern: RegExp, label: string }> = {
 
 /**
  * Returns the rows with unexpected names replaced, adding up the counts of rows
- * that end up under the same label. Anything that is not a list of rows is
+ * that end up under the same label. The rows arrive ordered by count, and the
+ * merged row grows after it is placed, so the order is restored at the end. Anything that is not a list of rows is
  * returned as is.
  */
 export function sanitizeMetricRows<T>(type: string, rows: T): T {
@@ -56,5 +57,7 @@ export function sanitizeMetricRows<T>(type: string, rows: T): T {
     if (Number.isFinite(count))
       replaced.count = Number(replaced.count) + count
   }
+  if (replaced)
+    result.sort((a, b) => (Number(b?.count) || 0) - (Number(a?.count) || 0))
   return result as T
 }

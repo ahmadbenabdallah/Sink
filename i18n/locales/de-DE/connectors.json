@@ -60,6 +60,7 @@
       "token": "Token",
       "copy": "Kopieren",
       "copied": "Kopiert",
+      "copy_failed": "Kopieren fehlgeschlagen. Markieren Sie den Text und kopieren Sie ihn selbst.",
       "claude_code": "Claude Code",
       "json_config": "Andere MCP-Clients (JSON)",
       "done": "Fertig"

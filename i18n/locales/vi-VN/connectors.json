@@ -60,6 +60,7 @@
       "token": "Token",
       "copy": "Sao chép",
       "copied": "Đã sao chép",
+      "copy_failed": "Không thể sao chép. Hãy chọn văn bản và tự sao chép.",
       "claude_code": "Claude Code",
       "json_config": "Ứng dụng MCP khác (JSON)",
       "done": "Xong"

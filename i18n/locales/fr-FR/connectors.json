@@ -60,6 +60,7 @@
       "token": "Jeton",
       "copy": "Copier",
       "copied": "Copié",
+      "copy_failed": "Copie impossible. Sélectionnez le texte et copiez-le vous-même.",
       "claude_code": "Claude Code",
       "json_config": "Autres clients MCP (JSON)",
       "done": "Terminé"

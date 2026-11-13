@@ -79,7 +79,7 @@ claude mcp add --transport http sink https://your-domain/api/mcp --header "Autho
 ::: warning
 更换 `NUXT_SITE_TOKEN` 不会使已有的连接器失效。如果站点令牌可能已泄露，请更换它，并检查连接器列表，撤销所有不认识的连接器。
 
-如果 Sink 前面启用了 [Cloudflare Access](/configuration/cloudflare-access)，携带 Access 身份的请求无论同时发送什么令牌都拥有全部权限，因此级别只对不经过 Access 的调用方生效。
+如果 Sink 前面启用了 [Cloudflare Access](/configuration/cloudflare-access)，发送连接器令牌的请求只拥有该连接器的级别，连接器被撤销后即被拒绝，即使请求同时携带 Access 身份。携带 Access 身份但没有连接器令牌的请求拥有全部权限，因此级别只对无法不带连接器令牌通过 Access 的客户端有效。如果希望某个代理的级别生效，请不要给它单独的 Access 凭据。
 :::
 
 ### 工具
@@ -103,7 +103,7 @@ claude mcp add --transport http sink https://your-domain/api/mcp --header "Autho
 | `delete_link`            | `full`   | 永久删除链接。                                      |
 | `check_links`            | `full`   | 请求已存链接的目标 URL 并报告其状态，按 slug 分页。 |
 
-站点令牌（在 MCP 端点接受它时）和 Cloudflare Access 身份拥有全部工具。
+站点令牌（在 MCP 端点接受它时）和不带连接器令牌的 Cloudflare Access 身份拥有全部工具。
 
 ::: warning 访客数据会进入代理
 来源、语言、浏览器名称等分析值来自访客；链接的备注、标题和描述来自创建链接的人。代理会把它们当作输入的一部分读取。Sink 会告知代理将其视为数据，并过滤形状不符合预期的值，但任何措辞都无法让文本对模型而言变得安全。

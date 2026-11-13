@@ -25,7 +25,7 @@ export interface ConnectorView extends ConnectorUsage {
   revokedAt: number | null
 }
 
-/** A caller of the MCP endpoint that is not a connector: the site token, and Cloudflare Access when it is configured. */
+/** A caller of the MCP endpoint that is not a connector: the site token unless it is refused there, and Cloudflare Access when it is configured. */
 export interface ReservedCallerView extends ConnectorUsage {
   id: 'site-token' | 'access'
 }
