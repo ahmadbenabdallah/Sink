@@ -2,6 +2,8 @@
 
 export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('cloudflare:scheduled', async (event) => {
+    if (isAnalyticsExportRun(event))
+      return
     const config = useRuntimeConfig()
 
     if (config.disableAutoBackup) {
