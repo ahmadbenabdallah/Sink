@@ -6,7 +6,7 @@ import { and, asc, count, desc, eq, exists, gt, inArray, isNotNull, isNull, lt, 
 import { drizzle } from 'drizzle-orm/d1'
 import { createError } from 'h3'
 import { parseURL, stringifyParsedURL } from 'ufo'
-import { links, linkTags, linkTombstones, tags } from '../../database/schema'
+import { deletedLinkIds, links, linkTags, linkTombstones, tags } from '../../database/schema'
 import { getExpiration } from '../../utils/time'
 
 const D1_CURSOR_PREFIX = 'd1:v1:'
@@ -242,6 +242,11 @@ function buildCreateLinkStatements(event: H3Event, db: ReturnType<typeof getData
     eq(linkTags.linkSlug, link.slug),
     exists(db.select({ slug: links.slug }).from(links).where(pendingLink)),
   ))
+  // A restored link (import keeps the id) gets its analytics history back.
+  const clearDeletedId = db.delete(deletedLinkIds).where(and(
+    eq(deletedLinkIds.id, link.id),
+    exists(db.select({ slug: links.slug }).from(links).where(pendingLink)),
+  ))
   const associationInserts = link.tags.map(tag => db.insert(linkTags).select(
     db.select({ linkSlug: links.slug, tagName: sql<string>`${tag}`.as('tag_name') })
       .from(links)
@@ -249,7 +254,7 @@ function buildCreateLinkStatements(event: H3Event, db: ReturnType<typeof getData
   ).onConflictDoNothing())
   const finalize = db.update(links).set({ effectiveExpiresAt }).where(pendingLink)
   return {
-    statements: [insert, clearTombstone, clearTags, ...tagInserts, ...associationInserts, finalize],
+    statements: [insert, clearTombstone, clearDeletedId, clearTags, ...tagInserts, ...associationInserts, finalize],
     effectiveExpiresAt,
   }
 }
@@ -303,11 +308,18 @@ export async function d1UpdateLink(event: H3Event, link: Link, expected?: Expect
   return { updated: updated.length > 0, effectiveExpiresAt: values.effectiveExpiresAt }
 }
 
-/** Deletes a link and records the tombstone either way. Resolves to whether a link was there to delete. */
+/**
+ * Deletes a link and records the tombstone either way. The link's id is
+ * recorded first, in the same batch, so its traffic is left out of analytics.
+ * Resolves to whether a link was there to delete.
+ */
 export async function d1DeleteLink(event: H3Event, slug: string): Promise<boolean> {
   const db = getDatabase(event)
   const now = Math.floor(Date.now() / 1000)
-  const [deleted] = await db.batch([
+  const [, deleted] = await db.batch([
+    db.insert(deletedLinkIds)
+      .select(db.select({ id: links.id, deletedAt: sql<number>`${now}`.as('deleted_at') }).from(links).where(eq(links.slug, slug)))
+      .onConflictDoUpdate({ target: deletedLinkIds.id, set: { deletedAt: now } }),
     db.delete(links).where(eq(links.slug, slug)).returning({ slug: links.slug }),
     db.insert(linkTombstones).values({ slug, deletedAt: now }).onConflictDoUpdate({
       target: linkTombstones.slug,
