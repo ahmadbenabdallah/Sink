@@ -1,14 +1,15 @@
-import { and, asc, eq, gte, isNull, lt, not, or } from 'drizzle-orm'
+import { and, asc, sql as drizzleSql, eq, gte, isNull, like, lt, not, or } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { sql } from 'kysely'
 import { analyticsExportSteps } from '../database/schema'
-import { blobsMap, doublesMap } from './access-log'
-import { compileAnalyticsQuery, createAnalyticsQuery } from './analytics-sql'
+import { blobsMap, doublesMap, logsMap } from './access-log'
+import { compileAnalyticsQuery, createAnalyticsQuery, weightedDistinct } from './analytics-sql'
 import { uploadBackupParts } from './backup-json-stream'
 
 /**
- * Copies every Analytics Engine record into R2, one file per UTC hour, before
- * Analytics Engine deletes it after about three months.
+ * Copies every Analytics Engine record into R2, one file per UTC hour, and
+ * writes daily totals and breakdowns per link to D1, before Analytics Engine
+ * deletes the records after about three months.
  *
  * It runs on a 5-minute cron trigger. On the free plan one run gets 10 ms of
  * CPU, so a run does at most a few steps, and a step mostly waits on the
@@ -33,7 +34,25 @@ const CLAIM_TTL_SECONDS = 15 * 60
 const MAX_ARCHIVE_ROWS = 10_000
 const REQUEST_TIMEOUT_MS = 20_000
 const DAY_MS = 86_400_000
-const ROWS_PER_SEED_STATEMENT = 48
+
+/** The dimensions broken down per link and day; `ip` and `ua` stay in the archive only. */
+export const ROLLUP_DIMENSIONS = ['referer', 'country', 'region', 'city', 'timezone', 'language', 'os', 'browser', 'browserType', 'device', 'deviceType', 'COLO'] as const
+/** Rows per totals or breakdown page. If runs are killed for CPU, lower it. */
+const ROLLUP_PAGE_ROWS = 500
+/**
+ * A page goes to D1 as one JSON value, and D1 rejects values over 2 MB.
+ * Records written before the referer and language caps can hold values of
+ * many kilobytes, so a larger page counts an attempt and parks after 3.
+ */
+const MAX_PAGE_JSON_BYTES = 1_000_000
+/**
+ * The free plan allows 100,000 D1 rows written a day. The rollups stop for the
+ * UTC day at half of that, so link edits and MCP usage keep working when
+ * visitor-controlled values (referers, languages) are flooded.
+ */
+const ROLLUP_ROWS_PER_DAY = 50_000
+/** The rollups stop above this, leaving room under the free plan's 500 MB per database. */
+const MAX_DATABASE_BYTES = 400 * 1024 * 1024
 
 export interface AnalyticsExportOptions {
   accountId: string
@@ -41,6 +60,8 @@ export interface AnalyticsExportOptions {
   dataset: string
   /** Milliseconds; the cron run's scheduled time. */
   now: number
+  /** Overrides the database size above which the rollups stop; for tests. */
+  maxDatabaseBytes?: number
 }
 
 export interface AnalyticsExportSummary {
@@ -189,26 +210,191 @@ async function archiveHour(r2: R2Bucket, day: string, hour: number, options: Ana
   return { records, kept }
 }
 
+/** One UTC day as `[start, end)` in unix seconds. */
+function dayWindow(day: string): { start: number, end: number } {
+  const start = Date.parse(`${day}T00:00:00Z`) / 1000
+  return { start, end: start + 86_400 }
+}
+
+/** One page of the day's totals, ordered by link id, starting after `after`. */
+function totalsStatement(dataset: string, day: string, after: string | null): string {
+  const { start, end } = dayWindow(day)
+  let query = createAnalyticsQuery(dataset)
+    .select([
+      sql.ref('index1').as('link_id'),
+      // ponytail: the alphabetically largest slug if a link's slug changed that day.
+      sql<string>`max(${sql.ref(logsMap.slug!)})`.as('slug'),
+      sql<number>`SUM(_sample_interval)`.as('visits'),
+      weightedDistinct(logsMap.ip!).as('visitors'),
+      weightedDistinct(logsMap.referer!).as('referers'),
+    ])
+    .where(windowCondition(start, end))
+  if (after !== null)
+    query = query.where(sql<boolean>`index1 > ${sql.lit(after)}`)
+  const compiled = compileAnalyticsQuery(query
+    .groupBy('index1')
+    .orderBy('index1')
+    .limit(sql.lit(ROLLUP_PAGE_ROWS)))
+  return `${compiled} FORMAT JSONEachRow`
+}
+
+/** One page of a dimension, ordered by `(link id, value)`, starting after `after`. */
+function breakdownStatement(dataset: string, day: string, column: string, after: [string, string] | null): string {
+  const { start, end } = dayWindow(day)
+  let query = createAnalyticsQuery(dataset)
+    .select([
+      sql.ref('index1').as('link_id'),
+      sql.ref(column).as('value'),
+      sql<number>`SUM(_sample_interval)`.as('visits'),
+      weightedDistinct(logsMap.ip!).as('visitors'),
+    ])
+    .where(windowCondition(start, end))
+  if (after)
+    query = query.where(sql<boolean>`(index1 > ${sql.lit(after[0])} or (index1 = ${sql.lit(after[0])} and ${sql.ref(column)} > ${sql.lit(after[1])}))`)
+  const compiled = compileAnalyticsQuery(query
+    .groupBy([sql.ref('index1'), sql.ref(column)])
+    .orderBy(sql.ref('index1'))
+    .orderBy(sql.ref(column))
+    .limit(sql.lit(ROLLUP_PAGE_ROWS)))
+  return `${compiled} FORMAT JSONEachRow`
+}
+
+/** Reads a JSONEachRow answer; a line that is not JSON is a wrong answer for this step. */
+async function readRows(response: Response): Promise<Record<string, unknown>[]> {
+  return (await response.text()).split('\n').filter(Boolean).map((line) => {
+    try {
+      return JSON.parse(line) as Record<string, unknown>
+    }
+    catch {
+      throw new StepError('bad_row')
+    }
+  })
+}
+
+function rowText(value: unknown): string {
+  if (typeof value !== 'string')
+    throw new StepError('bad_row')
+  return value
+}
+
+/** A non-negative number, or a decimal string: Analytics Engine sends UInt64 values as strings. */
+function rowCount(value: unknown): number {
+  const valid = typeof value === 'number'
+    ? Number.isFinite(value) && value >= 0
+    : typeof value === 'string' && /^\d+(?:\.\d+)?$/.test(value)
+  if (!valid)
+    throw new StepError('bad_row')
+  return Math.round(Number(value))
+}
+
+/**
+ * A rollup query with a resume key carries a visitor-controlled value, so a
+ * rejection (400 or 422) may be specific to this step: it counts an attempt
+ * and parks after 3, rather than stopping every run at this step. A query
+ * with no resume key has the same shape for every step, so its rejection
+ * stops the run like any other failure.
+ */
+async function queryRollup(options: AnalyticsExportOptions, statement: string, hasResumeKey: boolean): Promise<Record<string, unknown>[]> {
+  try {
+    return await readRows(await queryAnalyticsEngine(options, statement))
+  }
+  catch (error) {
+    if (hasResumeKey && error instanceof AnalyticsRequestError && (error.status === 400 || error.status === 422))
+      throw new StepError(`status_${error.status}`)
+    throw error
+  }
+}
+
+function pageJson(rows: unknown[][]): string {
+  const json = JSON.stringify(rows)
+  if (new TextEncoder().encode(json).length > MAX_PAGE_JSON_BYTES)
+    throw new StepError('page_too_large')
+  return json
+}
+
+/** `excluded.*` keeps a repeated page's rows the same; `WHERE true` lets SQLite read `ON CONFLICT` after a `SELECT`. */
+const TOTALS_UPSERT = `INSERT INTO analytics_daily (day, link_id, slug, visits, visitors, referers)
+  SELECT ?1, json_extract(value, '$[0]'), json_extract(value, '$[1]'), json_extract(value, '$[2]'), json_extract(value, '$[3]'), json_extract(value, '$[4]') FROM json_each(?2) WHERE true
+  ON CONFLICT (day, link_id) DO UPDATE SET slug = excluded.slug, visits = excluded.visits, visitors = excluded.visitors, referers = excluded.referers`
+const BREAKDOWN_UPSERT = `INSERT INTO analytics_daily_breakdown (dimension, day, link_id, value, visits, visitors)
+  SELECT ?1, ?2, json_extract(value, '$[0]'), json_extract(value, '$[1]'), json_extract(value, '$[2]'), json_extract(value, '$[3]') FROM json_each(?3) WHERE true
+  ON CONFLICT (dimension, day, link_id, value) DO UPDATE SET visits = excluded.visits, visitors = excluded.visitors`
+
+/**
+ * Runs one page of a rollup step: the day's totals, or one dimension's
+ * breakdown, 500 rows per page. The rows go in as one JSON parameter, so the
+ * page, the step's progress and the write budget are three statements in one
+ * batch: a page is never counted without its rows, and a repeated page writes
+ * the same rows. If another run took the claim back meanwhile, the progress
+ * update matches no row but the page is still written, which repeats the same
+ * rows and only over-counts the budget.
+ * Returns the number of rollup rows written.
+ */
+async function runRollupStep(env: Cloudflare.Env, step: ClaimedStep, options: AnalyticsExportOptions, now: number): Promise<number> {
+  const after = step.nextKey === null ? null : JSON.parse(step.nextKey) as unknown
+  let rows: unknown[][]
+  let upsert: D1PreparedStatement
+  if (step.step === 'totals') {
+    const answer = await queryRollup(options, totalsStatement(options.dataset, step.day, after as string | null), after !== null)
+    rows = answer.map(row => [rowText(row.link_id), rowText(row.slug), rowCount(row.visits), rowCount(row.visitors), rowCount(row.referers)])
+    upsert = env.DB.prepare(TOTALS_UPSERT).bind(step.day, pageJson(rows))
+  }
+  else {
+    const dimension = step.step.slice('breakdown:'.length)
+    const column = logsMap[dimension as keyof typeof logsMap] as string
+    const answer = await queryRollup(options, breakdownStatement(options.dataset, step.day, column, after as [string, string] | null), after !== null)
+    rows = answer.map(row => [rowText(row.link_id), rowText(row.value), rowCount(row.visits), rowCount(row.visitors)])
+    upsert = env.DB.prepare(BREAKDOWN_UPSERT).bind(dimension, step.day, pageJson(rows))
+  }
+
+  const last = rows.at(-1)
+  const nextKey = rows.length === ROLLUP_PAGE_ROWS
+    ? JSON.stringify(step.step === 'totals' ? last![0] : [last![0], last![1]])
+    : null
+  const progress = nextKey === null
+    ? env.DB.prepare('UPDATE analytics_export_steps SET completed_at = ?, started_at = NULL, next_key = NULL WHERE day = ? AND step = ? AND started_at = ?').bind(now, step.day, step.step, now)
+    : env.DB.prepare('UPDATE analytics_export_steps SET next_key = ?, started_at = NULL WHERE day = ? AND step = ? AND started_at = ?').bind(nextKey, step.day, step.step, now)
+  // ponytail: counts rows upserted, not D1's `meta.rows_written`, so the
+  // budget update fits in the same batch; on these tables, with no secondary
+  // index, each upsert writes one row.
+  const budget = env.DB.prepare('INSERT INTO analytics_export_budget (utc_day, rows_written) VALUES (?, ?) ON CONFLICT (utc_day) DO UPDATE SET rows_written = rows_written + excluded.rows_written')
+    .bind(new Date(options.now).toISOString().slice(0, 10), rows.length)
+  await env.DB.batch(rows.length ? [upsert, progress, budget] : [progress, budget])
+  return rows.length
+}
+
 type Database = ReturnType<typeof drizzle>
 
-/** Inserts the steps of every eligible day once, when the newest day is missing. */
+/** Every step of one day: 24 archive hours, then the rollups. */
+export function daySteps(): string[] {
+  return [
+    ...Array.from({ length: 24 }, (_, hour) => `archive:${String(hour).padStart(2, '0')}`),
+    ...ROLLUP_DIMENSIONS.map(dimension => `breakdown:${dimension}`),
+    'totals',
+  ]
+}
+
+/**
+ * Inserts the steps of every eligible day when the newest day has no
+ * `totals` step. That covers a new day and a table seeded before the rollups
+ * existed; `INSERT OR IGNORE` keeps every step already there.
+ */
 async function seedSteps(env: Cloudflare.Env, db: Database, days: string[]): Promise<void> {
   const newest = days.at(-1)!
-  const [existing] = await db.select({ day: analyticsExportSteps.day }).from(analyticsExportSteps).where(eq(analyticsExportSteps.day, newest)).limit(1)
+  const [existing] = await db.select({ day: analyticsExportSteps.day }).from(analyticsExportSteps).where(and(eq(analyticsExportSteps.day, newest), eq(analyticsExportSteps.step, 'totals'))).limit(1)
   if (existing)
     return
 
-  // Oldest first, so the newest day existing means every older day does too.
-  const rows = days.flatMap(day => Array.from({ length: 24 }, (_, hour) => [day, `archive:${String(hour).padStart(2, '0')}`]))
-  const statements: D1PreparedStatement[] = []
-  for (let offset = 0; offset < rows.length; offset += ROWS_PER_SEED_STATEMENT) {
-    const chunk = rows.slice(offset, offset + ROWS_PER_SEED_STATEMENT)
-    statements.push(env.DB.prepare(`INSERT OR IGNORE INTO analytics_export_steps (day, step) VALUES ${chunk.map(() => '(?, ?)').join(', ')}`).bind(...chunk.flat()))
-  }
-  await env.DB.batch(statements)
+  // One statement, so the newest day's `totals` existing means every step does.
+  // Budget rows older than the window are no longer read.
+  await env.DB.batch([
+    env.DB.prepare('INSERT OR IGNORE INTO analytics_export_steps (day, step) SELECT days.value, steps.value FROM json_each(?1) AS days, json_each(?2) AS steps')
+      .bind(JSON.stringify(days), JSON.stringify(daySteps())),
+    env.DB.prepare('DELETE FROM analytics_export_budget WHERE utc_day < ?').bind(days[0]!),
+  ])
 }
 
-interface ClaimedStep { day: string, step: string, attempts: number, parked: boolean }
+interface ClaimedStep { day: string, step: string, attempts: number, parked: boolean, nextKey: string | null }
 
 /**
  * Claims the oldest pending step with one guarded update, so two overlapping
@@ -216,15 +402,26 @@ interface ClaimedStep { day: string, step: string, attempts: number, parked: boo
  * attempt: the run that held it was killed, most likely for CPU. A step
  * already tried in this run is skipped, so a failure is retried on a later
  * run rather than three times in a row.
+ *
+ * Every pending archive hour comes before any rollup step, so a rollup query
+ * that keeps failing can never hold up the archive.
+ * ponytail: on a new install with three months of data, the archive catch-up
+ * (about 2.5 days) comes first, and the oldest days age out before their
+ * rollups run; their records stay in the R2 archive for an offline rebuild.
  */
-async function claimNextStep(db: Database, oldestDay: string, now: number, tried: ClaimedStep[]): Promise<ClaimedStep | null> {
+async function claimNextStep(db: Database, oldestDay: string, now: number, tried: ClaimedStep[], rollupsAllowed: boolean): Promise<ClaimedStep | null> {
   const expired = now - CLAIM_TTL_SECONDS
   const pending = and(
     isNull(analyticsExportSteps.completedAt),
     isNull(analyticsExportSteps.parkedAt),
     or(isNull(analyticsExportSteps.startedAt), lt(analyticsExportSteps.startedAt, expired)),
   )
-  const [candidate] = await db.select().from(analyticsExportSteps).where(and(pending, gte(analyticsExportSteps.day, oldestDay), ...tried.map(step => not(stepWhere(step)!)))).orderBy(asc(analyticsExportSteps.day), asc(analyticsExportSteps.step)).limit(1)
+  const isArchive = like(analyticsExportSteps.step, 'archive:%')
+  const [candidate] = await db.select()
+    .from(analyticsExportSteps)
+    .where(and(pending, gte(analyticsExportSteps.day, oldestDay), rollupsAllowed ? undefined : isArchive, ...tried.map(step => not(stepWhere(step)!))))
+    .orderBy(drizzleSql`case when ${isArchive} then 0 else 1 end`, asc(analyticsExportSteps.day), asc(analyticsExportSteps.step))
+    .limit(1)
   if (!candidate)
     return null
 
@@ -239,7 +436,7 @@ async function claimNextStep(db: Database, oldestDay: string, now: number, tried
       pending,
     ))
     .returning({ day: analyticsExportSteps.day, step: analyticsExportSteps.step })
-  return claimed ? { ...claimed, attempts, parked } : null
+  return claimed ? { ...claimed, attempts, parked, nextKey: candidate.nextKey } : null
 }
 
 function stepWhere(step: ClaimedStep) {
@@ -256,16 +453,24 @@ function isMissingTable(error: unknown): boolean {
   return text.includes('no such table')
 }
 
-/** Logs a stop reason only from the run in the first 5 minutes of the UTC day, so it appears once a day. */
-function logStopOncePerDay(now: number, reason: string) {
+/** Logs only from the run in the first 5 minutes of the UTC day, so it appears once a day. */
+function warnOncePerDay(now: number, entry: Record<string, unknown>) {
   if (now % DAY_MS < 5 * 60_000)
-    console.warn({ event: 'analytics_export.stopped', reason })
+    console.warn(entry)
+}
+
+/** Today's rollup rows written and the database size, which decide whether rollup steps run. */
+async function readBudget(env: Cloudflare.Env, now: number): Promise<{ rowsWritten: number, databaseBytes: number | null }> {
+  const result = await env.DB.prepare('SELECT rows_written FROM analytics_export_budget WHERE utc_day = ?')
+    .bind(new Date(now).toISOString().slice(0, 10))
+    .all<{ rows_written: number }>()
+  return { rowsWritten: result.results[0]?.rows_written ?? 0, databaseBytes: result.meta.size_after ?? null }
 }
 
 export async function runAnalyticsExport(env: Cloudflare.Env, options: AnalyticsExportOptions): Promise<AnalyticsExportSummary> {
   const summary: AnalyticsExportSummary = { stepsDone: 0, stepsFailed: 0, stepsParked: 0 }
   const stop = (reason: NonNullable<AnalyticsExportSummary['stopped']>) => {
-    logStopOncePerDay(options.now, reason)
+    warnOncePerDay(options.now, { event: 'analytics_export.stopped', reason })
     return { ...summary, stopped: reason }
   }
   if (!options.accountId || !options.apiToken)
@@ -276,18 +481,25 @@ export async function runAnalyticsExport(env: Cloudflare.Env, options: Analytics
   const db = drizzle(env.DB)
   const now = Math.floor(options.now / 1000)
   const days = eligibleDays(options.now)
+  let budget: Awaited<ReturnType<typeof readBudget>>
   try {
     await seedSteps(env, db, days)
+    budget = await readBudget(env, options.now)
   }
   catch (error) {
     if (isMissingTable(error))
       return stop('not_migrated')
     throw error
   }
+  // An unknown size counts as over the limit: the stop must not fail open.
+  const overSize = budget.databaseBytes === null || budget.databaseBytes > (options.maxDatabaseBytes ?? MAX_DATABASE_BYTES)
+  // Once an hour while it lasts: it does not end by itself.
+  if (overSize && options.now % 3_600_000 < 5 * 60_000)
+    console.warn({ event: 'analytics_export.size_limit', databaseBytes: budget.databaseBytes })
 
   const tried: ClaimedStep[] = []
   for (let run = 0; run < STEPS_PER_RUN; run++) {
-    const step = await claimNextStep(db, days[0]!, now, tried)
+    const step = await claimNextStep(db, days[0]!, now, tried, !overSize && budget.rowsWritten < ROLLUP_ROWS_PER_DAY)
     if (!step)
       break
     tried.push(step)
@@ -298,11 +510,20 @@ export async function runAnalyticsExport(env: Cloudflare.Env, options: Analytics
     }
 
     try {
-      const { records, kept } = await archiveHour(env.R2, step.day, Number(step.step.slice('archive:'.length)), options)
-      await db.update(analyticsExportSteps).set({ completedAt: now, startedAt: null }).where(claimWhere(step, now))
+      if (step.step.startsWith('archive:')) {
+        const { records, kept } = await archiveHour(env.R2, step.day, Number(step.step.slice('archive:'.length)), options)
+        await db.update(analyticsExportSteps).set({ completedAt: now, startedAt: null }).where(claimWhere(step, now))
+        if (kept < records)
+          console.warn({ event: 'analytics_export.hour_truncated', day: step.day, step: step.step, records, kept })
+      }
+      else {
+        const before = budget.rowsWritten
+        budget.rowsWritten += await runRollupStep(env, step, options, now)
+        // Logged by the step that crosses the budget, so once per UTC day.
+        if (before < ROLLUP_ROWS_PER_DAY && budget.rowsWritten >= ROLLUP_ROWS_PER_DAY)
+          console.warn({ event: 'analytics_export.write_budget', rowsWritten: budget.rowsWritten })
+      }
       summary.stepsDone++
-      if (kept < records)
-        console.warn({ event: 'analytics_export.hour_truncated', day: step.day, step: step.step, records, kept })
     }
     catch (error) {
       if (!(error instanceof StepError)) {

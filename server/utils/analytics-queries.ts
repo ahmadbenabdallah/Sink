@@ -6,7 +6,7 @@ import { sql } from 'kysely'
 import { z } from 'zod'
 import { FilterQuerySchema, QuerySchema } from '#shared/schemas/query'
 import { blobsMap, doublesMap, logsMap } from './access-log'
-import { createAnalyticsQuery } from './analytics-sql'
+import { createAnalyticsQuery, weightedDistinct } from './analytics-sql'
 import { buildAnalyticsFilter } from './query-filter'
 import { getSafeTimezone } from './time'
 
@@ -48,11 +48,6 @@ export type ViewsQuery = z.infer<typeof ViewsQuerySchema>
 export type MetricsQuery = z.infer<typeof MetricsQuerySchema>
 export type HeatmapQuery = z.infer<typeof HeatmapQuerySchema>
 export type StatsExportQuery = z.infer<typeof StatsExportQuerySchema>
-
-/** Weighted distinct count: COUNT(DISTINCT col) * SUM(_sample_interval) / COUNT() ≈ actual distinct count */
-function weightedDistinct(column: string): RawBuilder<number> {
-  return sql<number>`ROUND(COUNT(DISTINCT ${sql.ref(column)}) * SUM(_sample_interval) / COUNT())`
-}
 
 function weightedReferers(column: string): RawBuilder<number> {
   const reference = sql.ref(column)

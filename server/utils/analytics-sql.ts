@@ -1,10 +1,11 @@
-import type { Compilable, TableNode } from 'kysely'
+import type { Compilable, RawBuilder, TableNode } from 'kysely'
 import {
   DummyDriver,
   Kysely,
   MysqlAdapter,
   MysqlIntrospector,
   MysqlQueryCompiler,
+  sql,
 } from 'kysely'
 
 export interface AnalyticsRow {
@@ -63,6 +64,11 @@ export function createAnalyticsQuery(dataset: string) {
     throw new Error(`Invalid Analytics dataset: ${dataset}`)
 
   return coldDb.selectFrom(dataset)
+}
+
+/** Weighted distinct count: COUNT(DISTINCT col) * SUM(_sample_interval) / COUNT() ≈ actual distinct count */
+export function weightedDistinct(column: string): RawBuilder<number> {
+  return sql<number>`ROUND(COUNT(DISTINCT ${sql.ref(column)}) * SUM(_sample_interval) / COUNT())`
 }
 
 export function compileAnalyticsQuery(query: Compilable): string {
