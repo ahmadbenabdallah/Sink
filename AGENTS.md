@@ -76,7 +76,7 @@ pnpm db:migrate:remote   # mutates the configured remote D1 database
 - Use unique slugs and cleanup helpers from `tests/utils.ts`; do not make state-sharing suites concurrent.
 - `tests/setup.ts` applies all D1 migrations before tests. Update migrations, not ad hoc test setup, when schema changes.
 - A spec that imports server code directly must alias `#shared/...` itself, for example `vi.mock('#shared/utils/link-password', async () => import('../../shared/utils/link-password'))`.
-- `runScheduledTasks()` can return before the cron hooks finish. Wait for the effect with `vi.waitFor` instead of asserting right after the call (see `tests/api/link-password-rehash.spec.ts`).
+- `runScheduledTasks(cron)` fires the scheduled handler as the given trigger (default `0 0 * * *`). The daily jobs ignore the analytics export trigger (`server/utils/cron.ts`). It can return before the cron hooks finish. Wait for the effect with `vi.waitFor` instead of asserting right after the call (see `tests/api/link-password-rehash.spec.ts`).
 
 ## Generated artifacts
 

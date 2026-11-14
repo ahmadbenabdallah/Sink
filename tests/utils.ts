@@ -19,7 +19,8 @@ export async function createTestConnector(level: McpLevel) {
   return { id: connector.id, token }
 }
 
-export async function runScheduledTasks() {
+/** Fires the Worker's scheduled handler as the given cron trigger would. */
+export async function runScheduledTasks(cron = '0 0 * * *') {
   const pending: Promise<unknown>[] = []
   const context = {
     waitUntil(promise: Promise<unknown>) {
@@ -30,7 +31,7 @@ export async function runScheduledTasks() {
   } as unknown as ExecutionContext
   await exports.default.scheduled!({
     scheduledTime: Date.now(),
-    cron: '0 0 * * *',
+    cron,
     noRetry() {},
   }, env, context)
   await Promise.all(pending)
