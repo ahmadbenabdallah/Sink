@@ -57,6 +57,13 @@
       "when": 1794500063457,
       "tag": "0007_mute_darkstar",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1794680145725,
+      "tag": "0008_nice_retro_girl",
+      "breakpoints": true
     }
   ]
 }
