@@ -55,13 +55,20 @@ Cloudflare Analytics Engine 只保留**三个月**的数据，之后会删除。
 归档会无限期保留访客的 IP 地址和 User-Agent。请保持 R2 存储桶为私有，并在处理数据删除请求时记得这些文件。
 :::
 
-仪表盘目前还不会读取归档；它用于下载和离线分析。
+同一任务在某天的各小时归档完成后，还会把每个链接的每日数据写入 D1：
+
+- `analytics_daily`：每个链接每个 UTC 日的访问量、访客数和来源数，算法与链接卡片相同。
+- `analytics_daily_breakdown`：每个链接、每个 UTC 日、各维度每个取值的访问量和访客数（来源、国家、地区、城市、时区、语言、操作系统、浏览器、浏览器类型、设备、设备类型、Cloudflare 数据中心）。
+
+仪表盘目前还不会读取归档和每日数据；归档用于下载和离线分析。
 
 日志含义：
 
-- `analytics_export.stopped`：Analytics Engine、网络或 R2 出错。本次运行停止，5 分钟后重试同一小时；只要该日期未满 85 天，就不会丢失数据。日志会写明小时、状态码和错误名称。
+- `analytics_export.stopped`：Analytics Engine、网络、R2 或 D1 出错。本次运行停止，5 分钟后重试同一步骤（某个小时，或某天的每日数据）；只要该日期未满 85 天，就不会丢失数据。日志会写明步骤、状态码和错误名称。
 - `analytics_export.hour_truncated`：该小时超过 10,000 条记录（例如遭遇请求洪水），只保留前 10,000 条。
-- `analytics_export.step_parked`：某个小时的返回结果连续 3 次不正确（例如记录数少于统计数），该小时会被跳过，已收到的数据仍保存在文件中。要在其未满 85 天时重试被跳过的小时，请运行：
+- `analytics_export.write_budget`：每日数据今天已写入 50,000 行 D1（约为免费套餐每日写入额度的一半），停止到下一个 UTC 日。归档继续进行。
+- `analytics_export.size_limit`（每小时记录一次）：D1 数据库超过 400 MB，或 D1 未返回数据库大小，每日数据停止写入。归档继续进行。
+- `analytics_export.step_parked`：某个步骤的返回结果连续 3 次不正确（例如记录数少于统计数、某行无法读取、某页取值过长无法写入，或每日数据后续分页的查询被拒绝，该查询包含已记录的值），该步骤会被跳过；对于小时归档，已收到的数据仍保存在文件中。要在其未满 85 天时重试被跳过的步骤，请运行：
 
 ```sh
 npx wrangler d1 execute <database> --remote --command "UPDATE analytics_export_steps SET parked_at = NULL, attempts = 0 WHERE parked_at IS NOT NULL"

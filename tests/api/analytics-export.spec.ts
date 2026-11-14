@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:workers'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, like, not } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { analyticsExportSteps } from '../../server/database/schema'
+import { analyticsDaily, analyticsDailyBreakdown, analyticsExportBudget, analyticsExportSteps } from '../../server/database/schema'
 import { archiveKey, hourWindow, runAnalyticsExport } from '../../server/utils/analytics-export'
 import { ANALYTICS_EXPORT_CRON } from '../../server/utils/cron'
 import wranglerConfig from '../../wrangler.jsonc?raw'
@@ -23,6 +23,17 @@ type Answer = { status: number, body?: string } | Error
 /** Analytics Engine answers by hour start: rows for an hour, or a failure. */
 let hours: Map<number, string[] | Answer>
 let fetchSpy: ReturnType<typeof vi.spyOn>
+/** Answers the rollup queries (the ones with `group by`); every day has no rows by default. */
+let rollupAnswer: (sql: string) => Response | Promise<Response>
+
+/** One UTC day as [start, end) in unix seconds. */
+function dayStart(day: string) {
+  return Date.parse(`${day}T00:00:00Z`) / 1000
+}
+
+function lines(rows: object[]) {
+  return new Response(rows.map(row => `${JSON.stringify(row)}\n`).join(''))
+}
 
 function ndjson(count: number, hourStart: number) {
   return Array.from({ length: count }, (_, i) => JSON.stringify({ timestamp: new Date((hourStart + i) * 1000).toISOString(), _sample_interval: 1, index1: `id-${i}`, slug: `s${i}` }))
@@ -39,6 +50,8 @@ function stubAnalyticsEngine() {
       throw new Error(`Unexpected outbound request to ${url}`)
     expect(new Headers(init?.headers).get('Authorization')).toBe(`Bearer ${TOKEN}`)
     const sql = String(init?.body)
+    if (sql.includes(' group by '))
+      return rollupAnswer(sql)
     const start = Number(/toDateTime\((\d+)\)/.exec(sql)?.[1])
     const answer = hours.get(start) ?? []
     if (answer instanceof Error)
@@ -56,6 +69,8 @@ function stubFirstHour(records: string, raw: (sql: string) => Response | Promise
   const start = hourWindow(OLDEST, 0).start
   fetchSpy.mockImplementation(async (_input, init) => {
     const sql = String(init?.body)
+    if (sql.includes(' group by '))
+      return rollupAnswer(sql)
     if (!sql.includes(`toDateTime(${start})`))
       return Response.json({ data: [{ records: '0' }], rows: 1 })
     if (sql.includes('count()'))
@@ -78,15 +93,23 @@ async function deleteArchive() {
   } while (cursor)
 }
 
+async function clearTables() {
+  await db.delete(analyticsExportSteps)
+  await db.delete(analyticsDaily)
+  await db.delete(analyticsDailyBreakdown)
+  await db.delete(analyticsExportBudget)
+}
+
 beforeEach(async () => {
   hours = new Map()
+  rollupAnswer = () => new Response('')
   stubAnalyticsEngine()
-  await db.delete(analyticsExportSteps)
+  await clearTables()
 })
 
 afterEach(async () => {
   vi.restoreAllMocks()
-  await db.delete(analyticsExportSteps)
+  await clearTables()
   await deleteArchive()
 })
 
@@ -112,23 +135,23 @@ describe('analytics archive', { concurrent: false }, () => {
     expect((await stepRow(OLDEST, 3))?.completedAt).toEqual(expect.any(Number))
   })
 
-  it('seeds every hour of every day from 85 to 2 days old, and nothing else', async () => {
+  it('seeds every step of every day from 85 to 2 days old, and nothing else', async () => {
     await runAnalyticsExport(env, options)
 
     const rows = await db.select({ day: analyticsExportSteps.day }).from(analyticsExportSteps)
     const days = [...new Set(rows.map(row => row.day))].sort()
     expect(days[0]).toBe(OLDEST)
     expect(days.at(-1)).toBe(NEWEST)
-    expect(rows).toHaveLength(84 * 24)
+    expect(rows).toHaveLength(84 * 37)
   })
 
-  it('adds only the 24 hours of the newly eligible day on the next UTC day', async () => {
+  it('adds only the 37 steps of the newly eligible day on the next UTC day', async () => {
     await runAnalyticsExport(env, options)
     await runAnalyticsExport(env, { ...options, now: NOW + DAY_MS })
 
     const rows = await db.select({ day: analyticsExportSteps.day }).from(analyticsExportSteps)
-    expect(rows).toHaveLength(85 * 24)
-    expect(rows.filter(row => row.day === '2026-11-13')).toHaveLength(24)
+    expect(rows).toHaveLength(85 * 37)
+    expect(rows.filter(row => row.day === '2026-11-13')).toHaveLength(37)
   })
 
   it('never fetches an hour that is already done', async () => {
@@ -295,6 +318,323 @@ describe('analytics archive', { concurrent: false }, () => {
     expect(text).not.toContain(TOKEN)
     expect(text).not.toContain(ACCOUNT)
   })
+})
+
+async function rollupStep(day: string, step: string) {
+  const [row] = await db.select().from(analyticsExportSteps).where(and(eq(analyticsExportSteps.day, day), eq(analyticsExportSteps.step, step)))
+  return row
+}
+
+describe('analytics rollups', { concurrent: false }, () => {
+  beforeEach(async () => {
+    // Seed the steps once with a run that does nothing else.
+    fetchSpy.mockImplementation(async () => Response.json({ data: [{ records: '0' }], rows: 1 }))
+    await runAnalyticsExport(env, options)
+    stubAnalyticsEngine()
+    fetchSpy.mockClear()
+    await db.update(analyticsExportSteps).set({ completedAt: null, startedAt: null, attempts: 0, parkedAt: null, nextKey: null })
+  })
+
+  async function leave(...steps: { day: string, step: string }[]) {
+    await db.update(analyticsExportSteps).set({ completedAt: 1 })
+    for (const { day, step } of steps)
+      await db.update(analyticsExportSteps).set({ completedAt: null }).where(and(eq(analyticsExportSteps.day, day), eq(analyticsExportSteps.step, step)))
+  }
+
+  it('gives a table seeded before the rollups existed the 13 rollup steps of every day, once', async () => {
+    await db.delete(analyticsExportSteps).where(not(like(analyticsExportSteps.step, 'archive:%')))
+    await db.update(analyticsExportSteps).set({ completedAt: 7 }).where(eq(analyticsExportSteps.step, 'archive:05'))
+    await db.insert(analyticsExportBudget).values([{ utcDay: '2026-08-01', rowsWritten: 9 }, { utcDay: '2026-11-13', rowsWritten: 9 }])
+    const batches = vi.spyOn(env.DB, 'batch')
+
+    await runAnalyticsExport(env, options)
+    await runAnalyticsExport(env, options)
+
+    // The free plan allows 50 D1 queries per invocation; no batch comes near it.
+    expect(Math.max(...batches.mock.calls.map(([statements]) => statements.length))).toBeLessThanOrEqual(3)
+    // Budget rows older than the window are deleted.
+    expect((await db.select().from(analyticsExportBudget)).map(row => row.utcDay)).toEqual(['2026-11-13'])
+
+    const rows = await db.select().from(analyticsExportSteps)
+    expect(rows).toHaveLength(84 * 37)
+    expect(rows.filter(row => row.day === OLDEST).map(row => row.step).filter(step => !step.startsWith('archive:')).sort()).toEqual([
+      'breakdown:COLO',
+      'breakdown:browser',
+      'breakdown:browserType',
+      'breakdown:city',
+      'breakdown:country',
+      'breakdown:device',
+      'breakdown:deviceType',
+      'breakdown:language',
+      'breakdown:os',
+      'breakdown:referer',
+      'breakdown:region',
+      'breakdown:timezone',
+      'totals',
+    ])
+    // Archive progress is kept.
+    expect(rows.filter(row => row.step === 'archive:05').every(row => row.completedAt === 7)).toBe(true)
+  })
+
+  it('takes every pending archive hour before any rollup step', async () => {
+    await leave({ day: OLDEST, step: 'totals' }, { day: NEWEST, step: 'archive:23' })
+
+    await runAnalyticsExport(env, options)
+
+    const sqls = analyticsCalls().map(([, init]) => String(init?.body))
+    expect(sqls[0]).toContain(`toDateTime(${hourWindow(NEWEST, 23).start})`)
+    expect(sqls[0]).toContain('count()')
+  })
+
+  it('pages the day\'s totals per link, 500 links per run of the step, resuming after the last link id', async () => {
+    await leave({ day: OLDEST, step: 'totals' })
+    const all = Array.from({ length: 1200 }, (_, i) => ({ link_id: `id-${String(i).padStart(4, '0')}`, slug: `s${i}`, visits: 1, visitors: 1, referers: 0 }))
+    const sqls: string[] = []
+    rollupAnswer = (sql) => {
+      sqls.push(sql)
+      const after = /and index1 > '([^']*)' group by/.exec(sql)
+      const from = after ? all.findIndex(row => row.link_id === after[1]) + 1 : 0
+      return lines(all.slice(from, from + 500))
+    }
+
+    for (const expected of [500, 1000, 1200]) {
+      await runAnalyticsExport(env, options)
+      expect(await db.select().from(analyticsDaily)).toHaveLength(expected)
+    }
+
+    expect(sqls[1]).toContain(`and index1 > 'id-0499' group by`)
+    expect(sqls).toHaveLength(3)
+    expect((await rollupStep(OLDEST, 'totals'))?.completedAt).toEqual(expect.any(Number))
+  })
+
+  it('writes the day\'s totals per link with the card formulas, and the same rows when run again', async () => {
+    await leave({ day: OLDEST, step: 'totals' })
+    const sqls: string[] = []
+    rollupAnswer = (sql) => {
+      sqls.push(sql)
+      return lines([
+        { link_id: 'id-a', slug: 'a', visits: '12', visitors: 5, referers: 2 },
+        { link_id: 'id-b', slug: 'b', visits: '3', visitors: 3, referers: 0 },
+      ])
+    }
+
+    await runAnalyticsExport(env, options)
+    await leave({ day: OLDEST, step: 'totals' })
+    await runAnalyticsExport(env, options)
+
+    const start = dayStart(OLDEST)
+    expect(sqls[0]).toBe(`select index1 as link_id, max(blob1) as slug, SUM(_sample_interval) as visits, ROUND(COUNT(DISTINCT blob4) * SUM(_sample_interval) / COUNT()) as visitors, ROUND(COUNT(DISTINCT blob5) * SUM(_sample_interval) / COUNT()) as referers from sink where timestamp >= toDateTime(${start}) and timestamp < toDateTime(${start + 86_400}) group by index1 order by index1 limit 500 FORMAT JSONEachRow`)
+    expect(await db.select().from(analyticsDaily).orderBy(analyticsDaily.linkId)).toEqual([
+      { day: OLDEST, linkId: 'id-a', slug: 'a', visits: 12, visitors: 5, referers: 2 },
+      { day: OLDEST, linkId: 'id-b', slug: 'b', visits: 3, visitors: 3, referers: 0 },
+    ])
+    expect((await rollupStep(OLDEST, 'totals'))?.completedAt).toEqual(expect.any(Number))
+    // The rows written are counted against today's budget.
+    expect(await db.select().from(analyticsExportBudget)).toEqual([{ utcDay: '2026-11-14', rowsWritten: 4 }])
+  })
+
+  it('pages a breakdown 500 rows per run of the step, resuming after the last key, until a short page', async () => {
+    await leave({ day: OLDEST, step: 'breakdown:referer' })
+    const all = Array.from({ length: 1200 }, (_, i) => ({ link_id: `id-${String(Math.floor(i / 100)).padStart(2, '0')}`, value: `host-${String(i % 100).padStart(3, '0')}.example`, visits: 2, visitors: 1 }))
+    const sqls: string[] = []
+    rollupAnswer = (sql) => {
+      sqls.push(sql)
+      const after = /index1 > '([^']*)' or \(index1 = '[^']*' and blob5 > '([^']*)'\)/.exec(sql)
+      const from = after ? all.findIndex(row => row.link_id === after[1] && row.value === after[2]) + 1 : 0
+      return lines(all.slice(from, from + 500))
+    }
+
+    const batches = vi.spyOn(env.DB, 'batch')
+
+    for (const expected of [500, 1000, 1200]) {
+      await runAnalyticsExport(env, options)
+      expect(await db.select().from(analyticsDailyBreakdown)).toHaveLength(expected)
+    }
+
+    // A full page is still one statement.
+    expect(Math.max(...batches.mock.calls.map(([statements]) => statements.length))).toBeLessThanOrEqual(3)
+
+    const start = dayStart(OLDEST)
+    expect(sqls[0]).toBe(`select index1 as link_id, blob5 as value, SUM(_sample_interval) as visits, ROUND(COUNT(DISTINCT blob4) * SUM(_sample_interval) / COUNT()) as visitors from sink where timestamp >= toDateTime(${start}) and timestamp < toDateTime(${start + 86_400}) group by index1, blob5 order by index1, blob5 limit 500 FORMAT JSONEachRow`)
+    expect(sqls[1]).toContain(`and (index1 > 'id-04' or (index1 = 'id-04' and blob5 > 'host-099.example')) group by`)
+    expect(sqls).toHaveLength(3)
+    expect(await rollupStep(OLDEST, 'breakdown:referer')).toMatchObject({ completedAt: expect.any(Number), attempts: 0 })
+    const [row] = await db.select().from(analyticsDailyBreakdown).where(eq(analyticsDailyBreakdown.value, 'host-007.example')).limit(1)
+    expect(row).toMatchObject({ dimension: 'referer', day: OLDEST, visits: 2, visitors: 1 })
+  })
+
+  it('escapes visitor-controlled values in the resume key', async () => {
+    await leave({ day: OLDEST, step: 'breakdown:referer' })
+    const sqls: string[] = []
+    rollupAnswer = (sql) => {
+      sqls.push(sql)
+      return lines(sqls.length === 1 ? Array.from({ length: 500 }, (_, i) => ({ link_id: 'id-a', value: i === 499 ? `it's \\ ${i}` : `v${String(i).padStart(3, '0')}`, visits: 1, visitors: 1 })) : [])
+    }
+
+    await runAnalyticsExport(env, options)
+    await runAnalyticsExport(env, options)
+
+    expect(sqls[1]).toContain(`blob5 > 'it''s \\\\ 499'`)
+  })
+
+  it('stops the run without counting an attempt when a rollup query fails for every step', async () => {
+    await leave({ day: OLDEST, step: 'totals' })
+    rollupAnswer = () => new Response('error', { status: 503 })
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const summary = await runAnalyticsExport(env, options)
+
+    expect(summary).toMatchObject({ stopped: 'analytics_unavailable' })
+    expect(await rollupStep(OLDEST, 'totals')).toMatchObject({ attempts: 0, completedAt: null, startedAt: null })
+  })
+
+  it('counts an attempt for a row it cannot read, and parks the step after 3', async () => {
+    await leave({ day: OLDEST, step: 'totals' })
+    const bad = ['"lots"', 'true', '"0x1f"']
+    let run = 0
+    rollupAnswer = () => new Response(`{"link_id":"id-a","slug":"a","visits":${bad[run++]},"visitors":1,"referers":0}\n`)
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    for (let attempt = 0; attempt < 3; attempt++)
+      await runAnalyticsExport(env, options)
+
+    expect(await rollupStep(OLDEST, 'totals')).toMatchObject({ attempts: 3, completedAt: null, parkedAt: expect.any(Number) })
+    expect(errors.mock.calls.map(([entry]) => entry)).toContainEqual(expect.objectContaining({ event: 'analytics_export.step_parked', step: 'totals', reason: 'bad_row' }))
+    expect(await db.select().from(analyticsDaily)).toHaveLength(0)
+  })
+
+  it('skips rollup steps once 50,000 rows were written today, still archives, and starts again the next day', async () => {
+    await leave({ day: OLDEST, step: 'totals' }, { day: NEWEST, step: 'archive:23' })
+    await db.insert(analyticsExportBudget).values({ utcDay: '2026-11-14', rowsWritten: 50_000 })
+    rollupAnswer = () => lines([{ link_id: 'id-a', slug: 'a', visits: 1, visitors: 1, referers: 0 }])
+    const warns = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    await runAnalyticsExport(env, options)
+
+    expect((await stepRow(NEWEST, 23))?.completedAt).toEqual(expect.any(Number))
+    expect((await rollupStep(OLDEST, 'totals'))?.completedAt).toBeNull()
+    expect(warns).not.toHaveBeenCalled()
+
+    await runAnalyticsExport(env, { ...options, now: NOW + 3_600_000 * 24 })
+    // OLDEST is now 86 days old and out of the window; the next day's totals run.
+    await leave({ day: '2026-08-22', step: 'totals' })
+    await runAnalyticsExport(env, { ...options, now: NOW + 3_600_000 * 24 })
+    expect((await rollupStep('2026-08-22', 'totals'))?.completedAt).toEqual(expect.any(Number))
+  })
+
+  it('logs the write budget once, when a step crosses it during the day', async () => {
+    const noon = NOW + 12 * 3_600_000
+    await leave({ day: OLDEST, step: 'totals' }, { day: '2026-08-22', step: 'totals' })
+    await db.insert(analyticsExportBudget).values({ utcDay: '2026-11-14', rowsWritten: 49_999 })
+    rollupAnswer = () => lines([{ link_id: 'id-a', slug: 'a', visits: 1, visitors: 1, referers: 0 }, { link_id: 'id-b', slug: 'b', visits: 1, visitors: 1, referers: 0 }])
+    const warns = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    await runAnalyticsExport(env, { ...options, now: noon })
+    await runAnalyticsExport(env, { ...options, now: noon + 300_000 })
+
+    expect((await rollupStep(OLDEST, 'totals'))?.completedAt).toEqual(expect.any(Number))
+    // The crossing step finishes; nothing after it runs today.
+    expect((await rollupStep('2026-08-22', 'totals'))?.completedAt).toBeNull()
+    const budgetLogs = warns.mock.calls.map(([entry]) => entry).filter(entry => (entry as { event?: string }).event === 'analytics_export.write_budget')
+    expect(budgetLogs).toEqual([expect.objectContaining({ rowsWritten: 50_001 })])
+  })
+
+  it('skips rollup steps while the database is over its size limit, and still archives', async () => {
+    await leave({ day: OLDEST, step: 'totals' }, { day: NEWEST, step: 'archive:23' })
+    const warns = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    await runAnalyticsExport(env, { ...options, maxDatabaseBytes: 1 })
+
+    expect((await stepRow(NEWEST, 23))?.completedAt).toEqual(expect.any(Number))
+    expect((await rollupStep(OLDEST, 'totals'))?.completedAt).toBeNull()
+    expect(warns.mock.calls.map(([entry]) => entry)).toContainEqual(expect.objectContaining({ event: 'analytics_export.size_limit' }))
+  })
+
+  it('counts an attempt for a page too large for one D1 value, and goes on to the next step', async () => {
+    await leave({ day: OLDEST, step: 'breakdown:referer' }, { day: '2026-08-22', step: 'totals' })
+    // Records written before the referer cap can hold hosts of many kilobytes.
+    const long = 'h'.repeat(4_000)
+    rollupAnswer = sql => sql.includes('blob5 as value')
+      ? lines(Array.from({ length: 300 }, (_, i) => ({ link_id: 'id-a', value: `${long}${i}`, visits: 1, visitors: 1 })))
+      : lines([{ link_id: 'id-a', slug: 'a', visits: 1, visitors: 1, referers: 0 }])
+    const warns = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    await runAnalyticsExport(env, options)
+
+    expect(await rollupStep(OLDEST, 'breakdown:referer')).toMatchObject({ attempts: 1, completedAt: null })
+    expect(await db.select().from(analyticsDailyBreakdown)).toHaveLength(0)
+    expect((await rollupStep('2026-08-22', 'totals'))?.completedAt).toEqual(expect.any(Number))
+    expect(warns.mock.calls.map(([entry]) => entry)).toContainEqual(expect.objectContaining({ event: 'analytics_export.step_failed', reason: 'page_too_large' }))
+  })
+
+  it('treats an unknown database size as over the limit', async () => {
+    await leave({ day: OLDEST, step: 'totals' }, { day: NEWEST, step: 'archive:23' })
+    const warns = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    // A D1 that leaves `size_after` out of the budget read's result.
+    const DB = new Proxy(env.DB, {
+      get(target, key) {
+        if (key === 'prepare') {
+          return (query: string) => {
+            const statement = target.prepare(query)
+            if (!query.startsWith('SELECT rows_written'))
+              return statement
+            return {
+              bind: (...values: unknown[]) => ({
+                all: async () => {
+                  const result = await statement.bind(...values).all()
+                  return { ...result, meta: { ...result.meta, size_after: undefined } }
+                },
+              }),
+            }
+          }
+        }
+        const value = Reflect.get(target, key)
+        return typeof value === 'function' ? value.bind(target) : value
+      },
+    })
+
+    await runAnalyticsExport({ ...env, DB } as Cloudflare.Env, options)
+
+    expect((await stepRow(NEWEST, 23))?.completedAt).toEqual(expect.any(Number))
+    expect((await rollupStep(OLDEST, 'totals'))?.completedAt).toBeNull()
+    expect(warns.mock.calls.map(([entry]) => entry)).toContainEqual(expect.objectContaining({ event: 'analytics_export.size_limit', databaseBytes: null }))
+  })
+
+  // A rollup query carries a visitor-controlled resume key, so a rejected
+  // query may be specific to one step: it must not hold up every other step.
+  for (const status of [400, 422]) {
+    it(`counts an attempt when Analytics Engine rejects a query with a resume key with ${status}, and goes on to the next step`, async () => {
+      await leave({ day: OLDEST, step: 'breakdown:referer' }, { day: '2026-08-22', step: 'totals' })
+      await db.update(analyticsExportSteps).set({ nextKey: JSON.stringify(['id-a', 'crafted.example']) }).where(and(eq(analyticsExportSteps.day, OLDEST), eq(analyticsExportSteps.step, 'breakdown:referer')))
+      rollupAnswer = sql => sql.includes('blob5 as value')
+        ? new Response('rejected', { status })
+        : lines([{ link_id: 'id-a', slug: 'a', visits: 1, visitors: 1, referers: 0 }])
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+      await runAnalyticsExport(env, options)
+
+      expect(await rollupStep(OLDEST, 'breakdown:referer')).toMatchObject({ attempts: 1, completedAt: null, startedAt: null })
+      expect((await rollupStep('2026-08-22', 'totals'))?.completedAt).toEqual(expect.any(Number))
+
+      await runAnalyticsExport(env, options)
+      await runAnalyticsExport(env, options)
+      expect(await rollupStep(OLDEST, 'breakdown:referer')).toMatchObject({ attempts: 3, parkedAt: expect.any(Number) })
+      expect(errors.mock.calls.map(([entry]) => entry)).toContainEqual(expect.objectContaining({ event: 'analytics_export.step_parked', step: 'breakdown:referer', reason: `status_${status}` }))
+    })
+
+    it(`stops the run without counting an attempt when a query with no resume key is rejected with ${status}`, async () => {
+      await leave({ day: OLDEST, step: 'totals' })
+      rollupAnswer = () => new Response('rejected', { status })
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      const summary = await runAnalyticsExport(env, options)
+
+      expect(summary).toMatchObject({ stopped: 'analytics_unavailable' })
+      expect(await rollupStep(OLDEST, 'totals')).toMatchObject({ attempts: 0, completedAt: null })
+    })
+  }
 })
 
 describe('analytics export trigger', { concurrent: false }, () => {

@@ -55,13 +55,20 @@ It needs the same account ID and API token as analytics, plus the `R2` binding. 
 The archive keeps visitor IP addresses and user agents with no expiry. Keep the R2 bucket private, and remember these files when you answer a data deletion request.
 :::
 
-The dashboard does not read the archive yet; it is for download and offline analysis.
+The same job also writes daily numbers per link to D1, once a day's hours are archived:
+
+- `analytics_daily`: visits, visitors and referers per link and UTC day, computed as on the link cards.
+- `analytics_daily_breakdown`: visits and visitors per link, UTC day and value of each dimension (referer, country, region, city, timezone, language, OS, browser, browser type, device, device type, Cloudflare data center).
+
+The dashboard does not read the archive or the daily numbers yet; the archive is for download and offline analysis.
 
 What the logs mean:
 
-- `analytics_export.stopped`: Analytics Engine, the network or R2 failed. The run stops and the same hour is tried again 5 minutes later, so nothing is lost while the day is under 85 days old. The log names the hour, the status code and the error name.
+- `analytics_export.stopped`: Analytics Engine, the network, R2 or D1 failed. The run stops and the same step (an hour, or a day's numbers) is tried again 5 minutes later, so nothing is lost while the day is under 85 days old. The log names the step, the status code and the error name.
 - `analytics_export.hour_truncated`: the hour held more than 10,000 records, for example during a flood of requests. Its first 10,000 records are kept.
-- `analytics_export.step_parked`: the answer for one hour was wrong 3 times (for example fewer records than counted), so that hour is skipped. Whatever was received is kept in its file. To try parked hours again while they are under 85 days old, run:
+- `analytics_export.write_budget`: the daily numbers wrote 50,000 D1 rows today, about half the free plan's daily writes, so they stop until the next UTC day. The archive goes on.
+- `analytics_export.size_limit`, logged once an hour: the D1 database is over 400 MB, or D1 did not report its size, so the daily numbers stop. The archive goes on.
+- `analytics_export.step_parked`: the answer for one step was wrong 3 times (for example fewer records than counted, a row that cannot be read, a page of values too long to store, or a rejected query for a later page of a day's numbers, whose query contains a recorded value), so that step is skipped. For an hour, whatever was received is kept in its file. To try parked steps again while they are under 85 days old, run:
 
 ```sh
 npx wrangler d1 execute <database> --remote --command "UPDATE analytics_export_steps SET parked_at = NULL, attempts = 0 WHERE parked_at IS NOT NULL"

@@ -81,10 +81,12 @@ export const mcpUsage = sqliteTable('mcp_usage', {
 ])
 
 /**
- * Progress of the analytics archive, one row per step per UTC day. A step is
- * `archive:HH`: copy hour HH of the day from Analytics Engine to R2. A step is
- * pending until `completed_at` is set; `started_at` is a claim that expires
- * after 15 minutes; `parked_at` is set after 3 failed attempts.
+ * Progress of the analytics archive and rollups, one row per step per UTC day.
+ * A step is `archive:HH` (copy hour HH of the day from Analytics Engine to R2),
+ * `totals` or `breakdown:<dimension>` (write the day's rollups to D1). A step
+ * is pending until `completed_at` is set; `started_at` is a claim that expires
+ * after 15 minutes; `parked_at` is set after 3 failed attempts; `next_key` is
+ * where the next breakdown page starts.
  */
 export const analyticsExportSteps = sqliteTable('analytics_export_steps', {
   day: text().notNull(),
@@ -93,10 +95,44 @@ export const analyticsExportSteps = sqliteTable('analytics_export_steps', {
   startedAt: integer('started_at'),
   completedAt: integer('completed_at'),
   parkedAt: integer('parked_at'),
+  nextKey: text('next_key'),
 }, table => [
   primaryKey({ columns: [table.day, table.step] }),
   index('analytics_export_steps_pending_idx').on(table.completedAt, table.parkedAt, table.day, table.step),
 ])
+
+// The two rollup tables are WITHOUT ROWID, added by hand to drizzle/0009_*.sql:
+// Drizzle cannot express it, and its snapshot does not record it.
+
+/** Visits, visitors and referers per link per UTC day, with the card formulas. */
+export const analyticsDaily = sqliteTable('analytics_daily', {
+  day: text().notNull(),
+  linkId: text('link_id').notNull(),
+  slug: text().notNull(),
+  visits: integer().notNull(),
+  visitors: integer().notNull(),
+  referers: integer().notNull(),
+}, table => [
+  primaryKey({ columns: [table.day, table.linkId] }),
+])
+
+/** Visits and visitors per link, value and UTC day for one dimension, such as `referer` or `country`. */
+export const analyticsDailyBreakdown = sqliteTable('analytics_daily_breakdown', {
+  dimension: text().notNull(),
+  day: text().notNull(),
+  linkId: text('link_id').notNull(),
+  value: text().notNull(),
+  visits: integer().notNull(),
+  visitors: integer().notNull(),
+}, table => [
+  primaryKey({ columns: [table.dimension, table.day, table.linkId, table.value] }),
+])
+
+/** D1 rows the rollups wrote per UTC day, capped so they cannot use up the free plan's daily writes. */
+export const analyticsExportBudget = sqliteTable('analytics_export_budget', {
+  utcDay: text('utc_day').primaryKey(),
+  rowsWritten: integer('rows_written').notNull().default(0),
+})
 
 export const linkMigrationRuns = sqliteTable('link_migration_runs', {
   id: text().primaryKey(),
