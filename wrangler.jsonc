@@ -85,6 +85,8 @@
     }
   ],
   "triggers": {
-    "crons": ["0 0 * * *"] // Run backup task daily at 00:00 UTC
+    // "0 0 * * *": daily backup, expired-link cleanup and password re-hashing.
+    // "*/5 * * * *": analytics archive to R2 (server/utils/cron.ts). The daily jobs ignore it.
+    "crons": ["0 0 * * *", "*/5 * * * *"]
   }
 }

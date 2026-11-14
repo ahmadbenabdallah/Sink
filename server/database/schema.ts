@@ -80,6 +80,24 @@ export const mcpUsage = sqliteTable('mcp_usage', {
   primaryKey({ columns: [table.callerId, table.day] }),
 ])
 
+/**
+ * Progress of the analytics archive, one row per step per UTC day. A step is
+ * `archive:HH`: copy hour HH of the day from Analytics Engine to R2. A step is
+ * pending until `completed_at` is set; `started_at` is a claim that expires
+ * after 15 minutes; `parked_at` is set after 3 failed attempts.
+ */
+export const analyticsExportSteps = sqliteTable('analytics_export_steps', {
+  day: text().notNull(),
+  step: text().notNull(),
+  attempts: integer().notNull().default(0),
+  startedAt: integer('started_at'),
+  completedAt: integer('completed_at'),
+  parkedAt: integer('parked_at'),
+}, table => [
+  primaryKey({ columns: [table.day, table.step] }),
+  index('analytics_export_steps_pending_idx').on(table.completedAt, table.parkedAt, table.day, table.step),
+])
+
 export const linkMigrationRuns = sqliteTable('link_migration_runs', {
   id: text().primaryKey(),
   expectedCursor: text('expected_cursor'),
