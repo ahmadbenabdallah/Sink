@@ -107,6 +107,29 @@ export function doubles2logs(doubles: number[]) {
   }, {} as Partial<LogsMap>)
 }
 
+/**
+ * Caps on the visitor-controlled text fields, so padded headers (an Analytics
+ * Engine record holds up to 16 KB) cannot grow the R2 archive with no limit.
+ * Real values fit: browser, OS and device are read by ua-parser-js from the
+ * first 500 characters anyway, a DNS host name is at most 253 characters, and
+ * language tags are a few characters long.
+ */
+export const MAX_USER_AGENT_BYTES = 512
+const MAX_REFERER_BYTES = 255
+const MAX_LANGUAGE_BYTES = 64
+
+/** Cuts `value` to at most `maxBytes` of UTF-8 without splitting a character. */
+export function truncateUtf8(value: string, maxBytes: number): string {
+  const encoded = new TextEncoder().encode(value)
+  if (encoded.length <= maxBytes)
+    return value
+  let end = maxBytes
+  // Step back over continuation bytes (10xxxxxx) to the start of a character.
+  while (end > 0 && (encoded[end]! & 0xC0) === 0x80)
+    end--
+  return new TextDecoder().decode(encoded.subarray(0, end))
+}
+
 function getCountryName(country?: string): string {
   try {
     return new Intl.DisplayNames(['en'], { type: 'region' }).of(country || 'WD') || 'Worldwide'
@@ -119,10 +142,12 @@ function getCountryName(country?: string): string {
 export function collectAccessLog(event: H3Event): AccessLogResult | undefined {
   const ip = getHeader(event, 'cf-connecting-ip') || getHeader(event, 'x-real-ip') || getRequestIP(event, { xForwardedFor: true })
 
-  const { host: referer } = parseURL(getHeader(event, 'referer'))
+  const { host } = parseURL(getHeader(event, 'referer'))
+  const referer = host && truncateUtf8(host, MAX_REFERER_BYTES)
 
   const acceptLanguage = getHeader(event, 'accept-language') || ''
-  const language = (parseAcceptLanguage(acceptLanguage) || [])[0]
+  const topLanguage = (parseAcceptLanguage(acceptLanguage) || [])[0]
+  const language = topLanguage && truncateUtf8(topLanguage, MAX_LANGUAGE_BYTES)
 
   const userAgent = getHeader(event, 'user-agent') || ''
   const uaInfo = (new UAParser(userAgent, {
@@ -144,7 +169,7 @@ export function collectAccessLog(event: H3Event): AccessLogResult | undefined {
 
   const { disableBotAccessLog } = useRuntimeConfig(event)
   if (isBot && disableBotAccessLog) {
-    console.log('bot access log disabled:', userAgent)
+    console.log('bot access log disabled:', truncateUtf8(userAgent, MAX_USER_AGENT_BYTES))
     return
   }
 
@@ -152,7 +177,7 @@ export function collectAccessLog(event: H3Event): AccessLogResult | undefined {
   const logs = {
     url: link.url,
     slug: link.slug,
-    ua: userAgent,
+    ua: truncateUtf8(userAgent, MAX_USER_AGENT_BYTES),
     ip,
     referer,
     country: cf?.country,
