@@ -21,6 +21,12 @@ description: Upgrade Sink by syncing your GitHub fork and redeploying.
 
 If your instance stored links only in KV (older Sink versions), keep that KV data and follow [storage setup / migration](/storage/kv-to-d1).
 
+## Link targets must be web addresses
+
+New and edited links take only `http://` and `https://` targets, in the main URL, the App Store and Play Store URLs and every geo URL. This applies to the dashboard, the API, import and MCP. A target such as `javascript:` or `data:` would run as script on your short-link domain.
+
+Links saved before this change keep working and can still be listed, exported and deleted. Their visitors get a plain redirect, never the cloaking or preview page, and the dashboard shows their target without a clickable link. To edit one, change its target to an `http://` or `https://` address. An import file that contains one is refused, and the error names the row.
+
 ## After upgrade — quick check
 
 - Sign in to the dashboard

@@ -1,5 +1,6 @@
 import type { Link } from '#shared/types/link'
 import { parsePath, withQuery } from 'ufo'
+import { isWebUrl } from '#shared/utils/web-url'
 import { proxyLinkRequest } from '../services/link-proxy'
 
 const SOCIAL_BOTS = [
@@ -209,6 +210,18 @@ export default eventHandler(async (event) => {
         }
       }
 
+      // A link stored before targets had to be web addresses may still point at
+      // `javascript:` or `data:`. Framing it or linking to it from a page served
+      // here would run it on this origin, so it only ever gets a redirect, and
+      // one without a body: `sendRedirect` adds a meta refresh to the target.
+      if (!isWebUrl(finalTargetUrl)) {
+        if (redirectNoStore)
+          setHeader(event, 'Cache-Control', 'no-store')
+        setResponseStatus(event, +redirectStatusCode)
+        setHeader(event, 'Location', finalTargetUrl)
+        setHeader(event, 'Content-Type', 'text/plain; charset=utf-8')
+        return ''
+      }
       if (deviceRedirectUrl) {
         if (redirectNoStore)
           setHeader(event, 'Cache-Control', 'no-store')

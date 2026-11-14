@@ -38,14 +38,26 @@ export const LINK_TEXT_MAX_LENGTH = {
 
 export const nanoid = (length: number = slugDefaultLength) => customAlphabet('23456789abcdefghjkmnpqrstuvwxyz', length)
 
-const GeoSchema = z.preprocess((value) => {
-  if (!value || typeof value !== 'object' || Array.isArray(value))
-    return value
+/**
+ * New link targets must be web addresses. A `javascript:` or `data:` target runs
+ * as script on this origin when the cloaking page frames it or the dashboard
+ * links to it. Stored links keep the lenient rule, so links written before this
+ * check stay readable, exportable and deletable.
+ */
+const WEB_URL_RULE = { protocol: /^https?$/, message: 'URL must be a complete http:// or https:// address' }
+const StoredTargetSchema = z.string().trim().url().max(MAX_URL_LENGTH)
+const WebTargetSchema = z.string().trim().url(WEB_URL_RULE).max(MAX_URL_LENGTH)
 
-  return Object.fromEntries(
-    Object.entries(value as Record<string, unknown>).map(([key, url]) => [key.trim().toUpperCase(), url]),
-  )
-}, z.record(z.string().trim().regex(/^[A-Z]{2}$/), z.string().trim().url().max(MAX_URL_LENGTH)))
+function geoSchema(target: z.ZodString) {
+  return z.preprocess((value) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value))
+      return value
+
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, url]) => [key.trim().toUpperCase(), url]),
+    )
+  }, z.record(z.string().trim().regex(/^[A-Z]{2}$/), target))
+}
 
 /** Tags without the default, for contracts where an omitted list must stay omitted. */
 export const TagsFieldSchema = z.preprocess((value) => {
@@ -67,11 +79,16 @@ export const EditLinkPasswordSchema = z.string().trim().max(LINK_TEXT_MAX_LENGTH
 ).optional().describe('Password protection for the link. An empty string clears it; omitting keeps the stored one.')
 
 const IdSchema = z.string().trim().min(1).max(26)
-export const UrlSchema = z.string()
-  .trim()
-  .min(1, 'URL is required')
-  .max(MAX_URL_LENGTH, `URL must not exceed ${MAX_URL_LENGTH} characters`)
-  .url('URL format is invalid')
+function urlSchema(url: { message: string, protocol?: RegExp }) {
+  return z.string()
+    .trim()
+    .min(1, 'URL is required')
+    .max(MAX_URL_LENGTH, `URL must not exceed ${MAX_URL_LENGTH} characters`)
+    .url(url)
+}
+export const UrlSchema = urlSchema({ message: 'URL format is invalid' })
+// One check, so a malformed URL reports one issue, not two.
+export const WebUrlSchema = urlSchema(WEB_URL_RULE)
 export const SlugSchema = z.string().trim().max(SLUG_MAX_LENGTH).regex(new RegExp(slugRegex as RegExp))
 // `server/middleware/1.redirect.ts` skips reserved slugs before it looks a link up, so a
 // link written to one never redirects. Reject them where new links come in, and compare
@@ -90,21 +107,21 @@ const ExpirationSchema = TimestampSchema.refine(expiration => expiration > Math.
 
 /** The writable link fields. Descriptions carry into the generated MCP tool schemas. */
 export const LinkFieldsSchema = z.object({
-  url: UrlSchema.describe('The target URL.'),
+  url: WebUrlSchema.describe('The target URL. http or https only.'),
   slug: SlugSchema.describe('The slug identifying the short link.'),
   comment: z.string().trim().max(LINK_TEXT_MAX_LENGTH.comment).optional().describe('Optional internal note.'),
   expiration: ExpirationSchema.optional().describe('Unix seconds. Must be in the future.'),
   title: z.string().trim().max(LINK_TEXT_MAX_LENGTH.title).optional().describe('Overrides the title in the link preview.'),
   description: z.string().trim().max(LINK_TEXT_MAX_LENGTH.description).optional().describe('Overrides the description in the link preview.'),
   image: z.string().trim().max(LINK_TEXT_MAX_LENGTH.image).optional().describe('Overrides the image in the link preview.'),
-  apple: z.string().trim().url().max(MAX_URL_LENGTH).optional().describe('Apple App Store redirect URL.'),
-  google: z.string().trim().url().max(MAX_URL_LENGTH).optional().describe('Google Play Store redirect URL.'),
+  apple: WebTargetSchema.optional().describe('Apple App Store redirect URL. http or https only.'),
+  google: WebTargetSchema.optional().describe('Google Play Store redirect URL. http or https only.'),
   cloaking: z.boolean().optional().describe('Mask the destination URL behind the short link.'),
   redirectWithQuery: z.boolean().optional().describe('Append incoming query parameters to the destination URL.'),
   proxy: z.boolean().optional().describe('Reverse-proxy the destination instead of redirecting.'),
   password: LinkPasswordSchema.optional(),
   unsafe: z.boolean().optional().describe('Show a warning page before redirecting.'),
-  geo: GeoSchema.optional().describe('Geo-routing rules mapping a two-letter country code to a URL.'),
+  geo: geoSchema(WebTargetSchema).optional().describe('Geo-routing rules mapping a two-letter country code to an http or https URL.'),
   tags: TagsSchema.describe('Up to 10 normalized link tags, each 1-32 characters.'),
 })
 
@@ -128,6 +145,10 @@ export const ImportLinkSchema = LinkFieldsSchema.extend({
 })
 
 export const StoredLinkSchema = LinkFieldsSchema.extend({
+  url: UrlSchema,
+  apple: StoredTargetSchema.optional(),
+  google: StoredTargetSchema.optional(),
+  geo: geoSchema(StoredTargetSchema).optional(),
   id: IdSchema,
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
