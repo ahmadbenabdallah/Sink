@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { LinkCheckResult } from '@/types'
 import { CircleCheck, CircleX, ExternalLink, WifiOff } from '@lucide/vue'
+import { isWebUrl } from '#shared/utils/web-url'
 
 defineProps<{
   results: LinkCheckResult[]
@@ -94,7 +95,9 @@ function resultVariant(result: LinkCheckResult): 'default' | 'secondary' | 'dest
             <div
               class="flex justify-end gap-2"
             >
+              <!-- A target that is not a web address is shown as text only. -->
               <Button
+                v-if="isWebUrl(result.url)"
                 as="a"
                 variant="outline"
                 size="sm"

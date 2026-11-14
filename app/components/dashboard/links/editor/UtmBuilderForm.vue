@@ -2,7 +2,7 @@
 import { useMediaQuery } from '@vueuse/core'
 import { parseQuery, parseURL, withQuery } from 'ufo'
 import { toast } from 'vue-sonner'
-import { UrlSchema } from '#shared/schemas/link'
+import { WebUrlSchema } from '#shared/schemas/link'
 
 interface UtmFormValues {
   source: string
@@ -27,7 +27,7 @@ const isDesktop = useMediaQuery('(min-width: 640px)')
 const utmValues = reactive<UtmFormValues>(createEmptyUtmValues())
 
 const validatedUrl = computed(() => {
-  const result = UrlSchema.safeParse(props.url)
+  const result = WebUrlSchema.safeParse(props.url)
   return result.success ? result.data : undefined
 })
 
@@ -42,7 +42,7 @@ const validatedPreviewUrl = computed(() => {
   if (!previewUrl.value)
     return undefined
 
-  const result = UrlSchema.safeParse(previewUrl.value)
+  const result = WebUrlSchema.safeParse(previewUrl.value)
   return result.success ? result.data : undefined
 })
 
@@ -84,7 +84,7 @@ function buildUtmQuery(values: UtmFormValues) {
 function syncUtmValues(url: string) {
   Object.assign(utmValues, createEmptyUtmValues())
 
-  const result = UrlSchema.safeParse(url)
+  const result = WebUrlSchema.safeParse(url)
   if (!result.success)
     return
 

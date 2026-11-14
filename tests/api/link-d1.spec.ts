@@ -621,6 +621,23 @@ describe('d1 link integration', () => {
     expect(migrated?.updatedAt).toEqual(expect.any(Number))
   })
 
+  // New targets must be http or https; KV links written before that rule must
+  // still be served and still move to D1.
+  it('serves and migrates legacy KV links whose targets are not web addresses', async () => {
+    await clearLinkMigrationState()
+    const slug = trackSlug(`legacy-scheme-${crypto.randomUUID()}`)
+    await env.KV.put(`link:${slug}`, JSON.stringify({ url: 'mailto:someone@example.com', apple: 'tel:+15550100', geo: { us: 'javascript:alert(1)' }, cloaking: true, tags: [] }))
+
+    const redirect = await fetch(`/${slug}`, { redirect: 'manual' })
+    expect(redirect.status).toBe(301)
+    expect(redirect.headers.get('Location')).toBe('mailto:someone@example.com')
+    expect(await redirect.text()).toBe('')
+
+    const pages = await runMigration(true)
+    expect(pages.flatMap(page => page.failedItems).filter(item => item.key === `link:${slug}`)).toEqual([])
+    expect(await getD1Link(slug)).toMatchObject({ slug, url: 'mailto:someone@example.com', apple: 'tel:+15550100', geo: { US: 'javascript:alert(1)' } })
+  })
+
   it('keeps malformed legacy KV data when compatibility parsing fails', async () => {
     await clearLinkMigrationState()
     const slug = trackSlug(`malformed-legacy-${crypto.randomUUID()}`)

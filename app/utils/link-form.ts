@@ -1,5 +1,6 @@
 import type { DashboardLink, DashboardLinkFormData } from '@/types/dashboard-links'
 import { isMaskedLinkPassword } from '#shared/utils/link-password'
+import { isWebUrl } from '#shared/utils/web-url'
 import { date2unix, unix2date } from './time'
 
 export type LinkUrlValidationError
@@ -36,7 +37,8 @@ export function getLinkUrlValidationError(
   if (url.length > maxUrlLength)
     return { kind: 'too_long', length: url.length }
 
-  return URL.canParse(url) ? undefined : { kind: 'invalid' }
+  // The server takes only http and https targets.
+  return isWebUrl(url) ? undefined : { kind: 'invalid' }
 }
 
 /** First URL error among the geo routes. A row whose URL is still empty is valid; submit drops it. */

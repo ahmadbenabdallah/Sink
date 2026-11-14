@@ -1,5 +1,6 @@
 import type { H3Event } from 'h3'
 import type { EditLink, Link } from '#shared/schemas/link'
+import { isWebUrl } from '#shared/utils/web-url'
 
 const editableOptionalLinkFields = [
   'comment',
@@ -162,6 +163,12 @@ function applyLinkPatch(existingLink: Link, patch: LinkPatch): EditLink {
     else
       delete link[field]
   }
+
+  // A link stored before targets had to be web addresses can be patched only
+  // once its targets are, as a full edit requires.
+  const targets = [link.url, link.apple, link.google, ...Object.values((link.geo ?? {}) as Record<string, string>)]
+  if (targets.some(target => target !== undefined && !isWebUrl(target as string)))
+    throw createError({ status: 400, statusText: 'Link targets must be complete http:// or https:// addresses' })
 
   const urlChanged = link.url !== existingLink.url
   if (urlChanged && patch.unsafe === undefined && existingLink.unsafe === false)

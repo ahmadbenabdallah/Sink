@@ -11,6 +11,7 @@ import {
 import { LINK_PASSWORD_MASK_PREFIX } from '../../shared/utils/link-password'
 
 vi.mock('#shared/utils/link-password', async () => import('../../shared/utils/link-password'))
+vi.mock('#shared/utils/web-url', async () => import('../../shared/utils/web-url'))
 
 describe('link form values', () => {
   it('creates the current defaults for a new link', () => {
@@ -60,8 +61,16 @@ describe('link URL validation', () => {
     })
   })
 
+  // The server refuses these; the form says so before anything is sent.
+  it('treats a target that is not an http or https address as invalid', () => {
+    for (const url of ['javascript:alert(1)', 'JavaScript:alert(1)', 'data:text/html,x', 'mailto:a@example.com', 'ftp://example.com/', 'https:example.com', 'http:example.com', 'https:/example.com', '\u0000https://example.com/'])
+      expect(getLinkUrlValidationError(url, 100), url).toEqual({ kind: 'invalid' })
+    expect(getGeoRoutesUrlValidationError([{ url: 'javascript:alert(1)' }], 100)).toEqual({ kind: 'invalid' })
+  })
+
   it('accepts complete URLs and optional empty values', () => {
     expect(getLinkUrlValidationError('https://example.com', 100)).toBeUndefined()
+    expect(getLinkUrlValidationError('HTTP://example.com', 100)).toBeUndefined()
     expect(getLinkUrlValidationError('', 100, true)).toBeUndefined()
   })
 })

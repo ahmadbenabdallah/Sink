@@ -5,6 +5,7 @@ import { CalendarPlus2, Copy, CopyCheck, Ellipsis, Eraser, Flame, Hourglass, Lin
 import { useClipboard, useMediaQuery } from '@vueuse/core'
 import { parseURL } from 'ufo'
 import { toast } from 'vue-sonner'
+import { isWebUrl } from '#shared/utils/web-url'
 
 const props = defineProps<{
   link: DashboardLink
@@ -209,7 +210,8 @@ function copyLink() {
             <Copy v-else aria-hidden="true" class="size-4" />
           </Button>
 
-          <Button as-child variant="ghost" :size="isDesktop ? 'icon' : 'icon-lg'">
+          <!-- A link saved before targets had to be web addresses may hold `javascript:`; never make it clickable. -->
+          <Button v-if="isWebUrl(link.url)" as-child variant="ghost" :size="isDesktop ? 'icon' : 'icon-lg'">
             <a
               :href="link.url"
               target="_blank"
