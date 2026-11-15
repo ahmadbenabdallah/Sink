@@ -1,5 +1,5 @@
 import type { McpLevel } from '../../shared/types/auth'
-import type { ConnectorCreateResponse, ConnectorListResponse, ConnectorRevokeResponse, ConnectorView, ReservedCallerView } from '../../shared/types/connector'
+import type { ConnectorCreateResponse, ConnectorListResponse, ConnectorRemoveResponse, ConnectorRenameResponse, ConnectorRevokeResponse, ConnectorRotateResponse, ConnectorView, ReservedCallerView } from '../../shared/types/connector'
 import { ref, shallowRef } from 'vue'
 import { useAPI } from '@/utils/api'
 
@@ -51,5 +51,28 @@ export function useConnectors() {
     connectors.value = connectors.value.map(connector => connector.id === id ? { ...connector, revokedAt } : connector)
   }
 
-  return { connectors, reserved, dailyCallLimit, loading, loaded, loadError, load, create, revoke }
+  function replace(updated: ConnectorView) {
+    connectors.value = connectors.value.map(connector => connector.id === updated.id ? updated : connector)
+  }
+
+  /** Renames a connector and replaces its row with the server's. Throws what the request threw. */
+  async function rename(id: string, name: string): Promise<void> {
+    const { connector } = await useAPI<ConnectorRenameResponse>('/api/connector/rename', { method: 'POST', body: { id, name } })
+    replace(connector)
+  }
+
+  /** Replaces a connector's token. The new token goes back to the caller and is never kept here. */
+  async function rotate(id: string): Promise<ConnectorRotateResponse> {
+    const response = await useAPI<ConnectorRotateResponse>('/api/connector/rotate', { method: 'POST', body: { id } })
+    replace(response.connector)
+    return response
+  }
+
+  /** Removes a connector: it leaves the list for good. Throws what the request threw. */
+  async function remove(id: string): Promise<void> {
+    await useAPI<ConnectorRemoveResponse>('/api/connector/remove', { method: 'POST', body: { id } })
+    connectors.value = connectors.value.filter(connector => connector.id !== id)
+  }
+
+  return { connectors, reserved, dailyCallLimit, loading, loaded, loadError, load, create, revoke, rename, rotate, remove }
 }

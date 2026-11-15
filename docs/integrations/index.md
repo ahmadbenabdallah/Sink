@@ -55,7 +55,7 @@ Each token has a level:
 | `create` | Also create links.                                     |
 | `full`   | Also change and delete links, and check their targets. |
 
-Create one in the dashboard under **Settings → Connectors**, which also lists each connector's usage and lets you revoke it. The same can be done through the API with the site token. The token is shown in this response only:
+Create one in the dashboard under **Settings → Connectors → MCP connectors**, which also lists each connector's usage. Each row's **⋯** menu renames it, rotates its token, revokes it or removes it. The same can be done through the API with the site token. The token is shown in this response only:
 
 ```sh
 curl -X POST https://your-domain/api/connector/create \
@@ -70,7 +70,14 @@ Then connect the agent with it:
 claude mcp add --transport http sink https://your-domain/api/mcp --header "Authorization: Bearer sink_mcp_..."
 ```
 
-`GET /api/connector/list` lists connectors, and `POST /api/connector/revoke` with `{"id":"..."}` revokes one; a revoked token is refused from the next request on. A connector token works on `/api/mcp` only: it cannot call the REST API, sign in to the dashboard, or manage connectors.
+`GET /api/connector/list` lists connectors. With a body of `{"id":"..."}`:
+
+- `POST /api/connector/rename` (also `"name"`) renames one, with the same name rules as create.
+- `POST /api/connector/rotate` replaces its token and answers the new one, shown in this response only. The old token is refused from the next request on; the name, level and usage stay.
+- `POST /api/connector/revoke` revokes one: its token is refused from the next request on. A revoked connector can then only be removed (`409 connector_revoked` for rename and rotate).
+- `POST /api/connector/remove` removes one, active or revoked: it is revoked too, and disappears from the list and every route (`404`). Its record stays in D1 for the logs.
+
+A connector token works on `/api/mcp` only: it cannot call the REST API, sign in to the dashboard, or manage connectors.
 
 Each connector may make 5,000 tool calls per UTC day; `GET /api/connector/list` shows the calls of the last seven days and when each connector was last used. See [MCP usage and the D1 write quota](/deployment/workers#mcp-usage-and-the-d1-write-quota) to change the limit.
 
@@ -138,7 +145,7 @@ Connector tokens, levels and usage counting arrived together with stricter tool 
 To move your agents to connector tokens:
 
 1. Deploy this version. Deploying applies the two new D1 migrations, which add the connector and usage tables: on Workers through `pnpm deploy:worker`, on Pages through the build of the `master` branch.
-2. In the dashboard, open **Settings → Connectors** and create one connector per agent, with the lowest level that agent needs.
+2. In the dashboard, open **Settings → Connectors → MCP connectors** and create one connector per agent, with the lowest level that agent needs.
 3. In each agent's configuration, replace the site token with its connector token.
 4. Set `NUXT_MCP_ALLOW_SITE_TOKEN=false` and deploy again. The site token then works for the dashboard and the REST API only.
 5. Change `NUXT_SITE_TOKEN`, because the old value has been stored in agent configurations.

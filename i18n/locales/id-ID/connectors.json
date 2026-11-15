@@ -1,10 +1,10 @@
 {
   "connectors": {
-    "title": "Konektor",
+    "title": "Konektor MCP",
     "description": "Beri setiap agen AI token sendiri untuk endpoint MCP, sehingga kata sandi dasbor tidak pernah berada di konfigurasi agen.",
     "daily_limit": "Setiap konektor dapat melakukan {limit} panggilan alat per hari.",
-    "create": "Konektor baru",
-    "empty": "Belum ada konektor",
+    "create": "Konektor MCP baru",
+    "empty": "Tidak ada konektor MCP",
     "empty_description": "Buat satu untuk menghubungkan agen tanpa membagikan kata sandi dasbor.",
     "load_failed": "Tidak dapat memuat konektor",
     "usage_unavailable": "Tidak tersedia",
@@ -16,7 +16,8 @@
       "last_used": "Terakhir digunakan",
       "calls_7d": "Panggilan (7 hari)",
       "status": "Status",
-      "actions": "Tindakan"
+      "actions": "Tindakan",
+      "rotated": "Dirotasi {date}"
     },
     "status": {
       "active": "Aktif",
@@ -50,13 +51,13 @@
       "submitting": "Membuat…"
     },
     "create_dialog": {
-      "title": "Konektor baru",
+      "title": "Konektor MCP baru",
       "description": "Token hanya ditampilkan sekali, tepat setelah dibuat.",
       "failed": "Tidak dapat membuat konektor"
     },
     "reveal": {
       "title": "Salin token sekarang",
-      "once_notice": "Ini satu-satunya saat token ditampilkan. Jika hilang, cabut konektor ini dan buat yang baru.",
+      "once_notice": "Token hanya ditampilkan kali ini. Jika hilang, rotasi token untuk mendapatkan yang baru.",
       "token": "Token",
       "copy": "Salin",
       "copied": "Disalin",
@@ -66,12 +67,39 @@
       "done": "Selesai"
     },
     "revoke": {
-      "action": "Cabut",
       "title": "Cabut {name}?",
       "description": "Tokennya langsung berhenti berfungsi. Tindakan ini tidak dapat dibatalkan.",
       "confirm": "Cabut",
-      "success": "Konektor dicabut",
+      "success": "Konektor MCP dicabut",
       "failed": "Tidak dapat mencabut konektor"
+    },
+    "actions": {
+      "open": "Tindakan untuk {name}",
+      "rename": "Ganti nama",
+      "rotate": "Rotasi token",
+      "revoke": "Cabut",
+      "remove": "Hapus",
+      "revoked_only": "Dicabut: hanya bisa dihapus."
+    },
+    "rename": {
+      "title": "Ganti nama {name}",
+      "submit": "Simpan",
+      "success": "Nama konektor MCP diganti",
+      "failed": "Tidak dapat mengganti nama konektor MCP"
+    },
+    "rotate": {
+      "title": "Rotasi token {name}?",
+      "description": "Token saat ini langsung berhenti berfungsi. Setiap agen yang memakainya harus diberi token baru.",
+      "confirm": "Rotasi token",
+      "reveal_title": "Salin token baru sekarang",
+      "failed": "Tidak dapat merotasi token"
+    },
+    "remove": {
+      "title": "Hapus {name}?",
+      "description": "Tokennya langsung berhenti berfungsi, dan konektor ini hilang dari halaman ini untuk selamanya. Catatannya tetap disimpan untuk log; tidak bisa dipulihkan di sini.",
+      "confirm": "Hapus",
+      "success": "Konektor MCP dihapus",
+      "failed": "Tidak dapat menghapus konektor MCP"
     }
   }
 }

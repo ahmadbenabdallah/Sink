@@ -1,10 +1,10 @@
 {
   "connectors": {
-    "title": "Kết nối",
+    "title": "Kết nối MCP",
     "description": "Cấp cho mỗi tác nhân AI một token riêng cho điểm cuối MCP, để mật khẩu bảng điều khiển không bao giờ nằm trong cấu hình của tác nhân.",
     "daily_limit": "Mỗi kết nối được thực hiện {limit} lượt gọi công cụ mỗi ngày.",
-    "create": "Kết nối mới",
-    "empty": "Chưa có kết nối nào",
+    "create": "Kết nối MCP mới",
+    "empty": "Không có kết nối MCP",
     "empty_description": "Tạo một kết nối để nối tác nhân mà không cần chia sẻ mật khẩu bảng điều khiển.",
     "load_failed": "Không thể tải danh sách kết nối",
     "usage_unavailable": "Không có dữ liệu",
@@ -16,7 +16,8 @@
       "last_used": "Lần dùng gần nhất",
       "calls_7d": "Lượt gọi (7 ngày)",
       "status": "Trạng thái",
-      "actions": "Thao tác"
+      "actions": "Thao tác",
+      "rotated": "Đã đổi ngày {date}"
     },
     "status": {
       "active": "Đang hoạt động",
@@ -50,13 +51,13 @@
       "submitting": "Đang tạo…"
     },
     "create_dialog": {
-      "title": "Kết nối mới",
+      "title": "Kết nối MCP mới",
       "description": "Token chỉ hiển thị một lần, ngay sau khi tạo.",
       "failed": "Không thể tạo kết nối"
     },
     "reveal": {
       "title": "Sao chép token ngay",
-      "once_notice": "Đây là lần duy nhất token được hiển thị. Nếu làm mất, hãy thu hồi kết nối này và tạo kết nối mới.",
+      "once_notice": "Token chỉ hiển thị lần này. Nếu làm mất, hãy đổi token để nhận token mới.",
       "token": "Token",
       "copy": "Sao chép",
       "copied": "Đã sao chép",
@@ -66,12 +67,39 @@
       "done": "Xong"
     },
     "revoke": {
-      "action": "Thu hồi",
       "title": "Thu hồi {name}?",
       "description": "Token sẽ ngừng hoạt động ngay lập tức. Không thể hoàn tác.",
       "confirm": "Thu hồi",
-      "success": "Đã thu hồi kết nối",
+      "success": "Đã thu hồi kết nối MCP",
       "failed": "Không thể thu hồi kết nối"
+    },
+    "actions": {
+      "open": "Thao tác cho {name}",
+      "rename": "Đổi tên",
+      "rotate": "Đổi token",
+      "revoke": "Thu hồi",
+      "remove": "Xóa",
+      "revoked_only": "Đã thu hồi: chỉ có thể xóa."
+    },
+    "rename": {
+      "title": "Đổi tên {name}",
+      "submit": "Lưu",
+      "success": "Đã đổi tên kết nối MCP",
+      "failed": "Không thể đổi tên kết nối MCP"
+    },
+    "rotate": {
+      "title": "Đổi token của {name}?",
+      "description": "Token hiện tại ngừng hoạt động ngay. Mọi tác nhân dùng nó cần được cấp token mới.",
+      "confirm": "Đổi token",
+      "reveal_title": "Sao chép token mới ngay",
+      "failed": "Không thể đổi token"
+    },
+    "remove": {
+      "title": "Xóa {name}?",
+      "description": "Token của nó ngừng hoạt động ngay và nó biến mất khỏi trang này vĩnh viễn. Bản ghi vẫn được giữ cho nhật ký; không thể khôi phục tại đây.",
+      "confirm": "Xóa",
+      "success": "Đã xóa kết nối MCP",
+      "failed": "Không thể xóa kết nối MCP"
     }
   }
 }

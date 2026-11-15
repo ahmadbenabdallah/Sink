@@ -4,6 +4,8 @@ interface NavItem {
   url: string
   icon: Component
   isActive: boolean
+  /** Pages under this item: it then opens a submenu instead of being a link. */
+  children?: { title: string, url: string, isActive: boolean }[]
 }
 
 const { title } = useAppConfig()
@@ -48,6 +50,13 @@ const settingsItems = computed<NavItem[]>(() => [
     url: '/dashboard/connectors',
     icon: DASHBOARD_ROUTES.connectors.icon,
     isActive: isActive('connectors'),
+    children: [
+      {
+        title: 'nav.mcp_connectors',
+        url: '/dashboard/connectors/mcp',
+        isActive: isActive('mcpConnectors'),
+      },
+    ],
   },
 ])
 </script>

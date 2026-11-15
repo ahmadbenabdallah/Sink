@@ -20,30 +20,7 @@ const token = shallowRef<string | null>(null)
  */
 const revealed = shallowRef(false)
 const connectorName = shallowRef('')
-const copiedKey = shallowRef<string | null>(null)
-const revealPanel = useTemplateRef<HTMLElement>('revealPanel')
-let copiedTimer: ReturnType<typeof setTimeout> | undefined
-
-const snippets = computed(() => token.value ? connectorSnippets(window.location.origin, token.value) : null)
-const revealItems = computed(() => token.value && snippets.value
-  ? [
-      { key: 'token', label: t('connectors.reveal.token'), text: token.value },
-      { key: 'claude', label: t('connectors.reveal.claude_code'), text: snippets.value.claudeCode },
-      { key: 'json', label: t('connectors.reveal.json_config'), text: snippets.value.json },
-    ]
-  : [])
-
-async function copy(key: string, text: string) {
-  clearTimeout(copiedTimer)
-  const copied = await copyToClipboard(text)
-  copiedKey.value = copied ? key : null
-  // The text stays on screen, so it can still be selected and copied by hand.
-  if (!copied)
-    toast.error(t('connectors.reveal.copy_failed'))
-  copiedTimer = setTimeout(() => {
-    copiedKey.value = null
-  }, 2000)
-}
+const revealPanel = useTemplateRef<{ focus: () => void }>('revealPanel')
 
 async function submit(input: { name: string, level: McpLevel }) {
   if (submitting.value)
@@ -70,8 +47,6 @@ async function submit(input: { name: string, level: McpLevel }) {
 }
 
 watch(open, (isOpen) => {
-  clearTimeout(copiedTimer)
-  copiedKey.value = null
   if (isOpen) {
     revealed.value = false
     connectorName.value = ''
@@ -81,8 +56,6 @@ watch(open, (isOpen) => {
     token.value = null
   }
 })
-
-onBeforeUnmount(() => clearTimeout(copiedTimer))
 </script>
 
 <template>
@@ -101,54 +74,7 @@ onBeforeUnmount(() => clearTimeout(copiedTimer))
       :submitting="submitting"
       @submit="submit"
     />
-
-    <div
-      v-else
-      ref="revealPanel"
-      tabindex="-1"
-      class="
-        w-full space-y-5 px-1
-        focus:outline-none
-      "
-    >
-      <Alert>
-        <AlertDescription>{{ $t('connectors.reveal.once_notice') }}</AlertDescription>
-      </Alert>
-
-      <div
-        v-for="item in revealItems"
-        :key="item.key"
-        class="space-y-2"
-      >
-        <div class="flex items-center justify-between gap-2">
-          <p :id="`connector-reveal-${item.key}`" class="text-sm font-medium">
-            {{ item.label }}
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            :aria-label="`${$t('connectors.reveal.copy')}: ${item.label}`"
-            @click="copy(item.key, item.text)"
-          >
-            {{ copiedKey === item.key ? $t('connectors.reveal.copied') : $t('connectors.reveal.copy') }}
-          </Button>
-        </div>
-        <pre
-          role="group"
-          tabindex="0"
-          :aria-labelledby="`connector-reveal-${item.key}`"
-          class="
-            max-h-40 overflow-auto rounded-md bg-muted p-3 font-mono text-xs
-            break-all whitespace-pre-wrap
-          "
-        >{{ item.text }}</pre>
-      </div>
-
-      <p class="sr-only" aria-live="polite">
-        {{ copiedKey ? $t('connectors.reveal.copied') : '' }}
-      </p>
-    </div>
+    <DashboardConnectorsTokenReveal v-else ref="revealPanel" :token="token ?? ''" />
 
     <template v-if="revealed" #footer>
       <Button type="button" @click="open = false">

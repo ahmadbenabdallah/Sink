@@ -30,7 +30,8 @@
     "realtime": "Real-time",
     "check": "Check",
     "migrate": "Impor/Ekspor",
-    "connectors": "Konektor"
+    "connectors": "Konektor",
+    "mcp_connectors": "Konektor MCP"
   },
   "sidebar": {
     "subtitle": "Pemendek Tautan",

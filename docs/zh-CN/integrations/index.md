@@ -55,7 +55,7 @@ claude mcp add --transport http sink https://your-domain/api/mcp --header "Autho
 | `create` | 还可以创建链接。                       |
 | `full`   | 还可以修改、删除链接，并检查链接目标。 |
 
-可以在仪表盘的 **设置 → 连接器** 中创建，那里还会显示每个连接器的用量，并可撤销连接器。也可以使用站点令牌通过 API 完成同样的操作。令牌只会在这次响应中出现一次：
+可以在仪表盘的 **设置 → 连接器 → MCP 连接器** 中创建，那里还会显示每个连接器的用量。每一行的 **⋯** 菜单可以重命名、轮换令牌、撤销或删除连接器。也可以使用站点令牌通过 API 完成同样的操作。令牌只会在这次响应中出现一次：
 
 ```sh
 curl -X POST https://your-domain/api/connector/create \
@@ -70,7 +70,14 @@ curl -X POST https://your-domain/api/connector/create \
 claude mcp add --transport http sink https://your-domain/api/mcp --header "Authorization: Bearer sink_mcp_..."
 ```
 
-`GET /api/connector/list` 列出连接器，`POST /api/connector/revoke`（请求体 `{"id":"..."}`）撤销连接器；被撤销的令牌从下一次请求起即被拒绝。连接器令牌只能用于 `/api/mcp`：不能调用 REST API、不能登录仪表盘，也不能管理连接器。
+`GET /api/connector/list` 列出连接器。请求体为 `{"id":"..."}` 时：
+
+- `POST /api/connector/rename`（另加 `"name"`）重命名连接器，名称规则与创建时相同。
+- `POST /api/connector/rotate` 更换令牌并返回新令牌，新令牌只在这次响应中出现。旧令牌从下一次请求起即被拒绝；名称、级别和用量保持不变。
+- `POST /api/connector/revoke` 撤销连接器：其令牌从下一次请求起即被拒绝。被撤销的连接器只能删除（重命名和轮换返回 `409 connector_revoked`）。
+- `POST /api/connector/remove` 删除连接器（无论是否已撤销）：同时撤销它，并从列表和所有接口中消失（`404`）。其记录仍保留在 D1 中供日志使用。
+
+连接器令牌只能用于 `/api/mcp`：不能调用 REST API、不能登录仪表盘，也不能管理连接器。
 
 每个连接器每个 UTC 日最多可进行 5,000 次工具调用；`GET /api/connector/list` 会显示最近七天的调用次数以及每个连接器最近一次使用的时间。调整上限请参阅 [MCP 用量与 D1 写入配额](/zh-CN/deployment/workers#mcp-用量与-d1-写入配额)。
 
@@ -138,7 +145,7 @@ claude mcp add --transport http sink https://your-domain/api/mcp --header "Autho
 将代理迁移到连接器令牌：
 
 1. 部署此版本。部署会执行两个新的 D1 迁移，添加连接器表和用量表：Workers 通过 `pnpm deploy:worker`，Pages 通过 `master` 分支的构建。
-2. 在仪表盘中打开 **设置 → 连接器**，为每个代理创建一个连接器，级别取该代理所需的最低级别。
+2. 在仪表盘中打开 **设置 → 连接器 → MCP 连接器**，为每个代理创建一个连接器，级别取该代理所需的最低级别。
 3. 在每个代理的配置中，用其连接器令牌替换站点令牌。
 4. 设置 `NUXT_MCP_ALLOW_SITE_TOKEN=false` 并重新部署。此后站点令牌只用于仪表盘和 REST API。
 5. 更换 `NUXT_SITE_TOKEN`，因为旧值曾保存在代理配置中。

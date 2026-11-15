@@ -1,10 +1,10 @@
 {
   "connectors": {
-    "title": "Conectores",
+    "title": "Conectores MCP",
     "description": "Dê a cada agente de IA um token próprio para o endpoint MCP, para que a senha do painel nunca fique na configuração de um agente.",
     "daily_limit": "Cada conector pode fazer {limit} chamadas de ferramentas por dia.",
-    "create": "Novo conector",
-    "empty": "Nenhum conector ainda",
+    "create": "Novo conector MCP",
+    "empty": "Nenhum conector MCP",
     "empty_description": "Crie um para conectar um agente sem compartilhar a senha do painel.",
     "load_failed": "Não foi possível carregar os conectores",
     "usage_unavailable": "Indisponível",
@@ -16,7 +16,8 @@
       "last_used": "Último uso",
       "calls_7d": "Chamadas (7 dias)",
       "status": "Status",
-      "actions": "Ações"
+      "actions": "Ações",
+      "rotated": "Rotacionado em {date}"
     },
     "status": {
       "active": "Ativo",
@@ -50,13 +51,13 @@
       "submitting": "Criando…"
     },
     "create_dialog": {
-      "title": "Novo conector",
+      "title": "Novo conector MCP",
       "description": "O token é exibido uma única vez, logo após a criação.",
       "failed": "Não foi possível criar o conector"
     },
     "reveal": {
       "title": "Copie o token agora",
-      "once_notice": "Esta é a única vez que o token é exibido. Se você o perder, revogue este conector e crie um novo.",
+      "once_notice": "O token só aparece desta vez. Se perdê-lo, rotacione o token para obter um novo.",
       "token": "Token",
       "copy": "Copiar",
       "copied": "Copiado",
@@ -66,12 +67,39 @@
       "done": "Concluir"
     },
     "revoke": {
-      "action": "Revogar",
       "title": "Revogar {name}?",
       "description": "O token deixa de funcionar imediatamente. Esta ação não pode ser desfeita.",
       "confirm": "Revogar",
-      "success": "Conector revogado",
+      "success": "Conector MCP revogado",
       "failed": "Não foi possível revogar o conector"
+    },
+    "actions": {
+      "open": "Ações para {name}",
+      "rename": "Renomear",
+      "rotate": "Rotacionar token",
+      "revoke": "Revogar",
+      "remove": "Remover",
+      "revoked_only": "Revogado: só pode ser removido."
+    },
+    "rename": {
+      "title": "Renomear {name}",
+      "submit": "Salvar",
+      "success": "Conector MCP renomeado",
+      "failed": "Não foi possível renomear o conector MCP"
+    },
+    "rotate": {
+      "title": "Rotacionar o token de {name}?",
+      "description": "O token atual para de funcionar na hora. Todo agente que o usa precisa receber o novo.",
+      "confirm": "Rotacionar token",
+      "reveal_title": "Copie o novo token agora",
+      "failed": "Não foi possível rotacionar o token"
+    },
+    "remove": {
+      "title": "Remover {name}?",
+      "description": "O token dele para de funcionar na hora, e ele some desta página para sempre. O registro fica guardado para os logs; não pode ser restaurado aqui.",
+      "confirm": "Remover",
+      "success": "Conector MCP removido",
+      "failed": "Não foi possível remover o conector MCP"
     }
   }
 }

@@ -1,12 +1,12 @@
 {
   "connectors": {
-    "title": "Connectors",
+    "title": "MCP connectors",
     "description": "Give each AI agent its own token for the MCP endpoint, so the site token never sits in an agent's configuration.",
     "daily_limit": "Each connector may make {limit} tool calls per day.",
-    "create": "New connector",
-    "empty": "No connectors yet",
+    "create": "New MCP connector",
+    "empty": "No MCP connectors",
     "empty_description": "Create one to connect an agent without sharing the site token.",
-    "load_failed": "Could not load connectors",
+    "load_failed": "Could not load MCP connectors",
     "usage_unavailable": "Unavailable",
     "never_used": "Never",
     "table": {
@@ -16,7 +16,8 @@
       "last_used": "Last used",
       "calls_7d": "Calls (7 days)",
       "status": "Status",
-      "actions": "Actions"
+      "actions": "Actions",
+      "rotated": "Rotated {date}"
     },
     "status": {
       "active": "Active",
@@ -50,13 +51,13 @@
       "submitting": "Creating…"
     },
     "create_dialog": {
-      "title": "New connector",
+      "title": "New MCP connector",
       "description": "The token is shown once, right after you create it.",
-      "failed": "Could not create the connector"
+      "failed": "Could not create the MCP connector"
     },
     "reveal": {
       "title": "Copy the token now",
-      "once_notice": "This is the only time the token is shown. If you lose it, revoke this connector and create a new one.",
+      "once_notice": "This is the only time the token is shown. If you lose it, rotate the token to get a new one.",
       "token": "Token",
       "copy": "Copy",
       "copied": "Copied",
@@ -66,12 +67,39 @@
       "done": "Done"
     },
     "revoke": {
-      "action": "Revoke",
       "title": "Revoke {name}?",
       "description": "Its token stops working at once. This cannot be undone.",
       "confirm": "Revoke",
-      "success": "Connector revoked",
-      "failed": "Could not revoke the connector"
+      "success": "MCP connector revoked",
+      "failed": "Could not revoke the MCP connector"
+    },
+    "actions": {
+      "open": "Actions for {name}",
+      "rename": "Rename",
+      "rotate": "Rotate token",
+      "revoke": "Revoke",
+      "remove": "Remove",
+      "revoked_only": "Revoked: it can only be removed."
+    },
+    "rename": {
+      "title": "Rename {name}",
+      "submit": "Save",
+      "success": "MCP connector renamed",
+      "failed": "Could not rename the MCP connector"
+    },
+    "rotate": {
+      "title": "Rotate the token of {name}?",
+      "description": "The current token stops working at once. Every agent that uses it must be given the new one.",
+      "confirm": "Rotate token",
+      "reveal_title": "Copy the new token now",
+      "failed": "Could not rotate the token"
+    },
+    "remove": {
+      "title": "Remove {name}?",
+      "description": "Its token stops working at once, and it disappears from this page for good. Its record is kept for the logs; it cannot be restored here.",
+      "confirm": "Remove",
+      "success": "MCP connector removed",
+      "failed": "Could not remove the MCP connector"
     }
   }
 }

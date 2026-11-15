@@ -1,10 +1,10 @@
 {
   "connectors": {
-    "title": "连接器",
+    "title": "MCP 连接器",
     "description": "为每个 AI 代理单独创建用于 MCP 端点的令牌，这样仪表盘密码就不会出现在代理的配置里。",
     "daily_limit": "每个连接器每天最多可进行 {limit} 次工具调用。",
-    "create": "新建连接器",
-    "empty": "还没有连接器",
+    "create": "新建 MCP 连接器",
+    "empty": "没有 MCP 连接器",
     "empty_description": "创建一个连接器，无需共享仪表盘密码即可连接代理。",
     "load_failed": "无法加载连接器",
     "usage_unavailable": "不可用",
@@ -16,7 +16,8 @@
       "last_used": "最近使用",
       "calls_7d": "调用次数（7 天）",
       "status": "状态",
-      "actions": "操作"
+      "actions": "操作",
+      "rotated": "{date} 已轮换"
     },
     "status": {
       "active": "有效",
@@ -50,13 +51,13 @@
       "submitting": "正在创建…"
     },
     "create_dialog": {
-      "title": "新建连接器",
+      "title": "新建 MCP 连接器",
       "description": "令牌只会在创建后显示一次。",
       "failed": "无法创建连接器"
     },
     "reveal": {
       "title": "请立即复制令牌",
-      "once_notice": "令牌只会显示这一次。如果丢失，请撤销此连接器并重新创建。",
+      "once_notice": "令牌只会显示这一次。如果丢失，请轮换令牌以获取新令牌。",
       "token": "令牌",
       "copy": "复制",
       "copied": "已复制",
@@ -66,12 +67,39 @@
       "done": "完成"
     },
     "revoke": {
-      "action": "撤销",
       "title": "撤销 {name}？",
       "description": "其令牌会立即失效，且无法恢复。",
       "confirm": "撤销",
-      "success": "连接器已撤销",
+      "success": "MCP 连接器已撤销",
       "failed": "无法撤销连接器"
+    },
+    "actions": {
+      "open": "{name} 的操作",
+      "rename": "重命名",
+      "rotate": "轮换令牌",
+      "revoke": "撤销",
+      "remove": "删除",
+      "revoked_only": "已撤销：只能删除。"
+    },
+    "rename": {
+      "title": "重命名 {name}",
+      "submit": "保存",
+      "success": "MCP 连接器已重命名",
+      "failed": "无法重命名 MCP 连接器"
+    },
+    "rotate": {
+      "title": "轮换 {name} 的令牌？",
+      "description": "当前令牌会立即失效。每个使用它的代理都需要换上新令牌。",
+      "confirm": "轮换令牌",
+      "reveal_title": "现在复制新令牌",
+      "failed": "无法轮换令牌"
+    },
+    "remove": {
+      "title": "删除 {name}？",
+      "description": "它的令牌会立即失效，并会从此页面永久消失。记录会保留用于日志，无法在此恢复。",
+      "confirm": "删除",
+      "success": "MCP 连接器已删除",
+      "failed": "无法删除 MCP 连接器"
     }
   }
 }
