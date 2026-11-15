@@ -9,6 +9,7 @@ export const API_ERROR_CODES = [
   'cloudflare_credentials_rejected',
   'cloudflare_request_failed',
   'connector_not_found',
+  'connector_revoked',
   'file_required',
   'file_too_large',
   'forbidden',

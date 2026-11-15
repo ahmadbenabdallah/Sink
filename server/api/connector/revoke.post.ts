@@ -4,7 +4,7 @@ import { revokeToken } from '../../services/mcp/tokens'
 
 defineRouteMeta({
   openAPI: {
-    description: 'Revoke an MCP connector. Its token is refused from the next request on. Revoking it again changes nothing. Not available to a connector token.',
+    description: 'Revoke an MCP connector. Its token is refused from the next request on. Revoking it again changes nothing. A removed or unknown connector answers 404. Not available to a connector token.',
     security: [{ bearerAuth: [] }],
     requestBody: {
       required: true,
@@ -31,7 +31,7 @@ export default eventHandler(async (event): Promise<ConnectorRevokeResponse> => {
 
   const connector = await revokeToken(useConnectorDatabase(event), id)
   if (connector?.revokedAt == null)
-    throw createError({ status: 404, statusText: 'Connector not found', data: { code: 'connector_not_found' } })
+    throw connectorNotFound()
 
   console.log({ event: 'connector.revoked', id: connector.id, authMethod: event.context.authMethod })
   return { id: connector.id, revokedAt: connector.revokedAt }

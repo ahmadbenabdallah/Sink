@@ -88,6 +88,7 @@ describe('/api/connector/create', () => {
       level: 'create',
       createdAt: expect.any(Number),
       revokedAt: null,
+      rotatedAt: null,
       lastUsedAt: null,
       calls7d: 0,
     })

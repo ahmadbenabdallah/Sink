@@ -97,6 +97,15 @@ describe('the token store', () => {
     expect((await listTokens(db)).find(row => row.id === connector.id)?.revokedAt).toBe(revoked?.revokedAt)
   })
 
+  // Remove always sets revoked_at too, but a hand-run query could clear it and
+  // leave a token that works yet is hidden from every page that could revoke it.
+  it('finds nothing for a removed token, even if its revocation was cleared by hand', async () => {
+    const { token, connector } = await createToken(db, { name: 'Removed by hand', level: 'read' })
+    await db.update(mcpTokens).set({ removedAt: 1, revokedAt: null }).where(eq(mcpTokens.id, connector.id))
+
+    expect(await findActiveToken(db, token)).toBeNull()
+  })
+
   it('returns nothing when revoking an id that does not exist', async () => {
     expect(await revokeToken(db, 'no-such-id')).toBeNull()
   })
