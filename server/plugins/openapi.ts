@@ -70,7 +70,8 @@ function applyOpenAPISchemas(spec: Record<string, unknown>) {
 export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('beforeResponse', (event: H3Event, response: { body?: unknown }) => {
     const openAPIRoute = useRuntimeConfig(event).nitro?.openAPI?.route
-    if (!openAPIRoute || event.path !== openAPIRoute)
+    // The pathname, not event.path: a query string must not skip this hook.
+    if (!openAPIRoute || getRequestURL(event).pathname !== openAPIRoute)
       return
 
     const spec = response.body
@@ -78,5 +79,7 @@ export default defineNitroPlugin((nitroApp) => {
       return
 
     applyOpenAPISchemas(spec)
+    // Nitro publishes every route. The traffic sorts are for the dashboard only.
+    delete spec.paths['/api/link/traffic']
   })
 })

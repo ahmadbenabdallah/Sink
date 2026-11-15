@@ -22,6 +22,7 @@
   },
   "errors": {
     "ai_not_enabled": "AI is not enabled on this instance.",
+    "analytics_unavailable": "Traffic counts are unavailable right now.",
     "cloudflare_credentials_rejected": "Cloudflare rejected the configured API credentials.",
     "cloudflare_request_failed": "The request to the Cloudflare API failed.",
     "connector_not_found": "Connector not found.",

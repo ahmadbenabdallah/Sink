@@ -31,5 +31,10 @@ export interface LinkListResponse {
   list_complete: boolean
 }
 
+/** GET /api/link/traffic: the page's links with the counts they were ranked by, keyed by link id. */
+export interface TrafficLinkListResponse extends LinkListResponse {
+  counters: Record<string, { visits: number, visitors: number, referers: number }>
+}
+
 export type LinkSortBy = 'newest' | 'oldest' | 'az' | 'za'
 export type LinkStatus = 'active' | 'expired' | 'all'

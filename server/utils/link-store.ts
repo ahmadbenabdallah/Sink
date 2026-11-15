@@ -1,6 +1,6 @@
 import type { H3Event } from 'h3'
 import type { Link } from '#shared/schemas/link'
-import type { LinkSearchItem } from '#shared/types/link'
+import type { LinkSearchItem, LinkStatus } from '#shared/types/link'
 import type { ExpectedLinkVersion, LinkFilterOptions, ListLinksOptions, ListLinksResult, SearchLinksOptions } from '../services/link-store/d1'
 import { getRequestHost, getRequestProtocol } from 'h3'
 import {
@@ -11,9 +11,11 @@ import {
   d1GetActiveLink,
   d1GetActiveLinkVersions,
   d1GetAnyLink,
+  d1GetLinksBySlugs,
   d1GetLinkWithMetadata,
   d1HasActiveLinkVersion,
   d1IterateAllLinks,
+  d1ListLinkKeys,
   d1ListLinks,
   d1ListTags,
   d1SearchLinks,
@@ -150,6 +152,14 @@ export async function deleteLink(event: H3Event, slug: string): Promise<boolean>
   const deleted = await d1DeleteLink(event, slug)
   await deleteLinkCache(event, slug)
   return deleted
+}
+
+export async function listLinkKeys(event: H3Event, options: { tag?: string, status: LinkStatus }) {
+  return await d1ListLinkKeys(event, options)
+}
+
+export async function getLinksBySlugs(event: H3Event, slugs: string[]): Promise<Link[]> {
+  return await d1GetLinksBySlugs(event, slugs)
 }
 
 export async function listLinks(event: H3Event, options: ListLinksOptions): Promise<ListLinksResult> {

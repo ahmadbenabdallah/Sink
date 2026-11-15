@@ -22,6 +22,18 @@ function jsonBodySchema(spec: JsonObject, path: string, method: string) {
 }
 
 describe('/_docs/openapi.json', () => {
+  // The traffic sorts are for the dashboard only; Nitro would publish every route.
+  it('leaves the dashboard-only traffic route out', async () => {
+    const spec = await getOpenApiSpec()
+    expect(spec.paths?.['/api/link/traffic']).toBeUndefined()
+  })
+
+  it('leaves it out when the spec URL carries a query string too', async () => {
+    const response = await fetch('/_docs/openapi.json?x=1')
+    expect(response.status).toBe(200)
+    expect(((await response.json()) as JsonObject).paths?.['/api/link/traffic']).toBeUndefined()
+  })
+
   it('injects request body schemas into the link routes', async () => {
     const spec = await getOpenApiSpec()
 

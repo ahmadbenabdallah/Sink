@@ -6,6 +6,7 @@
  */
 export const API_ERROR_CODES = [
   'ai_not_enabled',
+  'analytics_unavailable',
   'cloudflare_credentials_rejected',
   'cloudflare_request_failed',
   'connector_not_found',

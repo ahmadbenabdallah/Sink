@@ -22,6 +22,7 @@
   },
   "errors": {
     "ai_not_enabled": "A IA não está ativada nesta instância.",
+    "analytics_unavailable": "As contagens de tráfego estão indisponíveis neste momento.",
     "cloudflare_credentials_rejected": "A Cloudflare rejeitou as credenciais de API configuradas.",
     "cloudflare_request_failed": "O pedido à API da Cloudflare falhou.",
     "connector_not_found": "Conector não encontrado.",
