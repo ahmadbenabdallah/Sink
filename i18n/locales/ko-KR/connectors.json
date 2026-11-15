@@ -47,8 +47,7 @@
       "name_placeholder": "Claude Code",
       "name_invalid": "1~{max}자의 이름을 입력하세요.",
       "level": "권한",
-      "submit": "커넥터 만들기",
-      "submitting": "만드는 중…"
+      "submit": "만들기"
     },
     "create_dialog": {
       "title": "새 MCP 커넥터",

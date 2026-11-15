@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ConnectorRotateResponse, ConnectorView } from '#shared/types/connector'
-import { Loader } from '@lucide/vue'
+import { Loader2 } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 
 const props = defineProps<{
@@ -63,21 +63,47 @@ async function confirmRotate() {
   >
     <DashboardConnectorsTokenReveal v-if="revealed" ref="revealPanel" :token="token ?? ''" />
 
+    <!--
+      The same buttons as the link editor: stacked on phones, side by side from
+      sm. Rotate stays red: it stops the current token at once.
+    -->
     <template #footer>
-      <Button v-if="revealed" type="button" @click="open = false">
+      <Button
+        v-if="revealed"
+        type="button"
+        class="
+          w-full
+          sm:w-auto
+        "
+        @click="open = false"
+      >
         {{ $t('connectors.reveal.done') }}
       </Button>
       <template v-else>
-        <Button type="button" variant="outline" :disabled="rotating" @click="open = false">
+        <Button
+          type="button"
+          variant="secondary"
+          class="
+            w-full
+            sm:w-auto
+          "
+          :disabled="rotating"
+          @click="open = false"
+        >
           {{ $t('common.cancel') }}
         </Button>
-        <Button type="button" variant="destructive" :disabled="rotating" :aria-busy="rotating" @click="confirmRotate">
-          <Loader
-            v-if="rotating" aria-hidden="true" class="
-              mr-2 size-4
-              motion-safe:animate-spin
-            "
-          />
+        <Button
+          type="button"
+          variant="destructive"
+          class="
+            w-full
+            sm:w-auto
+          "
+          :disabled="rotating"
+          :aria-busy="rotating"
+          @click="confirmRotate"
+        >
+          <Loader2 v-if="rotating" class="motion-safe:animate-spin" aria-hidden="true" />
           {{ $t('connectors.rotate.confirm') }}
         </Button>
       </template>

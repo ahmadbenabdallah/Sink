@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ConnectorView } from '#shared/types/connector'
-import { Loader } from '@lucide/vue'
+import { Loader2 } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 import { CONNECTOR_NAME_MAX_LENGTH, ConnectorNameSchema } from '#shared/schemas/connector'
 
@@ -91,17 +91,31 @@ async function save() {
       </Field>
     </form>
 
+    <!-- The same buttons as the link editor: stacked on phones, side by side from sm. -->
     <template #footer>
-      <Button type="button" variant="outline" :disabled="saving" @click="open = false">
+      <Button
+        type="button"
+        variant="secondary"
+        class="
+          w-full
+          sm:w-auto
+        "
+        :disabled="saving"
+        @click="open = false"
+      >
         {{ $t('common.cancel') }}
       </Button>
-      <Button type="submit" form="connector-rename-form" :disabled="saving" :aria-busy="saving">
-        <Loader
-          v-if="saving" aria-hidden="true" class="
-            mr-2 size-4
-            motion-safe:animate-spin
-          "
-        />
+      <Button
+        type="submit"
+        form="connector-rename-form"
+        :disabled="saving"
+        :aria-busy="saving"
+        class="
+          w-full
+          sm:w-auto
+        "
+      >
+        <Loader2 v-if="saving" class="motion-safe:animate-spin" aria-hidden="true" />
         {{ $t('connectors.rename.submit') }}
       </Button>
     </template>

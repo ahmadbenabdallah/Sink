@@ -47,8 +47,7 @@
       "name_placeholder": "Claude Code",
       "name_invalid": "Masukkan nama 1 sampai {max} karakter.",
       "level": "Tingkat",
-      "submit": "Buat konektor",
-      "submitting": "Membuat…"
+      "submit": "Buat"
     },
     "create_dialog": {
       "title": "Konektor MCP baru",

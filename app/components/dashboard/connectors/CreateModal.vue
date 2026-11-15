@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { McpLevel } from '#shared/types/auth'
 import type { ConnectorCreateResponse } from '#shared/types/connector'
+import { Loader2 } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 
 const props = defineProps<{
@@ -21,6 +22,7 @@ const token = shallowRef<string | null>(null)
 const revealed = shallowRef(false)
 const connectorName = shallowRef('')
 const revealPanel = useTemplateRef<{ focus: () => void }>('revealPanel')
+const formId = `connector-create-${useId()}`
 
 async function submit(input: { name: string, level: McpLevel }) {
   if (submitting.value)
@@ -71,15 +73,52 @@ watch(open, (isOpen) => {
   >
     <DashboardConnectorsCreateForm
       v-if="!revealed"
+      :form-id="formId"
       :submitting="submitting"
       @submit="submit"
     />
     <DashboardConnectorsTokenReveal v-else ref="revealPanel" :token="token ?? ''" />
 
-    <template v-if="revealed" #footer>
-      <Button type="button" @click="open = false">
+    <!-- The same buttons as the link editor: stacked on phones, side by side from sm. -->
+    <template #footer>
+      <Button
+        v-if="revealed"
+        type="button"
+        class="
+          w-full
+          sm:w-auto
+        "
+        @click="open = false"
+      >
         {{ $t('connectors.reveal.done') }}
       </Button>
+      <template v-else>
+        <Button
+          type="button"
+          variant="secondary"
+          class="
+            w-full
+            sm:w-auto
+          "
+          :disabled="submitting"
+          @click="open = false"
+        >
+          {{ $t('common.cancel') }}
+        </Button>
+        <Button
+          type="submit"
+          :form="formId"
+          :disabled="submitting"
+          :aria-busy="submitting"
+          class="
+            w-full
+            sm:w-auto
+          "
+        >
+          <Loader2 v-if="submitting" class="motion-safe:animate-spin" aria-hidden="true" />
+          {{ $t('connectors.form.submit') }}
+        </Button>
+      </template>
     </template>
   </ResponsiveModal>
 </template>
