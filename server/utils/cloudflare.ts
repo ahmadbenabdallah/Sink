@@ -14,7 +14,7 @@ const DELETED_LINK_WINDOW_SECONDS = 92 * 86_400
  */
 const MAX_DELETED_LINK_IDS = 2000
 
-function analyticsRequestFailed() {
+export function analyticsRequestFailed() {
   return createError({ status: 502, statusText: 'Cloudflare API request failed', data: { code: 'cloudflare_request_failed' } })
 }
 
@@ -47,12 +47,15 @@ async function recentlyDeletedLinkIds(event: H3Event): Promise<string[]> {
   return ids.filter(id => !hasControlCharacter(id))
 }
 
+/** An Analytics Engine SQL answer in JSON: `data` holds the rows. */
+export type AnalyticsAnswer = { data?: unknown[] } & Record<string, unknown>
+
 /**
  * Sends an Analytics Engine SQL query, leaving out the traffic of links the
  * owner deleted (`index1` is the link id). Every analytics read goes through
  * here: the stats and logs routes, the CSV export and the MCP analytics tools.
  */
-export async function useWAE(event: H3Event, query: SelectQueryBuilder<any, any, any>) {
+export async function useWAE(event: H3Event, query: SelectQueryBuilder<any, any, any>): Promise<AnalyticsAnswer> {
   const { cfAccountId, cfApiToken } = useRuntimeConfig(event)
   if (!cfAccountId || !cfApiToken)
     return { data: [] }
@@ -67,7 +70,7 @@ export async function useWAE(event: H3Event, query: SelectQueryBuilder<any, any,
     console.info('useWAE', compiledQuery)
 
   // nosemgrep: sink-no-raw-fetch-in-server -- fixed Cloudflare API host, not a user-supplied URL
-  return $fetch(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/analytics_engine/sql`, {
+  return $fetch<AnalyticsAnswer>(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/analytics_engine/sql`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${cfApiToken}`,

@@ -43,7 +43,11 @@
     "analysis": {
       "chart_summary": "총 {totalVisits}회 방문. 최고: {peakTime}에 {peakVisits}회.",
       "chart_summary_with_visitors": "총 {totalVisits}회 방문, 방문자 {totalVisitors}명. 최고: {peakTime}에 {peakVisits}회 방문.",
-      "locations_summary": "{countryCount}개 지역에서 {totalVisits}회 방문했습니다."
+      "locations_summary": "{countryCount}개 지역에서 {totalVisits}회 방문했습니다.",
+      "history_daily": "3개월보다 오래된 날짜는 UTC 기준 일별 합계에서 가져옵니다. 해당 날짜의 방문자와 리퍼러는 추정치입니다.",
+      "history_missing": "데이터가 없는 이전 날짜: {count}일.",
+      "history_recent_only": "주간 추세는 최근 3개월만 다룹니다.",
+      "history_budget": "이전 날짜는 내일 다시 볼 수 있습니다. 오늘의 읽기 한도에 도달했습니다."
     },
     "date_picker": {
       "today": "오늘",

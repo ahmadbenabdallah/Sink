@@ -43,7 +43,11 @@
     "analysis": {
       "chart_summary": "{totalVisits} visite totali. Picco: {peakVisits} alle {peakTime}.",
       "chart_summary_with_visitors": "{totalVisits} visite e {totalVisitors} visitatori totali. Picco: {peakVisits} visite alle {peakTime}.",
-      "locations_summary": "{totalVisits} visite in {countryCount} aree."
+      "locations_summary": "{totalVisits} visite in {countryCount} aree.",
+      "history_daily": "I giorni più vecchi di 3 mesi provengono dai totali giornalieri, per giorno UTC. Visitatori e referrer di quei giorni sono stime.",
+      "history_missing": "Giorni precedenti senza dati: {count}.",
+      "history_recent_only": "L'andamento settimanale copre solo gli ultimi 3 mesi.",
+      "history_budget": "I giorni precedenti saranno di nuovo disponibili domani: il limite di lettura di oggi è stato raggiunto."
     },
     "date_picker": {
       "today": "Oggi",

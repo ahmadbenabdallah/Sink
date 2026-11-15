@@ -43,7 +43,11 @@
     "analysis": {
       "chart_summary": "共 {totalVisits} 次访问，峰值为 {peakTime} 的 {peakVisits} 次。",
       "chart_summary_with_visitors": "共 {totalVisits} 次访问、{totalVisitors} 位访客，峰值为 {peakTime} 的 {peakVisits} 次访问。",
-      "locations_summary": "{countryCount} 个地区共 {totalVisits} 次访问。"
+      "locations_summary": "{countryCount} 个地区共 {totalVisits} 次访问。",
+      "history_daily": "超过 3 个月的日期来自按 UTC 日计算的每日汇总，这些日期的访客数和来源数为估算值。",
+      "history_missing": "没有数据的较早日期：{count} 天。",
+      "history_recent_only": "每周趋势只涵盖最近 3 个月。",
+      "history_budget": "较早的日期明天才能再次查看：今天的读取上限已用完。"
     },
     "date_picker": {
       "today": "今天",

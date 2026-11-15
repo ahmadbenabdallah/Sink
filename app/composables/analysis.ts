@@ -1,3 +1,4 @@
+import type { AnalyticsHistory } from '#shared/types/analytics-history'
 import type { AnalysisQueryState, AnalysisView, DashboardSlugFilters, HeatmapMetric } from '@/utils/dashboard-query'
 import { ref } from 'vue'
 import { defineStore, useI18n } from '#imports'
@@ -11,6 +12,12 @@ export const useDashboardAnalysisStore = defineStore('dashboard-analysis', () =>
   const filters = ref<DashboardSlugFilters>({})
   const viewMode = ref<AnalysisView>('trend')
   const heatmapMetric = ref<HeatmapMetric>('visits')
+  /** The `history` each part of the page last received, for the note about days older than three months. */
+  const history = ref<Record<string, AnalyticsHistory | undefined>>({})
+
+  function reportHistory(part: string, value: AnalyticsHistory | undefined) {
+    history.value = { ...history.value, [part]: value }
+  }
 
   function updateDateRange(range: [number, number]) {
     dateRange.value = { startAt: range[0], endAt: range[1] }
@@ -53,6 +60,8 @@ export const useDashboardAnalysisStore = defineStore('dashboard-analysis', () =>
     filters,
     viewMode,
     heatmapMetric,
+    history,
+    reportHistory,
     updateDateRange,
     selectPreset,
     selectCustomRange,

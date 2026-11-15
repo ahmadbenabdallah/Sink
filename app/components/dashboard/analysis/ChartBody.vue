@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue'
+import type { AnalyticsHistory } from '#shared/types/analytics-history'
 import type { ChartConfig } from '@/components/ui/chart'
 import type { ViewDataPoint } from '@/types'
 import type { DashboardSlugFilters } from '@/utils/dashboard-query'
@@ -137,7 +138,7 @@ watch([effectiveTimeRange, effectiveFilters, isPaused, retryKey], async (_values
   error.value = false
 
   try {
-    const result = await useAPI<{ data: ViewDataPoint[] }>('/api/stats/views', {
+    const result = await useAPI<{ data: ViewDataPoint[], history?: AnalyticsHistory }>('/api/stats/views', {
       signal: controller.signal,
       query: {
         ...effectiveFilters.value,
@@ -156,16 +157,27 @@ watch([effectiveTimeRange, effectiveFilters, isPaused, retryKey], async (_values
       visits: +item.visits,
     }))
     hasLoaded.value = true
+    // The Realtime page passes its own range; only the Analysis page has the note.
+    if (props.startAt === undefined)
+      analysisStore.reportHistory('views', result.history)
   }
   catch {
-    if (!controller.signal.aborted && !isPaused.value)
+    if (!controller.signal.aborted && !isPaused.value) {
       error.value = true
+      if (props.startAt === undefined)
+        analysisStore.reportHistory('views', undefined)
+    }
   }
   finally {
     if (!controller.signal.aborted && !isPaused.value)
       loading.value = false
   }
 }, { immediate: true })
+
+onUnmounted(() => {
+  if (props.startAt === undefined)
+    analysisStore.reportHistory('views', undefined)
+})
 
 type Data = ViewDataPoint
 </script>

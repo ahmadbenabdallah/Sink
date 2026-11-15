@@ -43,7 +43,11 @@
     "analysis": {
       "chart_summary": "Tổng cộng {totalVisits} lượt truy cập. Cao nhất: {peakVisits} lúc {peakTime}.",
       "chart_summary_with_visitors": "Tổng cộng {totalVisits} lượt truy cập và {totalVisitors} khách. Cao nhất: {peakVisits} lượt lúc {peakTime}.",
-      "locations_summary": "{totalVisits} lượt truy cập từ {countryCount} khu vực."
+      "locations_summary": "{totalVisits} lượt truy cập từ {countryCount} khu vực.",
+      "history_daily": "Các ngày cũ hơn 3 tháng lấy từ tổng theo ngày, tính theo ngày UTC. Khách truy cập và nguồn giới thiệu của những ngày đó là ước tính.",
+      "history_missing": "Số ngày cũ không có dữ liệu: {count}.",
+      "history_recent_only": "Xu hướng theo tuần chỉ bao gồm 3 tháng gần nhất.",
+      "history_budget": "Các ngày cũ sẽ có lại vào ngày mai: đã đạt giới hạn đọc của hôm nay."
     },
     "date_picker": {
       "today": "Hôm nay",

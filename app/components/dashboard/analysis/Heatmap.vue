@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AnalyticsHistory } from '#shared/types/analytics-history'
 import type { HeatmapDataPoint } from '@/types'
 
 const props = withDefaults(defineProps<{
@@ -140,7 +141,7 @@ watch([effectiveTimeRange, effectiveFilters, retryKey], async (_values, _oldValu
   error.value = false
   const { startAt, endAt } = effectiveTimeRange.value
   try {
-    const result = await useAPI<{ data: HeatmapDataPoint[] }>('/api/stats/heatmap', {
+    const result = await useAPI<{ data: HeatmapDataPoint[], history?: AnalyticsHistory }>('/api/stats/heatmap', {
       signal: controller.signal,
       query: {
         ...effectiveFilters.value,
@@ -160,6 +161,7 @@ watch([effectiveTimeRange, effectiveFilters, retryKey], async (_values, _oldValu
       hour: +item.hour,
     }))
     hasLoaded.value = true
+    analysisStore.reportHistory('heatmap', result.history)
   }
   catch {
     if (!controller.signal.aborted)
@@ -170,6 +172,8 @@ watch([effectiveTimeRange, effectiveFilters, retryKey], async (_values, _oldValu
       loading.value = false
   }
 }, { immediate: true })
+
+onUnmounted(() => analysisStore.reportHistory('heatmap', undefined))
 </script>
 
 <template>

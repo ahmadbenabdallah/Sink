@@ -43,7 +43,11 @@
     "analysis": {
       "chart_summary": "Total {totalVisits} kunjungan. Puncak: {peakVisits} pada {peakTime}.",
       "chart_summary_with_visitors": "Total {totalVisits} kunjungan dan {totalVisitors} pengunjung. Puncak: {peakVisits} kunjungan pada {peakTime}.",
-      "locations_summary": "{totalVisits} kunjungan dari {countryCount} wilayah."
+      "locations_summary": "{totalVisits} kunjungan dari {countryCount} wilayah.",
+      "history_daily": "Hari yang lebih lama dari 3 bulan berasal dari total harian, per hari UTC. Pengunjung dan perujuk untuk hari tersebut adalah perkiraan.",
+      "history_missing": "Hari lama tanpa data: {count}.",
+      "history_recent_only": "Tren mingguan hanya mencakup 3 bulan terakhir.",
+      "history_budget": "Hari lama baru tersedia lagi besok: batas baca hari ini sudah tercapai."
     },
     "date_picker": {
       "today": "Hari ini",
