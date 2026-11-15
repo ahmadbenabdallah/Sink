@@ -3,6 +3,7 @@ import type { LinkUpdateType } from '@/types'
 import type { DashboardLink, DashboardLinkListResponse } from '@/types/dashboard-links'
 import { AlertCircle, Inbox, LoaderCircle } from '@lucide/vue'
 import { useInfiniteScroll } from '@vueuse/core'
+import { isTrafficSort } from '@/utils/dashboard-query'
 
 const linksStore = useDashboardLinksStore()
 
@@ -10,11 +11,13 @@ const links = ref<DashboardLink[]>([])
 const listComplete = ref(false)
 const listError = ref(false)
 const listLoading = ref(false)
+/** A traffic sort could not get its counts: the page says so instead of showing a ranking. */
+const trafficUnavailable = ref(false)
 const limit = 24
 let cursor = ''
 let requestGeneration = 0
 
-const { countersMap, counterErrorIds, fetchCounters, resetCounters } = useLinkCounters()
+const { countersMap, counterErrorIds, fetchCounters, setCounters, resetCounters } = useLinkCounters()
 provide(LINKS_COUNTERS_MAP_KEY, countersMap)
 provide(LINKS_COUNTER_ERROR_IDS_KEY, counterErrorIds)
 provide(RETRY_LINK_COUNTERS_KEY, (id: string) => void fetchCounters([id]))
@@ -34,7 +37,11 @@ async function getLinks() {
   const requestCursor = cursor
   listLoading.value = true
   try {
-    const data = await useAPI<DashboardLinkListResponse>('/api/link/list', {
+    // A traffic sort ranks on the server and sends the counts it ranked by.
+    const traffic = isTrafficSort(linksStore.sortBy)
+    const data = await useAPI<DashboardLinkListResponse>(traffic ? '/api/link/traffic' : '/api/link/list', {
+      // A 503 from the traffic sorts fails the same way again: no silent retry.
+      ...(traffic ? { retry: 0 } : {}),
       query: {
         limit,
         cursor: requestCursor,
@@ -54,13 +61,19 @@ async function getLinks() {
     listComplete.value = data.list_complete
     listError.value = false
 
-    const ids = newLinks.map(l => l.id).filter(id => !countersMap.value[id])
-    void fetchCounters(ids)
+    if (data.counters) {
+      setCounters(data.counters)
+    }
+    else {
+      const ids = newLinks.map(l => l.id).filter(id => !countersMap.value[id])
+      void fetchCounters(ids)
+    }
   }
   catch (error) {
     if (generation !== requestGeneration)
       return
     console.error(error)
+    trafficUnavailable.value = getErrorCode(error)?.code === 'analytics_unavailable'
     listError.value = true
   }
   finally {
@@ -76,6 +89,7 @@ function resetAndLoad() {
   cursor = ''
   listComplete.value = false
   listError.value = false
+  trafficUnavailable.value = false
   listLoading.value = false
   void getLinks()
 }
@@ -190,7 +204,25 @@ linksStore.onLinkUpdate(({ link, type }) => {
     </CardContent>
   </Card>
   <Alert
-    v-if="listError"
+    v-if="listError && trafficUnavailable"
+    class="mx-auto max-w-xl"
+  >
+    <AlertCircle aria-hidden="true" />
+    <AlertTitle>{{ $t('links.traffic_unavailable.title') }}</AlertTitle>
+    <AlertDescription>
+      <p>{{ $t('links.traffic_unavailable.description') }}</p>
+      <div class="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" @click="getLinks">
+          {{ $t('common.try_again') }}
+        </Button>
+        <Button variant="outline" size="sm" @click="linksStore.sortBy = 'newest'">
+          {{ $t('links.traffic_unavailable.newest') }}
+        </Button>
+      </div>
+    </AlertDescription>
+  </Alert>
+  <Alert
+    v-else-if="listError"
     variant="destructive"
     class="mx-auto max-w-xl"
   >

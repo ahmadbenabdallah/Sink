@@ -144,12 +144,23 @@
       "newest": "Terbaru",
       "oldest": "Terlama",
       "az": "Slug A-Z",
-      "za": "Slug Z-A"
+      "za": "Slug Z-A",
+      "visits": "Kunjungan terbanyak",
+      "visitors": "Pengunjung terbanyak",
+      "referers": "Perujuk terbanyak",
+      "group_date": "Tanggal dan nama",
+      "group_traffic": "Lalu lintas, ~3 bulan terakhir",
+      "label": "Urutkan: {current}"
     },
     "update_failed": "Gagal memperbarui tautan",
     "create_failed": "Gagal membuat tautan",
     "ai_slug_failed": "Gagal membuat slug AI",
     "ai_og_failed": "Gagal membuat OpenGraph AI",
-    "ai_og_success": "OpenGraph AI berhasil dibuat"
+    "ai_og_success": "OpenGraph AI berhasil dibuat",
+    "traffic_unavailable": {
+      "title": "Jumlah kunjungan tidak tersedia",
+      "description": "Urutan berdasarkan lalu lintas memerlukan ID akun Cloudflare, token API, dan jawaban dari Analytics Engine.",
+      "newest": "Urutkan dari terbaru"
+    }
   }
 }

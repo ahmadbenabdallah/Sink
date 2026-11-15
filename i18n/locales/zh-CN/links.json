@@ -144,12 +144,23 @@
       "newest": "最新",
       "oldest": "最旧",
       "az": "短链(A-Z)",
-      "za": "短链(Z-A)"
+      "za": "短链(Z-A)",
+      "visits": "访问最多",
+      "visitors": "访客最多",
+      "referers": "来源最多",
+      "group_date": "日期和名称",
+      "group_traffic": "流量（最近约 3 个月）",
+      "label": "排序：{current}"
     },
     "update_failed": "更新链接失败",
     "create_failed": "创建链接失败",
     "ai_slug_failed": "AI 生成短链失败",
     "ai_og_failed": "生成 AI OpenGraph 失败",
-    "ai_og_success": "成功生成 AI OpenGraph"
+    "ai_og_success": "成功生成 AI OpenGraph",
+    "traffic_unavailable": {
+      "title": "暂时无法获取访问数",
+      "description": "按流量排序需要 Cloudflare 账户 ID、API 令牌，以及 Analytics Engine 的响应。",
+      "newest": "按最新排序"
+    }
   }
 }

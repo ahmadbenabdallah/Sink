@@ -144,12 +144,23 @@
       "newest": "Mới nhất trước",
       "oldest": "Cũ nhất trước",
       "az": "Slug A-Z",
-      "za": "Slug Z-A"
+      "za": "Slug Z-A",
+      "visits": "Nhiều lượt truy cập nhất",
+      "visitors": "Nhiều khách truy cập nhất",
+      "referers": "Nhiều nguồn giới thiệu nhất",
+      "group_date": "Ngày và tên",
+      "group_traffic": "Lưu lượng, ~3 tháng gần nhất",
+      "label": "Sắp xếp: {current}"
     },
     "update_failed": "Cập nhật liên kết thất bại",
     "create_failed": "Tạo liên kết thất bại",
     "ai_slug_failed": "Tạo slug AI thất bại",
     "ai_og_failed": "Không thể tạo AI OpenGraph",
-    "ai_og_success": "Tạo AI OpenGraph thành công"
+    "ai_og_success": "Tạo AI OpenGraph thành công",
+    "traffic_unavailable": {
+      "title": "Không có số lượt truy cập",
+      "description": "Sắp xếp theo lưu lượng cần ID tài khoản Cloudflare, token API và phản hồi từ Analytics Engine.",
+      "newest": "Sắp xếp mới nhất"
+    }
   }
 }

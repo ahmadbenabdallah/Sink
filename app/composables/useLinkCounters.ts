@@ -70,6 +70,12 @@ export function useLinkCounters() {
     }
   }
 
+  /** Writes counts the server sent with the links (the traffic sorts), with no request. */
+  function setCounters(counters: Record<string, CounterData>) {
+    countersMap.value = { ...countersMap.value, ...counters }
+    counterErrorIds.value = new Set([...counterErrorIds.value].filter(id => !(id in counters)))
+  }
+
   function resetCounters() {
     countersMap.value = {}
     counterErrorIds.value = new Set()
@@ -81,6 +87,7 @@ export function useLinkCounters() {
     countersMap,
     counterErrorIds,
     fetchCounters,
+    setCounters,
     resetCounters,
   }
 }

@@ -92,4 +92,18 @@ describe('useLinkCounters', () => {
 
     consoleError.mockRestore()
   })
+
+  it('writes counts it is given without a request, and clears their failures', async () => {
+    useAPIMock.mockRejectedValueOnce(new Error('down'))
+    const state = useLinkCounters()
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    await state.fetchCounters(['a'])
+    expect(state.counterErrorIds.value.has('a')).toBe(true)
+
+    state.setCounters({ a: { visits: 3, visitors: 2, referers: 1 }, b: { visits: 0, visitors: 0, referers: 0 } })
+
+    expect(state.countersMap.value).toEqual({ a: { visits: 3, visitors: 2, referers: 1 }, b: { visits: 0, visitors: 0, referers: 0 } })
+    expect(state.counterErrorIds.value.has('a')).toBe(false)
+    expect(useAPIMock).toHaveBeenCalledTimes(1)
+  })
 })

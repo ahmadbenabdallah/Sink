@@ -1,3 +1,8 @@
+import type { TrafficSort } from '../../shared/schemas/link-traffic'
+import { TRAFFIC_SORTS } from '../../shared/schemas/link-traffic'
+
+export { TRAFFIC_SORTS }
+
 export type DashboardQueryValue = string | null | (string | null)[] | undefined
 export type DashboardQuery = Record<string, DashboardQueryValue>
 export type DashboardQueryOutput = Record<string, string | string[]>
@@ -23,7 +28,10 @@ export const REALTIME_WINDOWS = [
   'last-24h',
 ] as const
 
-export const LINK_SORTS = ['newest', 'oldest', 'az', 'za'] as const
+/** The date and name sorts (`/api/link/list`). */
+export const DATE_SORTS = ['newest', 'oldest', 'az', 'za'] as const
+/** Every Links page sort: the date and name sorts, then the traffic sorts (`/api/link/traffic`). */
+export const LINK_SORTS = [...DATE_SORTS, ...TRAFFIC_SORTS] as const
 export const LINK_STATUSES = ['active', 'expired'] as const
 export const ANALYSIS_VIEWS = ['trend', 'heatmap'] as const
 export const HEATMAP_METRICS = ['visits', 'visitors'] as const
@@ -31,6 +39,11 @@ export const HEATMAP_METRICS = ['visits', 'visitors'] as const
 export type AnalysisDatePreset = typeof ANALYSIS_DATE_PRESETS[number]
 export type RealtimeWindow = typeof REALTIME_WINDOWS[number]
 export type DashboardLinkSort = typeof LINK_SORTS[number]
+
+/** Whether the Links page loads this sort from `/api/link/traffic`. */
+export function isTrafficSort(sort: string): sort is TrafficSort {
+  return (TRAFFIC_SORTS as readonly string[]).includes(sort)
+}
 export type DashboardLinkStatusQuery = typeof LINK_STATUSES[number]
 export type AnalysisView = typeof ANALYSIS_VIEWS[number]
 export type HeatmapMetric = typeof HEATMAP_METRICS[number]

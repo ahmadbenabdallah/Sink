@@ -1,4 +1,4 @@
-import type { Link, LinkFormData, LinkListResponse, LinkSearchItem } from '@/types'
+import type { CounterData, Link, LinkFormData, LinkListResponse, LinkSearchItem } from '@/types'
 
 export type DashboardLinkStatus = 'active' | 'expired'
 
@@ -17,4 +17,6 @@ export type DashboardLinkSearchItem = LinkSearchItem & {
 
 export type DashboardLinkListResponse = Omit<LinkListResponse, 'links'> & {
   links: DashboardLink[]
+  /** Sent by `/api/link/traffic`: the counts each link was ranked by, keyed by link id. */
+  counters?: Record<string, CounterData>
 }
