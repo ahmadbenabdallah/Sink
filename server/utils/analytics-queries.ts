@@ -64,13 +64,19 @@ function filteredQuery(query: FilterQuery, event: H3Event) {
   return filter ? analyticsQuery.where(filter) : analyticsQuery
 }
 
-export function buildCountersQuery(query: FilterQuery, event: H3Event) {
+/** Rows the traffic sorts ask for; reaching it means the ranking could be wrong (R9). */
+export const TRAFFIC_ROW_CAP = 10_000
+
+export function buildCountersQuery(query: FilterQuery, event: H3Event, options: { groupByLink?: boolean } = {}) {
   const statement = filteredQuery(query, event).select([
     sql<number>`SUM(_sample_interval)`.as('visits'),
     weightedDistinct(logsMap.ip!).as('visitors'),
     weightedDistinct(logsMap.referer!).as('referers'),
   ])
 
+  // The traffic sorts: every link's counts at once, with the same formulas.
+  if (options.groupByLink)
+    return statement.select(sql.ref('index1').as('id')).groupBy('index1').limit(sql.lit(TRAFFIC_ROW_CAP))
   return query.id
     ? statement.select(sql.ref('index1').as('id')).groupBy('index1')
     : statement

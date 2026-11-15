@@ -22,6 +22,7 @@
   },
   "errors": {
     "ai_not_enabled": "AI chưa được bật trên phiên bản này.",
+    "analytics_unavailable": "Hiện không có số liệu lưu lượng.",
     "cloudflare_credentials_rejected": "Cloudflare đã từ chối thông tin xác thực API đã cấu hình.",
     "cloudflare_request_failed": "Yêu cầu tới API Cloudflare đã thất bại.",
     "connector_not_found": "Không tìm thấy kết nối.",

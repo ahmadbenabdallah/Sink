@@ -112,3 +112,13 @@ describe('analytics query builders', () => {
     }
   })
 })
+
+// R1 and R2 of the traffic sorts: the card formulas over everything Analytics Engine holds.
+describe('buildCountersQuery for the traffic sorts', () => {
+  it('groups every link with the card formulas, no time or id filter, and the row cap', () => {
+    const sql = compileAnalyticsQuery(buildCountersQuery({}, event, { groupByLink: true }))
+
+    expect(sql).toBe('select SUM(_sample_interval) as visits, ROUND(COUNT(DISTINCT blob4) * SUM(_sample_interval) / COUNT()) as visitors, ROUND(COUNT(DISTINCT blob5) * SUM(_sample_interval) / COUNT()) as referers, index1 as id from sink group by index1 limit 10000')
+    expect(sql).not.toContain('timestamp')
+  })
+})

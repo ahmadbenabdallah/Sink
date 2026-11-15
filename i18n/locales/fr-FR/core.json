@@ -22,6 +22,7 @@
   },
   "errors": {
     "ai_not_enabled": "L’IA n’est pas activée sur cette instance.",
+    "analytics_unavailable": "Les statistiques de trafic sont indisponibles pour le moment.",
     "cloudflare_credentials_rejected": "Cloudflare a refusé les identifiants d’API configurés.",
     "cloudflare_request_failed": "La requête vers l’API Cloudflare a échoué.",
     "connector_not_found": "Connecteur introuvable.",

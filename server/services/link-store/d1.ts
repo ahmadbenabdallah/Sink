@@ -330,7 +330,8 @@ export async function d1DeleteLink(event: H3Event, slug: string): Promise<boolea
 }
 
 function encodeCursor(cursor: D1Cursor): string {
-  return `${D1_CURSOR_PREFIX}${btoa(JSON.stringify(cursor))}`
+  // encodeURIComponent first: btoa takes Latin-1 only, and a tag can be any text.
+  return `${D1_CURSOR_PREFIX}${btoa(encodeURIComponent(JSON.stringify(cursor)))}`
 }
 
 function decodeCursor(cursor: string | undefined, sort: LinkSortBy, tag: string | undefined, status: LinkStatus): D1Cursor | undefined {
@@ -339,7 +340,7 @@ function decodeCursor(cursor: string | undefined, sort: LinkSortBy, tag: string 
   if (!cursor.startsWith(D1_CURSOR_PREFIX))
     throw createError({ status: 400, statusText: 'Invalid pagination cursor', data: { code: 'invalid_cursor' } })
   try {
-    const decoded = JSON.parse(atob(cursor.slice(D1_CURSOR_PREFIX.length))) as D1Cursor
+    const decoded = JSON.parse(decodeURIComponent(atob(cursor.slice(D1_CURSOR_PREFIX.length)))) as D1Cursor
     if (decoded.sort !== sort || decoded.tag !== tag || decoded.status !== status || typeof decoded.slug !== 'string')
       throw new Error('Cursor does not match sort')
     if ((sort === 'newest' || sort === 'oldest') && typeof decoded.createdAt !== 'number')
@@ -349,6 +350,25 @@ function decodeCursor(cursor: string | undefined, sort: LinkSortBy, tag: string 
   catch {
     throw createError({ status: 400, statusText: 'Invalid pagination cursor', data: { code: 'invalid_cursor' } })
   }
+}
+
+/** The id, slug and creation time of every link matching the status and tag, for the traffic sorts. */
+export async function d1ListLinkKeys(event: H3Event, options: { tag?: string, status: LinkStatus }): Promise<{ id: string, slug: string, createdAt: number }[]> {
+  const db = getDatabase(event)
+  return await db.select({ id: links.id, slug: links.slug, createdAt: links.createdAt })
+    .from(links)
+    .where(and(statusCondition(options.status), exactTagCondition(db, options.tag)))
+}
+
+/** Full links for the given slugs, in that order; slugs no longer stored are left out. */
+export async function d1GetLinksBySlugs(event: H3Event, slugs: string[]): Promise<Link[]> {
+  const db = getDatabase(event)
+  const rows: LinkRow[] = []
+  // Within D1's 100 bound parameters per statement.
+  for (let offset = 0; offset < slugs.length; offset += 90)
+    rows.push(...await db.select().from(links).where(inArray(links.slug, slugs.slice(offset, offset + 90))))
+  const bySlug = new Map(rows.map(row => [row.slug, row]))
+  return await rowsToLinks(event, slugs.flatMap(slug => bySlug.get(slug) ?? []))
 }
 
 export async function d1ListLinks(event: H3Event, options: ListLinksOptions): Promise<ListLinksResult> {

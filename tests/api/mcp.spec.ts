@@ -1208,3 +1208,13 @@ describe('/api/mcp link tools, current behaviour', () => {
     expect((await getStoredLink(slug))?.url).toBe('https://example.com/mcp-preview')
   })
 })
+
+// R11: the traffic sorts are for the dashboard only.
+describe('list_links sorts', () => {
+  it('keeps its four sorts and no traffic sort', async () => {
+    const payload = await readEnvelope(await postRpc('list-tools-sorts', 'tools/list', {}))
+    const tools = (payload.result as { tools: { name: string, inputSchema: { properties: Record<string, { enum?: string[] }> } }[] }).tools
+    const listLinks = tools.find(tool => tool.name === 'list_links')
+    expect(listLinks?.inputSchema.properties.sort?.enum).toEqual(['az', 'za', 'newest', 'oldest'])
+  })
+})

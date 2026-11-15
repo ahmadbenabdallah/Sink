@@ -22,6 +22,7 @@
   },
   "errors": {
     "ai_not_enabled": "此實例未啟用 AI。",
+    "analytics_unavailable": "暫時無法取得流量資料。",
     "cloudflare_credentials_rejected": "Cloudflare 拒絕了已設定的 API 憑證。",
     "cloudflare_request_failed": "請求 Cloudflare API 失敗。",
     "connector_not_found": "找不到連接器。",
