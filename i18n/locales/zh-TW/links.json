@@ -144,12 +144,23 @@
       "newest": "最新",
       "oldest": "最舊",
       "az": "短連結(A-Z)",
-      "za": "短連結(Z-A)"
+      "za": "短連結(Z-A)",
+      "visits": "造訪最多",
+      "visitors": "訪客最多",
+      "referers": "來源最多",
+      "group_date": "日期和名稱",
+      "group_traffic": "流量（最近約 3 個月）",
+      "label": "排序：{current}"
     },
     "update_failed": "更新連結失敗",
     "create_failed": "創建連結失敗",
     "ai_slug_failed": "AI 生成短連結失敗",
     "ai_og_failed": "生成 AI OpenGraph 失敗",
-    "ai_og_success": "成功生成 AI OpenGraph"
+    "ai_og_success": "成功生成 AI OpenGraph",
+    "traffic_unavailable": {
+      "title": "暫時無法取得造訪數",
+      "description": "依流量排序需要 Cloudflare 帳戶 ID、API 權杖，以及 Analytics Engine 的回應。",
+      "newest": "依最新排序"
+    }
   }
 }

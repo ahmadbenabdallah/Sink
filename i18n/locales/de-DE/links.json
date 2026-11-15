@@ -144,12 +144,23 @@
       "newest": "Neueste zuerst",
       "oldest": "Älteste zuerst",
       "az": "Slug A-Z",
-      "za": "Slug Z-A"
+      "za": "Slug Z-A",
+      "visits": "Meiste Besuche",
+      "visitors": "Meiste Besucher",
+      "referers": "Meiste Verweise",
+      "group_date": "Datum und Name",
+      "group_traffic": "Zugriffe, letzte ~3 Monate",
+      "label": "Sortierung: {current}"
     },
     "update_failed": "Link konnte nicht aktualisiert werden",
     "create_failed": "Link konnte nicht erstellt werden",
     "ai_slug_failed": "KI-Slug konnte nicht generiert werden",
     "ai_og_failed": "Fehler beim Generieren des KI-OpenGraph",
-    "ai_og_success": "KI-OpenGraph erfolgreich generiert"
+    "ai_og_success": "KI-OpenGraph erfolgreich generiert",
+    "traffic_unavailable": {
+      "title": "Besuchszahlen sind nicht verfügbar",
+      "description": "Die Sortierung nach Zugriffen braucht die Cloudflare-Konto-ID und den API-Token sowie eine Antwort von Analytics Engine.",
+      "newest": "Nach neuesten sortieren"
+    }
   }
 }

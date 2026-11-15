@@ -144,12 +144,23 @@
       "newest": "Les plus récents",
       "oldest": "Les plus anciens",
       "az": "Slug A-Z",
-      "za": "Slug Z-A"
+      "za": "Slug Z-A",
+      "visits": "Plus de visites",
+      "visitors": "Plus de visiteurs",
+      "referers": "Plus de référents",
+      "group_date": "Date et nom",
+      "group_traffic": "Trafic, ~3 derniers mois",
+      "label": "Tri : {current}"
     },
     "update_failed": "Échec de la mise à jour du lien",
     "create_failed": "Échec de la création du lien",
     "ai_slug_failed": "Échec de la génération du slug IA",
     "ai_og_failed": "Échec de la génération de l'OpenGraph IA",
-    "ai_og_success": "OpenGraph IA généré avec succès"
+    "ai_og_success": "OpenGraph IA généré avec succès",
+    "traffic_unavailable": {
+      "title": "Le nombre de visites est indisponible",
+      "description": "Les tris par trafic ont besoin de l'ID de compte Cloudflare, du jeton d'API et d'une réponse d'Analytics Engine.",
+      "newest": "Trier par plus récents"
+    }
   }
 }

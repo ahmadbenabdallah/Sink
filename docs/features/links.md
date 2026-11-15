@@ -13,6 +13,12 @@ Leave the short code empty to generate a random lowercase one. Case-sensitive mo
 
 Tags are lowercased. Up to 10 tags per link, 1–32 characters each.
 
+## Sorting the Links page
+
+Besides **Newest**, **Oldest** and slug **A-Z** / **Z-A**, the Links page can sort by traffic: **Most visits**, **Most visitors** and **Most referers**. These are the numbers each link card shows, counted over everything Analytics Engine holds (about the last 3 months). Ties go to the newer link, and links with no visits come last. The Active/Expired tab and the tag filter still apply, and deleted links never appear.
+
+The traffic sorts need the Cloudflare account ID and API token used for [analytics](./analytics). Without them, or when Analytics Engine does not answer, the page says that visit counts are unavailable and offers to sort by newest instead. The MCP `list_links` tool keeps the four date and name sorts.
+
 ## Expiration and preview mode
 
 If you set an expiration, it must be in the future. Expired links stop working. Import allows already-expired records on purpose (to keep history).

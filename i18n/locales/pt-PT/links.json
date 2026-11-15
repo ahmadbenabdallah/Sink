@@ -144,12 +144,23 @@
       "newest": "Mais recentes primeiro",
       "oldest": "Mais antigos primeiro",
       "az": "Slug A-Z",
-      "za": "Slug Z-A"
+      "za": "Slug Z-A",
+      "visits": "Mais visitas",
+      "visitors": "Mais visitantes",
+      "referers": "Mais referências",
+      "group_date": "Data e nome",
+      "group_traffic": "Tráfego, últimos ~3 meses",
+      "label": "Ordenar: {current}"
     },
     "update_failed": "Falha ao atualizar link",
     "create_failed": "Falha ao criar link",
     "ai_slug_failed": "Falha ao gerar slug via IA",
     "ai_og_failed": "Falha ao gerar OpenGraph da IA",
-    "ai_og_success": "OpenGraph da IA gerado com sucesso"
+    "ai_og_success": "OpenGraph da IA gerado com sucesso",
+    "traffic_unavailable": {
+      "title": "As contagens de visitas estão indisponíveis",
+      "description": "As ordenações por tráfego precisam do ID da conta Cloudflare, do token de API e de uma resposta do Analytics Engine.",
+      "newest": "Ordenar por mais recentes"
+    }
   }
 }

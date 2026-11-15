@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   isSameDashboardQuery,
+  isTrafficSort,
   parseAnalysisQuery,
   parseLinksQuery,
   parseRealtimeQuery,
@@ -151,6 +152,19 @@ describe('realtime dashboard query', () => {
 })
 
 describe('links dashboard query', () => {
+  it('reads and writes the traffic sorts, and still falls back to newest', () => {
+    for (const sort of ['visits', 'visitors', 'referers'] as const) {
+      expect(parseLinksQuery({ sort }).sort).toBe(sort)
+      expect(serializeLinksQuery({ status: 'active', sort })).toEqual({ sort })
+    }
+    expect(parseLinksQuery({ sort: 'clicks' }).sort).toBe('newest')
+  })
+
+  it('tells the traffic sorts apart from the date and name sorts', () => {
+    expect(['visits', 'visitors', 'referers'].every(sort => isTrafficSort(sort))).toBe(true)
+    expect(['newest', 'oldest', 'az', 'za'].some(sort => isTrafficSort(sort))).toBe(false)
+  })
+
   it('normalizes invalid values and omits defaults', () => {
     expect(parseLinksQuery({ status: 'disabled', sort: 'popular', tag: '   ' })).toEqual({
       status: 'active',

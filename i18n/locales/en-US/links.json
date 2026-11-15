@@ -144,12 +144,23 @@
       "newest": "Newest First",
       "oldest": "Oldest First",
       "az": "Slug A-Z",
-      "za": "Slug Z-A"
+      "za": "Slug Z-A",
+      "visits": "Most visits",
+      "visitors": "Most visitors",
+      "referers": "Most referers",
+      "group_date": "Date and name",
+      "group_traffic": "Traffic, last ~3 months",
+      "label": "Sort: {current}"
     },
     "update_failed": "Failed to update link",
     "create_failed": "Failed to create link",
     "ai_slug_failed": "Failed to generate AI slug",
     "ai_og_failed": "Failed to generate AI OpenGraph",
-    "ai_og_success": "AI OpenGraph generated successfully"
+    "ai_og_success": "AI OpenGraph generated successfully",
+    "traffic_unavailable": {
+      "title": "Visit counts are unavailable",
+      "description": "The traffic sorts need the Cloudflare account ID and API token, and an answer from Analytics Engine.",
+      "newest": "Sort by newest"
+    }
   }
 }
