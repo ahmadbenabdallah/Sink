@@ -47,8 +47,7 @@
       "name_placeholder": "Claude Code",
       "name_invalid": "Nhập tên dài từ 1 đến {max} ký tự.",
       "level": "Cấp độ",
-      "submit": "Tạo kết nối",
-      "submitting": "Đang tạo…"
+      "submit": "Tạo"
     },
     "create_dialog": {
       "title": "Kết nối MCP mới",

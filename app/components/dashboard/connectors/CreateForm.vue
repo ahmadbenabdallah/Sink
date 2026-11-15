@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import type { McpLevel } from '#shared/types/auth'
-import { Loader, Plus, TriangleAlert } from '@lucide/vue'
+import { TriangleAlert } from '@lucide/vue'
 import { useForm } from '@tanstack/vue-form'
 import { CONNECTOR_NAME_MAX_LENGTH, CreateConnectorSchema } from '#shared/schemas/connector'
 import { MCP_LEVELS } from '#shared/types/auth'
 
 defineProps<{
   submitting: boolean
+  /** The dialog's footer submits the form through this id, as the link editor does. */
+  formId: string
 }>()
 
 const emit = defineEmits<{
@@ -38,7 +40,7 @@ function selectLevel(value: unknown) {
 </script>
 
 <template>
-  <form class="w-full space-y-6 px-1" :aria-busy="submitting" @submit.prevent="form.handleSubmit">
+  <form :id="formId" class="w-full space-y-6 px-1" :aria-busy="submitting" @submit.prevent="form.handleSubmit">
     <FieldGroup>
       <form.Field
         v-slot="{ field }"
@@ -110,25 +112,5 @@ function selectLevel(value: unknown) {
         </RadioGroup>
       </Field>
     </FieldGroup>
-
-    <Button
-      type="submit"
-      :disabled="submitting"
-      :aria-busy="submitting"
-    >
-      <Loader
-        v-if="submitting" aria-hidden="true" class="
-          mr-2 size-4
-          motion-safe:animate-spin
-        "
-      />
-      <Plus v-else aria-hidden="true" class="mr-2 size-4" />
-      <template v-if="submitting">
-        {{ $t('connectors.form.submitting') }}
-      </template>
-      <template v-else>
-        {{ $t('connectors.form.submit') }}
-      </template>
-    </Button>
   </form>
 </template>

@@ -47,8 +47,7 @@
       "name_placeholder": "Claude Code",
       "name_invalid": "Geben Sie einen Namen mit 1 bis {max} Zeichen ein.",
       "level": "Stufe",
-      "submit": "Connector erstellen",
-      "submitting": "Wird erstellt…"
+      "submit": "Erstellen"
     },
     "create_dialog": {
       "title": "Neuer MCP-Connector",
