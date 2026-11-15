@@ -60,6 +60,14 @@ export const mcpTokens = sqliteTable('mcp_tokens', {
   level: text({ enum: ['read', 'create', 'full'] }).notNull(),
   createdAt: integer('created_at').notNull(),
   revokedAt: integer('revoked_at'),
+  /** Unix seconds of the last rotation; null until the token is first replaced. */
+  rotatedAt: integer('rotated_at'),
+  /**
+   * Unix seconds of the removal. A removed connector is hidden from the app
+   * for good but kept, hash included, for the logs; it is always revoked too.
+   * Only a manual query brings it back (internaldocs/server/database/README.md).
+   */
+  removedAt: integer('removed_at'),
 }, table => [
   // The level decides which tools a caller gets, so the database refuses a
   // value the code does not know instead of trusting every writer.

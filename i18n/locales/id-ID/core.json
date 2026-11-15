@@ -25,6 +25,7 @@
     "cloudflare_credentials_rejected": "Cloudflare menolak kredensial API yang dikonfigurasi.",
     "cloudflare_request_failed": "Permintaan ke API Cloudflare gagal.",
     "connector_not_found": "Konektor tidak ditemukan.",
+    "connector_revoked": "Konektor MCP ini sudah dicabut: hanya bisa dihapus.",
     "file_required": "File wajib disertakan.",
     "file_too_large": "Ukuran file melebihi batas {max} MB.",
     "forbidden": "Anda tidak diizinkan melakukan tindakan ini.",

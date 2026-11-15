@@ -5,7 +5,7 @@ import { resolveDailyCallLimit, usageSummary } from '../../services/mcp/usage'
 
 defineRouteMeta({
   openAPI: {
-    description: 'List MCP connectors, newest first, revoked ones included. Tokens and their hashes are never returned. Not available to a connector token.',
+    description: 'List MCP connectors, newest first, revoked ones included and removed ones left out. Tokens and their hashes are never returned. Not available to a connector token.',
     security: [{ bearerAuth: [] }],
   },
 })

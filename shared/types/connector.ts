@@ -23,6 +23,8 @@ export interface ConnectorView extends ConnectorUsage {
   createdAt: number
   /** Unix seconds, or `null` while the connector is active. */
   revokedAt: number | null
+  /** Unix seconds of the last token rotation, or `null` if never rotated. */
+  rotatedAt: number | null
 }
 
 /** A caller of the MCP endpoint that is not a connector: the site token unless it is refused there, and Cloudflare Access when it is configured. */
@@ -47,4 +49,19 @@ export interface ConnectorCreateResponse {
 export interface ConnectorRevokeResponse {
   id: string
   revokedAt: number
+}
+
+export interface ConnectorRenameResponse {
+  connector: ConnectorView
+}
+
+export interface ConnectorRotateResponse {
+  connector: ConnectorView
+  /** The new token. This answer is the only place it ever appears; the old one is refused from now on. */
+  token: string
+}
+
+export interface ConnectorRemoveResponse {
+  id: string
+  removedAt: number
 }

@@ -25,6 +25,7 @@
     "cloudflare_credentials_rejected": "Cloudflare ha rifiutato le credenziali API configurate.",
     "cloudflare_request_failed": "La richiesta all’API di Cloudflare non è riuscita.",
     "connector_not_found": "Connettore non trovato.",
+    "connector_revoked": "Questo connettore MCP è revocato: può solo essere rimosso.",
     "file_required": "È necessario un file.",
     "file_too_large": "Il file supera il limite di {max} MB.",
     "forbidden": "Non sei autorizzato a eseguire questa azione.",

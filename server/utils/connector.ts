@@ -1,9 +1,13 @@
+import type { DrizzleD1Database } from 'drizzle-orm/d1'
 import type { H3Event } from 'h3'
 import type { AuthMethod } from '#shared/types/auth'
 import type { ConnectorUsage, ConnectorView } from '#shared/types/connector'
 import type { Connector } from '../services/mcp/tokens'
 import { drizzle } from 'drizzle-orm/d1'
 import { createError, getHeader } from 'h3'
+import { describeFailure } from '../services/mcp/failure'
+import { connectorState } from '../services/mcp/tokens'
+import { usageSummary } from '../services/mcp/usage'
 
 /** The ways of signing in that may manage connectors: the owner's, and nothing else. */
 const CONNECTOR_MANAGERS: readonly AuthMethod[] = ['site-token', 'access-user', 'access-service']
@@ -39,7 +43,7 @@ export function assertConnectorManager(event: H3Event): void {
 }
 
 /**
- * Create and revoke take JSON only. A browser sends a form without asking the
+ * The connector changes (create, rename, rotate, revoke, remove) take JSON only. A browser sends a form without asking the
  * server first, so accepting one would let a page the owner visits submit it.
  */
 export function assertJsonBody(event: H3Event): void {
@@ -49,7 +53,7 @@ export function assertJsonBody(event: H3Event): void {
 
 /**
  * A preview instance shares its site token with the public, so anyone could
- * mint or revoke connectors there. Listing stays allowed.
+ * create, rename, rotate, revoke or remove connectors there. Listing stays allowed.
  */
 export function assertConnectorChangesAllowed(event: H3Event): void {
   if (useRuntimeConfig(event).public.previewMode) {
@@ -78,7 +82,30 @@ export function toConnectorView(connector: Connector, usage: ConnectorUsage): Co
     level: connector.level,
     createdAt: connector.createdAt,
     revokedAt: connector.revokedAt,
+    rotatedAt: connector.rotatedAt,
     lastUsedAt: usage.lastUsedAt,
     calls7d: usage.calls7d,
   }
+}
+
+/** One connector's usage, read the way the list reads it: unknown, never zero, when it cannot be read. */
+export async function connectorUsage(db: DrizzleD1Database, id: string): Promise<ConnectorUsage> {
+  try {
+    return (await usageSummary(db)).get(id) ?? NO_USAGE
+  }
+  catch (error) {
+    console.error({ event: 'mcp_usage.summary_failed', ...describeFailure(error) })
+    return UNKNOWN_USAGE
+  }
+}
+
+/** The error for a rename or rotate that matched no row: 409 for a revoked connector, else 404. */
+export async function connectorUnchangedError(db: DrizzleD1Database, id: string) {
+  if (await connectorState(db, id) === 'revoked')
+    return createError({ status: 409, statusText: 'Connector is revoked', data: { code: 'connector_revoked' } })
+  return connectorNotFound()
+}
+
+export function connectorNotFound() {
+  return createError({ status: 404, statusText: 'Connector not found', data: { code: 'connector_not_found' } })
 }
