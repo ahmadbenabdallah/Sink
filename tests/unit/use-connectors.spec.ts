@@ -9,7 +9,7 @@ const { useAPIMock } = vi.hoisted(() => ({
 vi.mock('@/utils/api', () => ({ useAPI: useAPIMock }))
 
 function connector(overrides: Partial<ConnectorView> = {}): ConnectorView {
-  return { id: 'c1', name: 'Claude Code', hint: 'abc123', level: 'read', createdAt: 1_800_000_000, revokedAt: null, lastUsedAt: null, calls7d: 0, ...overrides }
+  return { id: 'c1', name: 'Claude Code', hint: 'abc123', level: 'read', createdAt: 1_800_000_000, revokedAt: null, rotatedAt: null, lastUsedAt: null, calls7d: 0, ...overrides }
 }
 
 function listResponse(overrides: Partial<ConnectorListResponse> = {}): ConnectorListResponse {
@@ -126,5 +126,56 @@ describe('useConnectors', () => {
 
     await expect(state.revoke('c1')).rejects.toThrow('not found')
     expect(state.connectors.value[0]!.revokedAt).toBeNull()
+  })
+
+  it('renames a connector, replacing its row with the answer', async () => {
+    useAPIMock
+      .mockResolvedValueOnce(listResponse({ connectors: [connector({ id: 'c2' }), connector({ id: 'c1' })] }))
+      .mockResolvedValueOnce({ connector: connector({ id: 'c1', name: 'Renamed', calls7d: 4 }) })
+    const state = useConnectors()
+    await state.load()
+
+    await state.rename('c1', 'Renamed')
+
+    expect(useAPIMock).toHaveBeenLastCalledWith('/api/connector/rename', { method: 'POST', body: { id: 'c1', name: 'Renamed' } })
+    expect(state.connectors.value.map(row => [row.id, row.name, row.calls7d])).toEqual([['c2', 'Claude Code', 0], ['c1', 'Renamed', 4]])
+  })
+
+  it('rotates a token, replacing the row and handing back the new token without keeping it', async () => {
+    useAPIMock
+      .mockResolvedValueOnce(listResponse())
+      .mockResolvedValueOnce({ connector: connector({ hint: 'new123', rotatedAt: 1_800_001_000 }), token: 'sink_mcp_secret' })
+    const state = useConnectors()
+    await state.load()
+
+    const { token } = await state.rotate('c1')
+
+    expect(token).toBe('sink_mcp_secret')
+    expect(useAPIMock).toHaveBeenLastCalledWith('/api/connector/rotate', { method: 'POST', body: { id: 'c1' } })
+    expect(state.connectors.value[0]).toMatchObject({ hint: 'new123', rotatedAt: 1_800_001_000 })
+    expect(JSON.stringify(state.connectors.value)).not.toContain('sink_mcp_secret')
+  })
+
+  it('removes a connector from the list', async () => {
+    useAPIMock
+      .mockResolvedValueOnce(listResponse({ connectors: [connector({ id: 'c2' }), connector({ id: 'c1' })] }))
+      .mockResolvedValueOnce({ id: 'c1', removedAt: 1_800_002_000 })
+    const state = useConnectors()
+    await state.load()
+
+    await state.remove('c1')
+
+    expect(useAPIMock).toHaveBeenLastCalledWith('/api/connector/remove', { method: 'POST', body: { id: 'c1' } })
+    expect(state.connectors.value.map(row => row.id)).toEqual(['c2'])
+  })
+
+  it.each(['rename', 'rotate', 'remove'] as const)('lets a failed %s reach the caller and leaves the list alone', async (action) => {
+    useAPIMock.mockResolvedValueOnce(listResponse()).mockRejectedValueOnce(new Error('revoked'))
+    const state = useConnectors()
+    await state.load()
+    const before = JSON.stringify(state.connectors.value)
+
+    await expect(action === 'rename' ? state.rename('c1', 'x') : state[action]('c1')).rejects.toThrow('revoked')
+    expect(JSON.stringify(state.connectors.value)).toBe(before)
   })
 })

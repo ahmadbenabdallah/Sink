@@ -30,7 +30,8 @@
     "realtime": "In Tempo Reale",
     "check": "Check",
     "migrate": "Importa/Esporta",
-    "connectors": "Connettori"
+    "connectors": "Connettori",
+    "mcp_connectors": "Connettori MCP"
   },
   "sidebar": {
     "subtitle": "Accorcia i tuoi Link",

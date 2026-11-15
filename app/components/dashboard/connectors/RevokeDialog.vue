@@ -9,18 +9,14 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  /**
-   * The dialog has closed and is about to return focus. After a revoke the
-   * button that opened it is gone, so the page decides where focus goes.
-   */
-  closeAutoFocus: [event: Event, revoked: boolean]
+  /** The dialog has closed and is about to return focus; the page decides where. */
+  closeAutoFocus: [event: Event]
 }>()
 
 const open = defineModel<boolean>('open', { default: false })
 
 const { t } = useI18n()
 const revoking = shallowRef(false)
-const revoked = shallowRef(false)
 
 async function confirmRevoke() {
   if (revoking.value || !props.connector)
@@ -29,7 +25,6 @@ async function confirmRevoke() {
   revoking.value = true
   try {
     await props.revoke(props.connector.id)
-    revoked.value = true
     open.value = false
     toast(t('connectors.revoke.success'))
   }
@@ -54,17 +49,12 @@ function handleEscapeKeyDown(event: KeyboardEvent) {
   if (revoking.value)
     event.preventDefault()
 }
-
-function handleCloseAutoFocus(event: Event) {
-  emit('closeAutoFocus', event, revoked.value)
-  revoked.value = false
-}
 </script>
 
 <template>
   <AlertDialog :open="open" @update:open="updateOpen">
     <AlertDialogContent
-      @close-auto-focus="handleCloseAutoFocus"
+      @close-auto-focus="emit('closeAutoFocus', $event)"
       @escape-key-down="handleEscapeKeyDown"
     >
       <AlertDialogHeader>

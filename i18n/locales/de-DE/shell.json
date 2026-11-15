@@ -30,7 +30,8 @@
     "realtime": "Echtzeit",
     "check": "Check",
     "migrate": "Import/Export",
-    "connectors": "Connectors"
+    "connectors": "Connectors",
+    "mcp_connectors": "MCP-Connectors"
   },
   "sidebar": {
     "subtitle": "Link-Verkürzer",

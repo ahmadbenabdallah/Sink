@@ -1,10 +1,10 @@
 {
   "connectors": {
-    "title": "Connecteurs",
+    "title": "Connecteurs MCP",
     "description": "Donnez à chaque agent IA son propre jeton pour le point de terminaison MCP, afin que le mot de passe du tableau de bord ne figure jamais dans la configuration d'un agent.",
     "daily_limit": "Chaque connecteur peut effectuer {limit} appels d'outils par jour.",
-    "create": "Nouveau connecteur",
-    "empty": "Aucun connecteur pour l'instant",
+    "create": "Nouveau connecteur MCP",
+    "empty": "Aucun connecteur MCP",
     "empty_description": "Créez-en un pour connecter un agent sans partager le mot de passe du tableau de bord.",
     "load_failed": "Impossible de charger les connecteurs",
     "usage_unavailable": "Indisponible",
@@ -16,7 +16,8 @@
       "last_used": "Dernière utilisation",
       "calls_7d": "Appels (7 jours)",
       "status": "Statut",
-      "actions": "Actions"
+      "actions": "Actions",
+      "rotated": "Renouvelé le {date}"
     },
     "status": {
       "active": "Actif",
@@ -50,13 +51,13 @@
       "submitting": "Création…"
     },
     "create_dialog": {
-      "title": "Nouveau connecteur",
+      "title": "Nouveau connecteur MCP",
       "description": "Le jeton n'est affiché qu'une fois, juste après sa création.",
       "failed": "Impossible de créer le connecteur"
     },
     "reveal": {
       "title": "Copiez le jeton maintenant",
-      "once_notice": "C'est la seule fois où le jeton est affiché. Si vous le perdez, révoquez ce connecteur et créez-en un nouveau.",
+      "once_notice": "Le jeton n'est affiché qu'une seule fois. Si vous le perdez, renouvelez le jeton pour en obtenir un nouveau.",
       "token": "Jeton",
       "copy": "Copier",
       "copied": "Copié",
@@ -66,12 +67,39 @@
       "done": "Terminé"
     },
     "revoke": {
-      "action": "Révoquer",
       "title": "Révoquer {name} ?",
       "description": "Son jeton cesse de fonctionner immédiatement. Cette action est irréversible.",
       "confirm": "Révoquer",
-      "success": "Connecteur révoqué",
+      "success": "Connecteur MCP révoqué",
       "failed": "Impossible de révoquer le connecteur"
+    },
+    "actions": {
+      "open": "Actions pour {name}",
+      "rename": "Renommer",
+      "rotate": "Renouveler le jeton",
+      "revoke": "Révoquer",
+      "remove": "Supprimer",
+      "revoked_only": "Révoqué : il peut seulement être supprimé."
+    },
+    "rename": {
+      "title": "Renommer {name}",
+      "submit": "Enregistrer",
+      "success": "Connecteur MCP renommé",
+      "failed": "Impossible de renommer le connecteur MCP"
+    },
+    "rotate": {
+      "title": "Renouveler le jeton de {name} ?",
+      "description": "Le jeton actuel cesse de fonctionner immédiatement. Chaque agent qui l'utilise doit recevoir le nouveau.",
+      "confirm": "Renouveler le jeton",
+      "reveal_title": "Copiez le nouveau jeton maintenant",
+      "failed": "Impossible de renouveler le jeton"
+    },
+    "remove": {
+      "title": "Supprimer {name} ?",
+      "description": "Son jeton cesse de fonctionner immédiatement et il disparaît définitivement de cette page. Son enregistrement est conservé pour les journaux ; il ne peut pas être restauré ici.",
+      "confirm": "Supprimer",
+      "success": "Connecteur MCP supprimé",
+      "failed": "Impossible de supprimer le connecteur MCP"
     }
   }
 }

@@ -7,7 +7,7 @@ definePageMeta({
 <template>
   <main class="space-y-6">
     <h1 class="sr-only">
-      {{ $t('nav.connectors') }}
+      {{ $t('nav.mcp_connectors') }}
     </h1>
     <DashboardConnectors />
   </main>

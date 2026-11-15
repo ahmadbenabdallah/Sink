@@ -3,31 +3,50 @@ import type { ConnectorUsage, ConnectorView } from '#shared/types/connector'
 import { Plus, RefreshCw } from '@lucide/vue'
 
 const { t, locale } = useI18n()
-// The server refuses to create or revoke in preview mode; say so up front.
+// The server refuses every connector change in preview mode; say so up front.
 // The setting is a string that is empty when off, and an empty string on
 // `disabled` would disable the button, so it is turned into a boolean here.
 const previewMode = !!useRuntimeConfig().public.previewMode
-const { connectors, reserved, dailyCallLimit, loading, loaded, loadError, load, create, revoke } = useConnectors()
+const { connectors, reserved, dailyCallLimit, loading, loaded, loadError, load, create, revoke, rename, rotate, remove } = useConnectors()
 
 const createOpen = shallowRef(false)
-const revokeOpen = shallowRef(false)
-const revokeTarget = shallowRef<ConnectorView | null>(null)
 const createButton = useTemplateRef<{ $el: HTMLElement }>('createButton')
+
+type Action = 'rename' | 'rotate' | 'revoke' | 'remove'
+/** The connector the open dialog acts on. */
+const target = shallowRef<ConnectorView | null>(null)
+const dialog = shallowRef<Action | null>(null)
+function dialogOpen(action: Action) {
+  return computed({
+    get: () => dialog.value === action,
+    set: (open: boolean) => {
+      if (!open && dialog.value === action)
+        dialog.value = null
+    },
+  })
+}
+const renameOpen = dialogOpen('rename')
+const rotateOpen = dialogOpen('rotate')
+const revokeOpen = dialogOpen('revoke')
+const removeOpen = dialogOpen('remove')
+
+function openAction(connector: ConnectorView, action: Action) {
+  target.value = connector
+  dialog.value = action
+}
 
 const RESERVED_LABELS = { 'site-token': 'connectors.reserved.site_token', 'access': 'connectors.reserved.access' } as const
 
-function askRevoke(connector: ConnectorView) {
-  revokeTarget.value = connector
-  revokeOpen.value = true
-}
-
-// A revoked row loses its Revoke button, which is where focus would return
-// to. Send it somewhere that still exists.
-function handleRevokeClosed(event: Event, revoked: boolean) {
-  if (!revoked)
-    return
+// A dialog opened from a row menu returns focus to that row's menu button
+// while the row exists, and to "New MCP connector" once it is removed.
+function returnFocus(event: Event) {
   event.preventDefault()
-  createButton.value?.$el.focus()
+  const id = target.value?.id
+  const rowButton = id ? document.querySelector(`[data-connector-actions="${CSS.escape(id)}"]`) : null
+  if (rowButton instanceof HTMLButtonElement && !rowButton.disabled)
+    rowButton.focus()
+  else
+    createButton.value?.$el.focus()
 }
 
 function lastUsedText(usage: ConnectorUsage): string {
@@ -140,7 +159,16 @@ onMounted(load)
                 {{ $t(`connectors.level.${connector.level}.label`) }}
               </Badge>
             </TableCell>
-            <TableCell>{{ shortDate(connector.createdAt, locale) }}</TableCell>
+            <TableCell>
+              <div>{{ shortDate(connector.createdAt, locale) }}</div>
+              <div
+                v-if="connector.rotatedAt !== null" class="
+                  text-xs text-muted-foreground
+                "
+              >
+                {{ $t('connectors.table.rotated', { date: shortDate(connector.rotatedAt, locale) }) }}
+              </div>
+            </TableCell>
             <TableCell>{{ lastUsedText(connector) }}</TableCell>
             <TableCell class="text-right tabular-nums">
               {{ callsText(connector) }}
@@ -151,16 +179,11 @@ onMounted(load)
               </Badge>
             </TableCell>
             <TableCell class="text-right">
-              <Button
-                v-if="connector.revokedAt === null"
+              <DashboardConnectorsActionsMenu
+                :connector="connector"
                 :disabled="previewMode"
-                variant="outline"
-                size="sm"
-                :aria-label="$t('connectors.revoke.title', { name: connector.name })"
-                @click="askRevoke(connector)"
-              >
-                {{ $t('connectors.revoke.action') }}
-              </Button>
+                @action="openAction(connector, $event)"
+              />
             </TableCell>
           </TableRow>
 
@@ -178,10 +201,28 @@ onMounted(load)
   </Card>
 
   <DashboardConnectorsCreateModal v-model:open="createOpen" :create="create" />
+  <DashboardConnectorsRenameDialog
+    v-model:open="renameOpen"
+    :connector="target"
+    :rename="rename"
+    @close-auto-focus="returnFocus"
+  />
+  <DashboardConnectorsRotateModal
+    v-model:open="rotateOpen"
+    :connector="target"
+    :rotate="rotate"
+    @close-auto-focus="returnFocus"
+  />
   <DashboardConnectorsRevokeDialog
     v-model:open="revokeOpen"
-    :connector="revokeTarget"
+    :connector="target"
     :revoke="revoke"
-    @close-auto-focus="handleRevokeClosed"
+    @close-auto-focus="returnFocus"
+  />
+  <DashboardConnectorsRemoveDialog
+    v-model:open="removeOpen"
+    :connector="target"
+    :remove="remove"
+    @close-auto-focus="returnFocus"
   />
 </template>

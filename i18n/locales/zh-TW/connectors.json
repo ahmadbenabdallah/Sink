@@ -1,10 +1,10 @@
 {
   "connectors": {
-    "title": "連接器",
+    "title": "MCP 連接器",
     "description": "為每個 AI 代理單獨建立用於 MCP 端點的權杖，這樣儀表板密碼就不會出現在代理的設定裡。",
     "daily_limit": "每個連接器每天最多可進行 {limit} 次工具呼叫。",
-    "create": "新增連接器",
-    "empty": "尚無連接器",
+    "create": "新增 MCP 連接器",
+    "empty": "沒有 MCP 連接器",
     "empty_description": "建立一個連接器，無須分享儀表板密碼即可連接代理。",
     "load_failed": "無法載入連接器",
     "usage_unavailable": "無法取得",
@@ -16,7 +16,8 @@
       "last_used": "最近使用",
       "calls_7d": "呼叫次數（7 天）",
       "status": "狀態",
-      "actions": "操作"
+      "actions": "操作",
+      "rotated": "{date} 已輪替"
     },
     "status": {
       "active": "有效",
@@ -50,13 +51,13 @@
       "submitting": "正在建立…"
     },
     "create_dialog": {
-      "title": "新增連接器",
+      "title": "新增 MCP 連接器",
       "description": "權杖只會在建立後顯示一次。",
       "failed": "無法建立連接器"
     },
     "reveal": {
       "title": "請立即複製權杖",
-      "once_notice": "權杖只會顯示這一次。如果遺失，請撤銷此連接器並重新建立。",
+      "once_notice": "權杖只會顯示這一次。如果遺失，請輪替權杖以取得新權杖。",
       "token": "權杖",
       "copy": "複製",
       "copied": "已複製",
@@ -66,12 +67,39 @@
       "done": "完成"
     },
     "revoke": {
-      "action": "撤銷",
       "title": "撤銷 {name}？",
       "description": "其權杖會立即失效，且無法復原。",
       "confirm": "撤銷",
-      "success": "連接器已撤銷",
+      "success": "MCP 連接器已撤銷",
       "failed": "無法撤銷連接器"
+    },
+    "actions": {
+      "open": "{name} 的操作",
+      "rename": "重新命名",
+      "rotate": "輪替權杖",
+      "revoke": "撤銷",
+      "remove": "移除",
+      "revoked_only": "已撤銷：只能移除。"
+    },
+    "rename": {
+      "title": "重新命名 {name}",
+      "submit": "儲存",
+      "success": "MCP 連接器已重新命名",
+      "failed": "無法重新命名 MCP 連接器"
+    },
+    "rotate": {
+      "title": "輪替 {name} 的權杖？",
+      "description": "目前的權杖會立即失效。每個使用它的代理都需要換上新權杖。",
+      "confirm": "輪替權杖",
+      "reveal_title": "現在複製新權杖",
+      "failed": "無法輪替權杖"
+    },
+    "remove": {
+      "title": "移除 {name}？",
+      "description": "它的權杖會立即失效，並會從此頁面永久消失。紀錄會保留供日誌使用，無法在此還原。",
+      "confirm": "移除",
+      "success": "MCP 連接器已移除",
+      "failed": "無法移除 MCP 連接器"
     }
   }
 }

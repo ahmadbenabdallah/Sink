@@ -1,10 +1,10 @@
 {
   "connectors": {
-    "title": "Connectors",
+    "title": "MCP-Connectors",
     "description": "Geben Sie jedem KI-Agenten einen eigenen Token für den MCP-Endpunkt, damit das Dashboard-Passwort nie in der Konfiguration eines Agenten steht.",
     "daily_limit": "Jeder Connector darf {limit} Tool-Aufrufe pro Tag ausführen.",
-    "create": "Neuer Connector",
-    "empty": "Noch keine Connectors",
+    "create": "Neuer MCP-Connector",
+    "empty": "Keine MCP-Connectors",
     "empty_description": "Erstellen Sie einen, um einen Agenten zu verbinden, ohne das Dashboard-Passwort weiterzugeben.",
     "load_failed": "Connectors konnten nicht geladen werden",
     "usage_unavailable": "Nicht verfügbar",
@@ -16,7 +16,8 @@
       "last_used": "Zuletzt verwendet",
       "calls_7d": "Aufrufe (7 Tage)",
       "status": "Status",
-      "actions": "Aktionen"
+      "actions": "Aktionen",
+      "rotated": "Rotiert am {date}"
     },
     "status": {
       "active": "Aktiv",
@@ -50,13 +51,13 @@
       "submitting": "Wird erstellt…"
     },
     "create_dialog": {
-      "title": "Neuer Connector",
+      "title": "Neuer MCP-Connector",
       "description": "Der Token wird nur einmal angezeigt, direkt nach dem Erstellen.",
       "failed": "Connector konnte nicht erstellt werden"
     },
     "reveal": {
       "title": "Token jetzt kopieren",
-      "once_notice": "Der Token wird nur dieses eine Mal angezeigt. Wenn Sie ihn verlieren, widerrufen Sie diesen Connector und erstellen Sie einen neuen.",
+      "once_notice": "Der Token wird nur dieses eine Mal angezeigt. Wenn Sie ihn verlieren, rotieren Sie den Token, um einen neuen zu erhalten.",
       "token": "Token",
       "copy": "Kopieren",
       "copied": "Kopiert",
@@ -66,12 +67,39 @@
       "done": "Fertig"
     },
     "revoke": {
-      "action": "Widerrufen",
       "title": "{name} widerrufen?",
       "description": "Der Token funktioniert sofort nicht mehr. Dies kann nicht rückgängig gemacht werden.",
       "confirm": "Widerrufen",
-      "success": "Connector widerrufen",
+      "success": "MCP-Connector widerrufen",
       "failed": "Connector konnte nicht widerrufen werden"
+    },
+    "actions": {
+      "open": "Aktionen für {name}",
+      "rename": "Umbenennen",
+      "rotate": "Token rotieren",
+      "revoke": "Widerrufen",
+      "remove": "Entfernen",
+      "revoked_only": "Widerrufen: kann nur noch entfernt werden."
+    },
+    "rename": {
+      "title": "{name} umbenennen",
+      "submit": "Speichern",
+      "success": "MCP-Connector umbenannt",
+      "failed": "MCP-Connector konnte nicht umbenannt werden"
+    },
+    "rotate": {
+      "title": "Token von {name} rotieren?",
+      "description": "Der aktuelle Token funktioniert sofort nicht mehr. Jeder Agent, der ihn nutzt, braucht den neuen.",
+      "confirm": "Token rotieren",
+      "reveal_title": "Neuen Token jetzt kopieren",
+      "failed": "Token konnte nicht rotiert werden"
+    },
+    "remove": {
+      "title": "{name} entfernen?",
+      "description": "Sein Token funktioniert sofort nicht mehr, und er verschwindet endgültig von dieser Seite. Der Eintrag bleibt für die Protokolle erhalten und kann hier nicht wiederhergestellt werden.",
+      "confirm": "Entfernen",
+      "success": "MCP-Connector entfernt",
+      "failed": "MCP-Connector konnte nicht entfernt werden"
     }
   }
 }
