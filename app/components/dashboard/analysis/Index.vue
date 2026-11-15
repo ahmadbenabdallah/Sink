@@ -14,6 +14,7 @@ const analysisStore = useDashboardAnalysisStore()
   <h2 v-if="link" class="text-xl/10 font-bold">
     {{ $t('dashboard.stats', { slug: link.slug }) }}
   </h2>
+  <DashboardAnalysisHistoryNote />
   <DashboardAnalysisCounters />
   <Tabs v-model="analysisStore.viewMode" default-value="trend">
     <div class="mb-4 flex flex-wrap items-center gap-2">

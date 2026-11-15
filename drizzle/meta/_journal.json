@@ -78,6 +78,13 @@
       "when": 1794701052050,
       "tag": "0010_nappy_viper",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1794706693130,
+      "tag": "0011_abandoned_eternals",
+      "breakpoints": true
     }
   ]
 }

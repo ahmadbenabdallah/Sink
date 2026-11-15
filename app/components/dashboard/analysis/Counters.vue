@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AnalyticsHistory } from '#shared/types/analytics-history'
 import type { CounterData } from '@/types'
 import { Flame, MousePointerClick, Users } from '@lucide/vue'
 import NumberFlow from '@number-flow/vue'
@@ -24,7 +25,7 @@ watch([() => analysisStore.dateRange, () => analysisStore.filters, retryKey], as
   loading.value = true
   error.value = false
   try {
-    const result = await useAPI<{ data: CounterData[] }>('/api/stats/counters', {
+    const result = await useAPI<{ data: CounterData[], history?: AnalyticsHistory }>('/api/stats/counters', {
       signal: controller.signal,
       query: {
         ...analysisStore.filters,
@@ -36,17 +37,22 @@ watch([() => analysisStore.dateRange, () => analysisStore.filters, retryKey], as
     if (!controller.signal.aborted) {
       counters.value = result.data?.[0] ?? defaultData
       hasLoaded.value = true
+      analysisStore.reportHistory('counters', result.history)
     }
   }
   catch {
-    if (!controller.signal.aborted)
+    if (!controller.signal.aborted) {
       error.value = true
+      analysisStore.reportHistory('counters', undefined)
+    }
   }
   finally {
     if (!controller.signal.aborted)
       loading.value = false
   }
 }, { immediate: true })
+
+onUnmounted(() => analysisStore.reportHistory('counters', undefined))
 </script>
 
 <template>

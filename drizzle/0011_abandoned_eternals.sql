@@ -1,0 +1,1 @@
+ALTER TABLE `analytics_export_budget` ADD `rows_read` integer DEFAULT 0 NOT NULL;

@@ -43,7 +43,11 @@
     "analysis": {
       "chart_summary": "{totalVisits} visites au total. Pic : {peakVisits} à {peakTime}.",
       "chart_summary_with_visitors": "{totalVisits} visites et {totalVisitors} visiteurs au total. Pic : {peakVisits} visites à {peakTime}.",
-      "locations_summary": "{totalVisits} visites dans {countryCount} zones."
+      "locations_summary": "{totalVisits} visites dans {countryCount} zones.",
+      "history_daily": "Les jours de plus de 3 mois proviennent des totaux quotidiens, par jour UTC. Les visiteurs et les référents de ces jours sont des estimations.",
+      "history_missing": "Jours anciens sans données : {count}.",
+      "history_recent_only": "La tendance hebdomadaire ne couvre que les 3 derniers mois.",
+      "history_budget": "Les jours anciens seront de nouveau disponibles demain : la limite de lecture du jour est atteinte."
     },
     "date_picker": {
       "today": "Aujourd'hui",

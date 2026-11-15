@@ -140,10 +140,14 @@ export const analyticsDailyBreakdown = sqliteTable('analytics_daily_breakdown', 
   primaryKey({ columns: [table.dimension, table.day, table.linkId, table.value] }),
 ])
 
-/** D1 rows the rollups wrote per UTC day, capped so they cannot use up the free plan's daily writes. */
+/**
+ * D1 rows the rollups wrote, and the Analysis page's old-day reads read, per
+ * UTC day, capped so neither can use up the free plan's daily D1 quota.
+ */
 export const analyticsExportBudget = sqliteTable('analytics_export_budget', {
   utcDay: text('utc_day').primaryKey(),
   rowsWritten: integer('rows_written').notNull().default(0),
+  rowsRead: integer('rows_read').notNull().default(0),
 })
 
 export const linkMigrationRuns = sqliteTable('link_migration_runs', {

@@ -62,7 +62,17 @@ The same job also writes daily numbers per link to D1, once a day's hours are ar
 - `analytics_daily`: visits, visitors and referers per link and UTC day, computed as on the link cards.
 - `analytics_daily_breakdown`: visits and visitors per link, UTC day and value of each dimension (referer, country, region, city, timezone, language, OS, browser, browser type, device, device type, Cloudflare data center).
 
-The dashboard does not read the archive or the daily numbers yet; the archive is for download and offline analysis.
+The Analysis page reads the daily numbers for days older than 88 days, which Analytics Engine may already have deleted. For those days:
+
+- Counters, the trend chart by day and the detail lists come from the daily numbers, by UTC day. Visits are exact; visitors and referers are sums of daily values, so they are estimates. A list that combines old and recent days is approximate, because each part keeps only its top values.
+- The hourly chart and the weekly trend heatmap cover the last 3 months only.
+- A day whose daily numbers are not written yet is shown as without data, never as zero. One view reads at most the 366 days before the last 88; earlier days are shown as without data too.
+- To stay inside the free plan's D1 reads, these old-day reads stop for the day after reading 2,000,000 D1 rows; the page then says the older days are available again tomorrow.
+- Where no daily numbers exist at all (Pages, or a Worker without R2), the page reads Analytics Engine as before.
+- Filtering by link or slug works; other filters (API only) leave the old days out, and the answer's `history` field says so.
+- Link cards, the CSV export, recent events, the globe and the MCP analytics tools read Analytics Engine only, as before.
+
+The R2 archive is for download and offline analysis; the dashboard does not read it.
 
 What the logs mean:
 

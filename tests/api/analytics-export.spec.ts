@@ -430,7 +430,7 @@ describe('analytics rollups', { concurrent: false }, () => {
     ])
     expect((await rollupStep(OLDEST, 'totals'))?.completedAt).toEqual(expect.any(Number))
     // The rows written are counted against today's budget.
-    expect(await db.select().from(analyticsExportBudget)).toEqual([{ utcDay: '2026-11-14', rowsWritten: 4 }])
+    expect(await db.select().from(analyticsExportBudget)).toEqual([{ utcDay: '2026-11-14', rowsWritten: 4, rowsRead: 0 }])
   })
 
   it('pages a breakdown 500 rows per run of the step, resuming after the last key, until a short page', async () => {

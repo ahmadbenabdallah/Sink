@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AnalyticsHistory } from '#shared/types/analytics-history'
 import type { MetricItem } from '@/types'
 import { LoaderCircle } from '@lucide/vue'
 
@@ -29,7 +30,7 @@ watch([() => analysisStore.dateRange, () => analysisStore.filters, retryKey], as
   loading.value = true
   error.value = false
   try {
-    const result = await useAPI<{ data: RawMetricData[] }>('/api/stats/metrics', {
+    const result = await useAPI<{ data: RawMetricData[], history?: AnalyticsHistory }>('/api/stats/metrics', {
       signal: controller.signal,
       query: {
         ...analysisStore.filters,
@@ -47,17 +48,22 @@ watch([() => analysisStore.dateRange, () => analysisStore.filters, retryKey], as
       }))
       top10.value = metrics.value.slice(0, 10)
       hasLoaded.value = true
+      analysisStore.reportHistory(`metric:${props.type}`, result.history)
     }
   }
   catch {
-    if (!controller.signal.aborted)
+    if (!controller.signal.aborted) {
       error.value = true
+      analysisStore.reportHistory(`metric:${props.type}`, undefined)
+    }
   }
   finally {
     if (!controller.signal.aborted)
       loading.value = false
   }
 }, { immediate: true })
+
+onUnmounted(() => analysisStore.reportHistory(`metric:${props.type}`, undefined))
 </script>
 
 <template>
