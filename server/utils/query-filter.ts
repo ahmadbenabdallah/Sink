@@ -6,13 +6,17 @@ import { blobsMap } from './access-log'
 
 export type { Query }
 
-function queryValues(value: string, omitEmpty = false): string[] {
-  if ([...value].some((character) => {
+/** Analytics Engine queries never carry control characters. */
+export function hasControlCharacter(value: string): boolean {
+  return [...value].some((character) => {
     const code = character.charCodeAt(0)
     return code <= 0x1F || code === 0x7F
-  })) {
+  })
+}
+
+function queryValues(value: string, omitEmpty = false): string[] {
+  if (hasControlCharacter(value))
     throw new Error('Analytics filters must not contain control characters')
-  }
 
   const values = value.split(',')
   return omitEmpty ? values.filter(Boolean) : values

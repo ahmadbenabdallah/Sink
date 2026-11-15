@@ -101,6 +101,18 @@ export const analyticsExportSteps = sqliteTable('analytics_export_steps', {
   index('analytics_export_steps_pending_idx').on(table.completedAt, table.parkedAt, table.day, table.step),
 ])
 
+/**
+ * Ids of links the owner deleted, so their traffic is left out of analytics.
+ * The expired-link cleanup does not record ids; creating or importing a link
+ * with a listed id takes it off the list.
+ */
+export const deletedLinkIds = sqliteTable('deleted_link_ids', {
+  id: text().primaryKey(),
+  deletedAt: integer('deleted_at').notNull(),
+}, table => [
+  index('deleted_link_ids_deleted_at_idx').on(table.deletedAt),
+])
+
 // The two rollup tables are WITHOUT ROWID, added by hand to drizzle/0009_*.sql:
 // Drizzle cannot express it, and its snapshot does not record it.
 

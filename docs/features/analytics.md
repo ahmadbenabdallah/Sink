@@ -35,6 +35,8 @@ Numbers can be **approximate** (Cloudflare samples high traffic). Low traffic ca
 
 To hide detected bots from stats and [click webhooks](/configuration/webhooks), set `NUXT_DISABLE_BOT_ACCESS_LOG=true`.
 
+**Deleted links are hidden.** When you delete a link (from the dashboard, the API or the MCP `delete_link` tool), its traffic disappears from every chart, list, export and MCP analytics answer. A new link that reuses the slug starts from zero. Restoring the link by import, which keeps its id, brings its history back. Links removed automatically by the [expired-link cleanup](/configuration/) keep their history, and links deleted before this version stay visible until Analytics Engine expires their data. Only the 2,000 most recent deletions of the last three months are hidden, so after more deletions than that the oldest ones' remaining traffic shows again. The R2 archive and the daily numbers in D1 still keep every link.
+
 ## Near-realtime page
 
 ::: tip Not a live stream
