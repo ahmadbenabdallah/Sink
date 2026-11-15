@@ -49,7 +49,7 @@ Cloudflare Analytics Engine 只保留**三个月**的数据，之后会删除。
 
 - 一个每 5 分钟运行的定时触发器，每次复制一个 UTC 小时的数据，只处理已满 2 天的日期。
 - 文件保存为 `analytics/raw/YYYY-MM-DD/HH.ndjson`，每行一个 JSON 对象，包含所有记录字段（包括 IP 地址和 User-Agent）以及 Cloudflare 的采样权重 `_sample_interval`。
-- 首次运行时，会按从旧到新的顺序补齐 85 天以内的所有日期。
+- 首次运行时，会从 Analytics Engine 中最早一条记录所在的日期开始，按从旧到新的顺序补齐 90 天以内的日期。Analytics Engine 保留 89 到 92 天，因此在较短的月份里，其中最早的几天可能已被部分删除；剩下的数据会被保留。
 
 它需要与访问分析相同的账户 ID 和 API 令牌，以及 `R2` 绑定。Pages 部署没有定时触发器，因此不会归档。
 
@@ -76,11 +76,13 @@ R2 归档用于下载和离线分析，仪表盘不会读取它。
 
 日志含义：
 
-- `analytics_export.stopped`：Analytics Engine、网络、R2 或 D1 出错。本次运行停止，5 分钟后重试同一步骤（某个小时，或某天的每日数据）；只要该日期未满 85 天，就不会丢失数据。日志会写明步骤、状态码和错误名称。
+- `analytics_export.stopped`：Analytics Engine、网络、R2 或 D1 出错。本次运行停止，5 分钟后重试同一步骤（某个小时，或某天的每日数据）；只要该日期未满 89 天（Analytics Engine 至少保留的天数），就不会丢失数据。日志会写明步骤、状态码和错误名称。
 - `analytics_export.hour_truncated`：该小时超过 10,000 条记录（例如遭遇请求洪水），只保留前 10,000 条。
+- `analytics_export.seed_failed`：每天查询 Analytics Engine 中最早记录的请求失败或返回了意外结果，因此没有加入新的日期。已加入的步骤会继续运行，下一次运行会再次查询。
+- `analytics_export.skipped_before_first_record`：最早记录之前的日期没有任何数据，其步骤被直接标记为完成，不再查询。
 - `analytics_export.write_budget`：每日数据今天已写入 50,000 行 D1（约为免费套餐每日写入额度的一半），停止到下一个 UTC 日。归档继续进行。
 - `analytics_export.size_limit`（每小时记录一次）：D1 数据库超过 400 MB，或 D1 未返回数据库大小，每日数据停止写入。归档继续进行。
-- `analytics_export.step_parked`：某个步骤的返回结果连续 3 次不正确（例如记录数少于统计数、某行无法读取、某页取值过长无法写入，或每日数据后续分页的查询被拒绝，该查询包含已记录的值），该步骤会被跳过；对于小时归档，已收到的数据仍保存在文件中。要在其未满 85 天时重试被跳过的步骤，请运行：
+- `analytics_export.step_parked`：某个步骤的返回结果连续 3 次不正确（例如记录数少于统计数、某行无法读取、某页取值过长无法写入，或每日数据后续分页的查询被拒绝，该查询包含已记录的值），该步骤会被跳过；对于小时归档，已收到的数据仍保存在文件中。要在其未满 89 天时重试被跳过的步骤，请运行：
 
 ```sh
 npx wrangler d1 execute <database> --remote --command "UPDATE analytics_export_steps SET parked_at = NULL, attempts = 0 WHERE parked_at IS NOT NULL"

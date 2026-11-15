@@ -1,16 +1,16 @@
 import { describe, expect, it, vi } from 'vitest'
-import { archiveKey, createLineCounter, eligibleDays, hourWindow } from '../../server/utils/analytics-export'
+import { archiveKey, createLineCounter, daysFromFirstRecord, eligibleDays, hourWindow } from '../../server/utils/analytics-export'
 
 vi.mock('#shared/utils/flag', () => ({ getFlag: vi.fn() }))
 
 const NOW = Date.UTC(2026, 10, 14, 0, 2) // 2026-11-14 00:02 UTC
 
 describe('eligibleDays', () => {
-  it('lists full UTC days from 85 to 2 days old, oldest first', () => {
+  it('lists full UTC days from 90 to 2 days old, oldest first', () => {
     const days = eligibleDays(NOW)
-    expect(days[0]).toBe('2026-08-21')
+    expect(days[0]).toBe('2026-08-16')
     expect(days.at(-1)).toBe('2026-11-12')
-    expect(days).toHaveLength(84)
+    expect(days).toHaveLength(89)
     expect([...days].sort()).toEqual(days)
   })
 
@@ -22,6 +22,23 @@ describe('eligibleDays', () => {
   it('uses UTC day boundaries, not the time of day', () => {
     expect(eligibleDays(Date.UTC(2026, 10, 14, 23, 59))).toEqual(eligibleDays(NOW))
     expect(eligibleDays(Date.UTC(2026, 10, 15, 0, 0)).at(-1)).toBe('2026-11-13')
+  })
+})
+
+describe('daysFromFirstRecord', () => {
+  const days = ['2026-11-08', '2026-11-09', '2026-11-10', '2026-11-11']
+
+  it('keeps the days from the one holding the oldest record', () => {
+    expect(daysFromFirstRecord(days, Date.UTC(2026, 10, 9, 23, 59) / 1000)).toEqual(['2026-11-09', '2026-11-10', '2026-11-11'])
+  })
+
+  it('keeps every day when the records start before the window', () => {
+    expect(daysFromFirstRecord(days, Date.UTC(2026, 5, 1) / 1000)).toEqual(days)
+  })
+
+  it('keeps only the newest day when there is no record, or the first one is newer', () => {
+    expect(daysFromFirstRecord(days, null)).toEqual(['2026-11-11'])
+    expect(daysFromFirstRecord(days, Date.UTC(2026, 10, 13) / 1000)).toEqual(['2026-11-11'])
   })
 })
 

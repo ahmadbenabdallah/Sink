@@ -49,7 +49,7 @@ Cloudflare Analytics Engine keeps data for **three months**, then deletes it. On
 
 - A cron trigger runs every 5 minutes and copies one UTC hour at a time, once the day is 2 days old.
 - Files are stored as `analytics/raw/YYYY-MM-DD/HH.ndjson`, one JSON object per line, with every recorded field (including IP address and user agent) and Cloudflare's sampling weight `_sample_interval`.
-- On its first runs it catches up on every day up to 85 days old, oldest first.
+- On its first runs it catches up from the day of the oldest record Analytics Engine holds, up to 90 days old, oldest first. Analytics Engine keeps 89 to 92 days, so in a short month the oldest of these days may already be partly deleted; whatever is left is kept.
 
 It needs the same account ID and API token as analytics, plus the `R2` binding. Pages deployments have no cron triggers, so nothing is archived there.
 
@@ -76,11 +76,13 @@ The R2 archive is for download and offline analysis; the dashboard does not read
 
 What the logs mean:
 
-- `analytics_export.stopped`: Analytics Engine, the network, R2 or D1 failed. The run stops and the same step (an hour, or a day's numbers) is tried again 5 minutes later, so nothing is lost while the day is under 85 days old. The log names the step, the status code and the error name.
+- `analytics_export.stopped`: Analytics Engine, the network, R2 or D1 failed. The run stops and the same step (an hour, or a day's numbers) is tried again 5 minutes later, so nothing is lost while the day is under 89 days old (the least Analytics Engine keeps). The log names the step, the status code and the error name.
 - `analytics_export.hour_truncated`: the hour held more than 10,000 records, for example during a flood of requests. Its first 10,000 records are kept.
+- `analytics_export.seed_failed`: the daily question for the oldest record Analytics Engine holds failed or got an unexpected answer, so no new day was added. The steps already added still run, and the next run asks again.
+- `analytics_export.skipped_before_first_record`: steps of days before the oldest record were marked done without being asked for, because those days hold nothing.
 - `analytics_export.write_budget`: the daily numbers wrote 50,000 D1 rows today, about half the free plan's daily writes, so they stop until the next UTC day. The archive goes on.
 - `analytics_export.size_limit`, logged once an hour: the D1 database is over 400 MB, or D1 did not report its size, so the daily numbers stop. The archive goes on.
-- `analytics_export.step_parked`: the answer for one step was wrong 3 times (for example fewer records than counted, a row that cannot be read, a page of values too long to store, or a rejected query for a later page of a day's numbers, whose query contains a recorded value), so that step is skipped. For an hour, whatever was received is kept in its file. To try parked steps again while they are under 85 days old, run:
+- `analytics_export.step_parked`: the answer for one step was wrong 3 times (for example fewer records than counted, a row that cannot be read, a page of values too long to store, or a rejected query for a later page of a day's numbers, whose query contains a recorded value), so that step is skipped. For an hour, whatever was received is kept in its file. To try parked steps again while they are under 89 days old, run:
 
 ```sh
 npx wrangler d1 execute <database> --remote --command "UPDATE analytics_export_steps SET parked_at = NULL, attempts = 0 WHERE parked_at IS NOT NULL"
