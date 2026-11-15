@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:workers'
-import { and, eq, like, not } from 'drizzle-orm'
+import { and, eq, gte, isNull, like, lt, not } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { analyticsDaily, analyticsDailyBreakdown, analyticsExportBudget, analyticsExportSteps } from '../../server/database/schema'
 import { archiveKey, hourWindow, runAnalyticsExport } from '../../server/utils/analytics-export'
@@ -10,7 +10,7 @@ import { db, runScheduledTasks } from '../utils'
 vi.mock('#shared/utils/flag', () => ({ getFlag: vi.fn() }))
 
 const NOW = Date.UTC(2026, 10, 14, 0, 2) // 2026-11-14 00:02 UTC
-const OLDEST = '2026-08-21' // 85 days before NOW
+const OLDEST = '2026-08-16' // 90 days before NOW
 const NEWEST = '2026-11-12' // 2 days before NOW
 const ACCOUNT = 'test-account-id-4f1c'
 const TOKEN = 'test-api-token-9a7e'
@@ -23,6 +23,15 @@ type Answer = { status: number, body?: string } | Error
 /** Analytics Engine answers by hour start: rows for an hour, or a failure. */
 let hours: Map<number, string[] | Answer>
 let fetchSpy: ReturnType<typeof vi.spyOn>
+/** The UTC day of the oldest record Analytics Engine holds, or null for none; OLDEST by default. */
+let firstRecordDay: string | null
+
+/** Answers the "oldest record" query that seeding asks first; null for any other query. */
+function answerFirstRecord(sql: string): Response | null {
+  if (!sql.includes('min(timestamp)'))
+    return null
+  return Response.json({ data: [firstRecordDay === null ? { first: '0', records: '0' } : { first: String(Date.parse(`${firstRecordDay}T10:00:00Z`) / 1000), records: '12' }] })
+}
 /** Answers the rollup queries (the ones with `group by`); every day has no rows by default. */
 let rollupAnswer: (sql: string) => Response | Promise<Response>
 
@@ -39,8 +48,9 @@ function ndjson(count: number, hourStart: number) {
   return Array.from({ length: count }, (_, i) => JSON.stringify({ timestamp: new Date((hourStart + i) * 1000).toISOString(), _sample_interval: 1, index1: `id-${i}`, slug: `s${i}` }))
 }
 
+/** Analytics Engine calls, without the "oldest record" query seeding asks once a day. */
 function analyticsCalls() {
-  return fetchSpy.mock.calls.filter(([input]) => String(input instanceof Request ? input.url : input).includes('/analytics_engine/sql'))
+  return fetchSpy.mock.calls.filter(([input, init]) => String(input instanceof Request ? input.url : input).includes('/analytics_engine/sql') && !String(init?.body).includes('min(timestamp)'))
 }
 
 function stubAnalyticsEngine() {
@@ -50,6 +60,9 @@ function stubAnalyticsEngine() {
       throw new Error(`Unexpected outbound request to ${url}`)
     expect(new Headers(init?.headers).get('Authorization')).toBe(`Bearer ${TOKEN}`)
     const sql = String(init?.body)
+    const first = answerFirstRecord(sql)
+    if (first)
+      return first
     if (sql.includes(' group by '))
       return rollupAnswer(sql)
     const start = Number(/toDateTime\((\d+)\)/.exec(sql)?.[1])
@@ -69,6 +82,9 @@ function stubFirstHour(records: string, raw: (sql: string) => Response | Promise
   const start = hourWindow(OLDEST, 0).start
   fetchSpy.mockImplementation(async (_input, init) => {
     const sql = String(init?.body)
+    const first = answerFirstRecord(sql)
+    if (first)
+      return first
     if (sql.includes(' group by '))
       return rollupAnswer(sql)
     if (!sql.includes(`toDateTime(${start})`))
@@ -102,6 +118,7 @@ async function clearTables() {
 
 beforeEach(async () => {
   hours = new Map()
+  firstRecordDay = OLDEST
   rollupAnswer = () => new Response('')
   stubAnalyticsEngine()
   await clearTables()
@@ -135,14 +152,14 @@ describe('analytics archive', { concurrent: false }, () => {
     expect((await stepRow(OLDEST, 3))?.completedAt).toEqual(expect.any(Number))
   })
 
-  it('seeds every step of every day from 85 to 2 days old, and nothing else', async () => {
+  it('seeds every step of every day from 90 to 2 days old when the records go back that far', async () => {
     await runAnalyticsExport(env, options)
 
     const rows = await db.select({ day: analyticsExportSteps.day }).from(analyticsExportSteps)
     const days = [...new Set(rows.map(row => row.day))].sort()
     expect(days[0]).toBe(OLDEST)
     expect(days.at(-1)).toBe(NEWEST)
-    expect(rows).toHaveLength(84 * 37)
+    expect(rows).toHaveLength(89 * 37)
   })
 
   it('adds only the 37 steps of the newly eligible day on the next UTC day', async () => {
@@ -150,8 +167,108 @@ describe('analytics archive', { concurrent: false }, () => {
     await runAnalyticsExport(env, { ...options, now: NOW + DAY_MS })
 
     const rows = await db.select({ day: analyticsExportSteps.day }).from(analyticsExportSteps)
-    expect(rows).toHaveLength(85 * 37)
+    expect(rows).toHaveLength(90 * 37)
     expect(rows.filter(row => row.day === '2026-11-13')).toHaveLength(37)
+  })
+
+  it('seeds only from the day of the oldest record Analytics Engine holds, and archives that day first', async () => {
+    firstRecordDay = '2026-11-09'
+    const start = hourWindow('2026-11-09', 0).start
+    hours.set(start, ndjson(2, start))
+
+    await runAnalyticsExport(env, options)
+
+    const days = [...new Set((await db.select({ day: analyticsExportSteps.day }).from(analyticsExportSteps)).map(row => row.day))].sort()
+    expect(days).toEqual(['2026-11-09', '2026-11-10', '2026-11-11', '2026-11-12'])
+    expect(await (await env.R2.get(archiveKey('2026-11-09', 0)))?.text()).toBe(`${ndjson(2, start).join('\n')}\n`)
+  })
+
+  it('marks the steps of days before the oldest record done without asking for them', async () => {
+    // Seeded before this feature, from the start of the window.
+    await runAnalyticsExport(env, options)
+    await db.update(analyticsExportSteps).set({ completedAt: null })
+    firstRecordDay = '2026-11-10'
+    const before = analyticsCalls().length
+    const logs = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    // The next UTC day seeds again, now from the oldest record.
+    await runAnalyticsExport(env, { ...options, now: NOW + DAY_MS })
+
+    // Only days inside the window: Analytics Engine vouches for them having no record.
+    const pendingBefore = await db.select().from(analyticsExportSteps).where(and(gte(analyticsExportSteps.day, '2026-08-17'), lt(analyticsExportSteps.day, '2026-11-10'), isNull(analyticsExportSteps.completedAt)))
+    expect(pendingBefore).toHaveLength(0)
+    // A day that has aged out of the window stays as it was: it reads as without data, never as zero.
+    expect(await db.select().from(analyticsExportSteps).where(and(eq(analyticsExportSteps.day, OLDEST), isNull(analyticsExportSteps.completedAt)))).toHaveLength(37)
+    expect(logs.mock.calls.map(([entry]) => entry)).toContainEqual({ event: 'analytics_export.skipped_before_first_record', firstDay: '2026-11-10', steps: expect.any(Number) })
+    const sqls = analyticsCalls().slice(before).map(([, init]) => String(init?.body))
+    expect(sqls[0]).toContain(`toDateTime(${hourWindow('2026-11-10', 0).start})`)
+  })
+
+  it('seeds only the newest day when Analytics Engine holds no record', async () => {
+    firstRecordDay = null
+
+    await runAnalyticsExport(env, options)
+
+    const days = [...new Set((await db.select({ day: analyticsExportSteps.day }).from(analyticsExportSteps)).map(row => row.day))]
+    expect(days).toEqual([NEWEST])
+  })
+
+  it('seeds nothing when the oldest-record query fails, logging the status', async () => {
+    fetchSpy.mockImplementation(async () => new Response('error', { status: 401 }))
+    const warns = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const summary = await runAnalyticsExport(env, options)
+
+    expect(summary).toMatchObject({ stepsDone: 0 })
+    expect(await db.select().from(analyticsExportSteps)).toHaveLength(0)
+    expect(warns.mock.calls.map(([entry]) => entry)).toContainEqual(expect.objectContaining({ event: 'analytics_export.seed_failed', status: 401 }))
+  })
+
+  // Seeding needs Analytics Engine; the steps already seeded must not wait for it.
+  it('still runs the steps already seeded when the oldest-record query fails', async () => {
+    await runAnalyticsExport(env, options)
+    await db.update(analyticsExportSteps).set({ completedAt: null })
+    await db.delete(analyticsExportSteps).where(eq(analyticsExportSteps.day, NEWEST))
+    vi.mocked(globalThis.fetch).mockImplementation(async (_input, init) => {
+      const sql = String(init?.body)
+      return sql.includes('min(timestamp)') ? Response.json({}) : Response.json({ data: [{ records: '0' }], rows: 1 })
+    })
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const summary = await runAnalyticsExport(env, options)
+
+    expect(summary).toMatchObject({ stepsDone: 3 })
+    expect(await db.select().from(analyticsExportSteps).where(eq(analyticsExportSteps.day, NEWEST))).toHaveLength(0)
+  })
+
+  // A wrong answer must never read as "no records": that would mark every earlier day done.
+  it.each([
+    ['no data', {}],
+    ['an empty data list', { data: [] }],
+    ['records that are not a number', { data: [{ first: '1794000000', records: 'many' }] }],
+    ['records without a first time', { data: [{ first: '0', records: '5' }] }],
+    ['a first time in the future', { data: [{ first: '100000000000000000000', records: '5' }] }],
+  ])('seeds nothing on an answer with %s', async (_label, answer) => {
+    fetchSpy.mockImplementation(async () => Response.json(answer))
+    const warns = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const summary = await runAnalyticsExport(env, options)
+
+    expect(summary).toMatchObject({ stepsDone: 0 })
+    expect(await db.select().from(analyticsExportSteps)).toHaveLength(0)
+    expect(warns.mock.calls.map(([entry]) => entry)).toContainEqual(expect.objectContaining({ event: 'analytics_export.seed_failed', reason: 'bad_answer' }))
+  })
+
+  it('asks for the oldest record within the window only', async () => {
+    const sqls: string[] = []
+    fetchSpy.mockImplementation(async (_input, init) => {
+      sqls.push(String(init?.body))
+      return answerFirstRecord(String(init?.body)) ?? Response.json({ data: [{ records: '0' }], rows: 1 })
+    })
+
+    await runAnalyticsExport(env, options)
+
+    expect(sqls.find(sql => sql.includes('min(timestamp)'))).toBe(`select toUnixTimestamp(min(timestamp)) as first, count() as records from sink where timestamp >= toDateTime(${Date.UTC(2026, 7, 16) / 1000})`)
   })
 
   it('never fetches an hour that is already done', async () => {
@@ -235,6 +352,9 @@ describe('analytics archive', { concurrent: false }, () => {
     // The count says 5, but the raw answer is cut off after 3 lines.
     fetchSpy.mockImplementation(async (_input, init) => {
       const sql = String(init?.body)
+      const first = answerFirstRecord(sql)
+      if (first)
+        return first
       if (!sql.includes(`toDateTime(${start})`))
         return Response.json({ data: [{ records: '0' }], rows: 1 })
       if (sql.includes('count()'))
@@ -328,7 +448,7 @@ async function rollupStep(day: string, step: string) {
 describe('analytics rollups', { concurrent: false }, () => {
   beforeEach(async () => {
     // Seed the steps once with a run that does nothing else.
-    fetchSpy.mockImplementation(async () => Response.json({ data: [{ records: '0' }], rows: 1 }))
+    fetchSpy.mockImplementation(async (_input, init) => answerFirstRecord(String(init?.body)) ?? Response.json({ data: [{ records: '0' }], rows: 1 }))
     await runAnalyticsExport(env, options)
     stubAnalyticsEngine()
     fetchSpy.mockClear()
@@ -356,7 +476,7 @@ describe('analytics rollups', { concurrent: false }, () => {
     expect((await db.select().from(analyticsExportBudget)).map(row => row.utcDay)).toEqual(['2026-11-13'])
 
     const rows = await db.select().from(analyticsExportSteps)
-    expect(rows).toHaveLength(84 * 37)
+    expect(rows).toHaveLength(89 * 37)
     expect(rows.filter(row => row.day === OLDEST).map(row => row.step).filter(step => !step.startsWith('archive:')).sort()).toEqual([
       'breakdown:COLO',
       'breakdown:browser',
@@ -517,15 +637,15 @@ describe('analytics rollups', { concurrent: false }, () => {
     expect(warns).not.toHaveBeenCalled()
 
     await runAnalyticsExport(env, { ...options, now: NOW + 3_600_000 * 24 })
-    // OLDEST is now 86 days old and out of the window; the next day's totals run.
-    await leave({ day: '2026-08-22', step: 'totals' })
+    // OLDEST is now 91 days old and out of the window; the next day's totals run.
+    await leave({ day: '2026-08-17', step: 'totals' })
     await runAnalyticsExport(env, { ...options, now: NOW + 3_600_000 * 24 })
-    expect((await rollupStep('2026-08-22', 'totals'))?.completedAt).toEqual(expect.any(Number))
+    expect((await rollupStep('2026-08-17', 'totals'))?.completedAt).toEqual(expect.any(Number))
   })
 
   it('logs the write budget once, when a step crosses it during the day', async () => {
     const noon = NOW + 12 * 3_600_000
-    await leave({ day: OLDEST, step: 'totals' }, { day: '2026-08-22', step: 'totals' })
+    await leave({ day: OLDEST, step: 'totals' }, { day: '2026-08-17', step: 'totals' })
     await db.insert(analyticsExportBudget).values({ utcDay: '2026-11-14', rowsWritten: 49_999 })
     rollupAnswer = () => lines([{ link_id: 'id-a', slug: 'a', visits: 1, visitors: 1, referers: 0 }, { link_id: 'id-b', slug: 'b', visits: 1, visitors: 1, referers: 0 }])
     const warns = vi.spyOn(console, 'warn').mockImplementation(() => {})
@@ -535,7 +655,7 @@ describe('analytics rollups', { concurrent: false }, () => {
 
     expect((await rollupStep(OLDEST, 'totals'))?.completedAt).toEqual(expect.any(Number))
     // The crossing step finishes; nothing after it runs today.
-    expect((await rollupStep('2026-08-22', 'totals'))?.completedAt).toBeNull()
+    expect((await rollupStep('2026-08-17', 'totals'))?.completedAt).toBeNull()
     const budgetLogs = warns.mock.calls.map(([entry]) => entry).filter(entry => (entry as { event?: string }).event === 'analytics_export.write_budget')
     expect(budgetLogs).toEqual([expect.objectContaining({ rowsWritten: 50_001 })])
   })
@@ -552,7 +672,7 @@ describe('analytics rollups', { concurrent: false }, () => {
   })
 
   it('counts an attempt for a page too large for one D1 value, and goes on to the next step', async () => {
-    await leave({ day: OLDEST, step: 'breakdown:referer' }, { day: '2026-08-22', step: 'totals' })
+    await leave({ day: OLDEST, step: 'breakdown:referer' }, { day: '2026-08-17', step: 'totals' })
     // Records written before the referer cap can hold hosts of many kilobytes.
     const long = 'h'.repeat(4_000)
     rollupAnswer = sql => sql.includes('blob5 as value')
@@ -564,7 +684,7 @@ describe('analytics rollups', { concurrent: false }, () => {
 
     expect(await rollupStep(OLDEST, 'breakdown:referer')).toMatchObject({ attempts: 1, completedAt: null })
     expect(await db.select().from(analyticsDailyBreakdown)).toHaveLength(0)
-    expect((await rollupStep('2026-08-22', 'totals'))?.completedAt).toEqual(expect.any(Number))
+    expect((await rollupStep('2026-08-17', 'totals'))?.completedAt).toEqual(expect.any(Number))
     expect(warns.mock.calls.map(([entry]) => entry)).toContainEqual(expect.objectContaining({ event: 'analytics_export.step_failed', reason: 'page_too_large' }))
   })
 
@@ -605,7 +725,7 @@ describe('analytics rollups', { concurrent: false }, () => {
   // query may be specific to one step: it must not hold up every other step.
   for (const status of [400, 422]) {
     it(`counts an attempt when Analytics Engine rejects a query with a resume key with ${status}, and goes on to the next step`, async () => {
-      await leave({ day: OLDEST, step: 'breakdown:referer' }, { day: '2026-08-22', step: 'totals' })
+      await leave({ day: OLDEST, step: 'breakdown:referer' }, { day: '2026-08-17', step: 'totals' })
       await db.update(analyticsExportSteps).set({ nextKey: JSON.stringify(['id-a', 'crafted.example']) }).where(and(eq(analyticsExportSteps.day, OLDEST), eq(analyticsExportSteps.step, 'breakdown:referer')))
       rollupAnswer = sql => sql.includes('blob5 as value')
         ? new Response('rejected', { status })
@@ -616,7 +736,7 @@ describe('analytics rollups', { concurrent: false }, () => {
       await runAnalyticsExport(env, options)
 
       expect(await rollupStep(OLDEST, 'breakdown:referer')).toMatchObject({ attempts: 1, completedAt: null, startedAt: null })
-      expect((await rollupStep('2026-08-22', 'totals'))?.completedAt).toEqual(expect.any(Number))
+      expect((await rollupStep('2026-08-17', 'totals'))?.completedAt).toEqual(expect.any(Number))
 
       await runAnalyticsExport(env, options)
       await runAnalyticsExport(env, options)

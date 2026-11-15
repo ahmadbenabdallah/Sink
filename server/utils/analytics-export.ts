@@ -19,8 +19,12 @@ import { uploadBackupParts } from './backup-json-stream'
 export const ARCHIVE_PREFIX = 'analytics/raw/'
 /** Days younger than this may still receive late records. */
 const MIN_AGE_DAYS = 2
-/** A few days' margin inside Analytics Engine's three months (89 to 92 days). */
-const MAX_AGE_DAYS = 85
+/**
+ * Analytics Engine keeps three months, 89 to 92 days. Days up to 90 old are
+ * covered, oldest first: in a short month the oldest of them may already be
+ * partly deleted, and the job then keeps whatever is left.
+ */
+const MAX_AGE_DAYS = 90
 const STEPS_PER_RUN = 3
 const MAX_ATTEMPTS = 3
 /** A claim older than this belongs to a run that was killed. */
@@ -71,7 +75,7 @@ export interface AnalyticsExportSummary {
   stopped?: 'not_configured' | 'no_r2' | 'not_migrated' | 'analytics_unavailable'
 }
 
-/** Full UTC days from 85 to 2 days old, oldest first, as `YYYY-MM-DD`. */
+/** Full UTC days from 90 to 2 days old, oldest first, as `YYYY-MM-DD`. */
 export function eligibleDays(now: number): string[] {
   const today = Math.floor(now / DAY_MS) * DAY_MS
   const days: string[] = []
@@ -375,23 +379,99 @@ export function daySteps(): string[] {
 }
 
 /**
- * Inserts the steps of every eligible day when the newest day has no
- * `totals` step. That covers a new day and a table seeded before the rollups
- * existed; `INSERT OR IGNORE` keeps every step already there.
+ * The eligible days from the one holding the oldest record Analytics Engine
+ * has, so a new install does not spend days asking about empty ones. With no
+ * record, or a first record newer than the window, only the newest day: its
+ * steps mark the window as seeded for the UTC day.
  */
-async function seedSteps(env: Cloudflare.Env, db: Database, days: string[]): Promise<void> {
+export function daysFromFirstRecord(days: string[], firstRecord: number | null): string[] {
+  const first = firstRecord === null ? null : new Date(firstRecord * 1000).toISOString().slice(0, 10)
+  const from = first === null ? [] : days.filter(day => day >= first)
+  return from.length ? from : [days.at(-1)!]
+}
+
+/** The oldest-record query failed or answered something unexpected: the run stops and seeds nothing, and the next run asks again. */
+class SeedUnavailable extends Error {
+  constructor(readonly reason: string, readonly status: number | null = null) {
+    super(reason)
+  }
+}
+
+/**
+ * The oldest record's time within the window, in unix seconds, or null when
+ * Analytics Engine holds none. Only an answer of exactly zero records means
+ * none: any other unexpected answer throws, because "none" marks every
+ * earlier day done.
+ * ponytail: if Analytics Engine answers min() from sampled data, the oldest
+ * record can come back late and the sparse first day be skipped. Seed a day
+ * earlier than the answer if that ever shows up.
+ */
+async function firstRecordTime(options: AnalyticsExportOptions, fromDay: string): Promise<number | null> {
+  const statement = compileAnalyticsQuery(createAnalyticsQuery(options.dataset)
+    .select([
+      sql<number>`toUnixTimestamp(min(${sql.ref('timestamp')}))`.as('first'),
+      sql<number>`count()`.as('records'),
+    ])
+    .where(sql<boolean>`${sql.ref('timestamp')} >= toDateTime(${sql.lit(dayWindow(fromDay).start)})`))
+  let answer: { data?: { first?: unknown, records?: unknown }[] }
+  try {
+    answer = await (await queryAnalyticsEngine(options, statement)).json() as typeof answer
+  }
+  catch (error) {
+    throw new SeedUnavailable((error as Error)?.name ?? 'Error', error instanceof AnalyticsRequestError ? error.status : null)
+  }
+  const row = answer.data?.[0]
+  const records = Number(row?.records)
+  if (!row || !Number.isSafeInteger(records) || records < 0)
+    throw new SeedUnavailable('bad_answer')
+  if (records === 0)
+    return null
+  const first = Number(row.first)
+  if (!Number.isSafeInteger(first) || first <= 0 || first > options.now / 1000)
+    throw new SeedUnavailable('bad_answer')
+  return first
+}
+
+/**
+ * Inserts the steps of the eligible days, from the oldest record on, when the
+ * newest day has no `totals` step: once a UTC day, and once for a table seeded
+ * before the rollups existed. `INSERT OR IGNORE` keeps every step already
+ * there. Steps of window days before the oldest record hold nothing, so any
+ * still pending (seeded before this rule) are marked done without being asked
+ * for. Days that already left the window are not touched: they read as
+ * without data, never as zero. When the query fails, nothing is seeded, the
+ * steps already seeded still run, and the next run asks again.
+ */
+async function seedSteps(env: Cloudflare.Env, db: Database, days: string[], options: AnalyticsExportOptions, now: number): Promise<void> {
   const newest = days.at(-1)!
   const [existing] = await db.select({ day: analyticsExportSteps.day }).from(analyticsExportSteps).where(and(eq(analyticsExportSteps.day, newest), eq(analyticsExportSteps.step, 'totals'))).limit(1)
   if (existing)
     return
 
-  // One statement, so the newest day's `totals` existing means every step does.
+  let firstRecord: number | null
+  try {
+    firstRecord = await firstRecordTime(options, days[0]!)
+  }
+  catch (error) {
+    if (!(error instanceof SeedUnavailable))
+      throw error
+    console.warn({ event: 'analytics_export.seed_failed', reason: error.reason, status: error.status })
+    return
+  }
+  const seeded = daysFromFirstRecord(days, firstRecord)
+
+  // One insert, so the newest day's `totals` existing means every step does.
   // Budget rows older than the window are no longer read.
-  await env.DB.batch([
+  const [, skipped] = await env.DB.batch([
     env.DB.prepare('INSERT OR IGNORE INTO analytics_export_steps (day, step) SELECT days.value, steps.value FROM json_each(?1) AS days, json_each(?2) AS steps')
-      .bind(JSON.stringify(days), JSON.stringify(daySteps())),
+      .bind(JSON.stringify(seeded), JSON.stringify(daySteps())),
+    env.DB.prepare('UPDATE analytics_export_steps SET completed_at = ?, started_at = NULL WHERE day >= ? AND day < ? AND completed_at IS NULL AND parked_at IS NULL')
+      .bind(now, days[0]!, seeded[0]!),
     env.DB.prepare('DELETE FROM analytics_export_budget WHERE utc_day < ?').bind(days[0]!),
   ])
+  // Visible, so a wrong skip would show in the logs.
+  if (skipped?.meta.changes)
+    console.log({ event: 'analytics_export.skipped_before_first_record', firstDay: seeded[0], steps: skipped.meta.changes })
 }
 
 interface ClaimedStep { day: string, step: string, attempts: number, parked: boolean, nextKey: string | null }
@@ -483,7 +563,7 @@ export async function runAnalyticsExport(env: Cloudflare.Env, options: Analytics
   const days = eligibleDays(options.now)
   let budget: Awaited<ReturnType<typeof readBudget>>
   try {
-    await seedSteps(env, db, days)
+    await seedSteps(env, db, days, options, now)
     budget = await readBudget(env, options.now)
   }
   catch (error) {
