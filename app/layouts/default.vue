@@ -39,7 +39,6 @@ const { title, linkedin, website, source } = useAppConfig()
           >
             <NuxtLink
               to="/"
-              :aria-label="$t('layouts.links.home_aria_label')"
               class="text-xl font-black"
             >
               {{ brand ?? title }}
@@ -79,7 +78,6 @@ const { title, linkedin, website, source } = useAppConfig()
         >
           <NuxtLink
             to="/"
-            :aria-label="$t('layouts.links.home_aria_label')"
             class="text-xl font-black"
           >
             {{ brand ?? title }}
@@ -119,8 +117,8 @@ const { title, linkedin, website, source } = useAppConfig()
                 :href="source"
                 target="_blank"
                 rel="noopener noreferrer"
-                :title="$t('layouts.footer.social.github')"
-                :aria-label="$t('layouts.footer.social.github')"
+                :title="$t('layouts.footer.social.source')"
+                :aria-label="$t('layouts.footer.social.source')"
               >
                 <GitHubIcon aria-hidden="true" />
               </a>

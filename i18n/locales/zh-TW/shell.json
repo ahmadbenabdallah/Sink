@@ -9,7 +9,8 @@
         "mastodon": "Mastodon",
         "github": "GitHub",
         "linkedin": "LinkedIn",
-        "website": "網站"
+        "website": "網站",
+        "source": "原始碼 (GitHub)"
       }
     },
     "header": {

@@ -9,7 +9,8 @@
         "mastodon": "Mastodon",
         "github": "GitHub",
         "linkedin": "LinkedIn",
-        "website": "Trang web"
+        "website": "Trang web",
+        "source": "Mã nguồn (GitHub)"
       }
     },
     "header": {

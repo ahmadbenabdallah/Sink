@@ -9,7 +9,8 @@
         "mastodon": "Mastodon",
         "github": "GitHub",
         "linkedin": "LinkedIn",
-        "website": "Website"
+        "website": "Website",
+        "source": "Quellcode (GitHub)"
       }
     },
     "header": {
