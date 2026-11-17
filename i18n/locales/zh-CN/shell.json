@@ -7,7 +7,9 @@
         "blog": "博客",
         "twitter": "Twitter",
         "mastodon": "Mastodon",
-        "github": "GitHub"
+        "github": "GitHub",
+        "linkedin": "LinkedIn",
+        "website": "网站"
       }
     },
     "header": {

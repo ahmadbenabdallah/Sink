@@ -5,6 +5,11 @@ export default defineAppConfig({
   coffee: 'https://sink.cool/coffee',
   twitter: 'https://sink.cool/x',
   telegram: 'https://sink.cool/telegram',
+  // Footer links. `source` is this fork's code, offered under AGPL-3.0;
+  // `github` still points upstream for the star counts.
+  linkedin: 'https://linkedin.com/in/ahmed-benabdallah',
+  website: 'https://ahmedbenabdallah.com',
+  source: 'https://github.com/ahmadbenabdallah/Sink',
   description: 'A Simple / Speedy / Secure Link Shortener with Analytics, 100% run on Cloudflare.',
   image: 'https://sink.cool/banner.png',
   previewTTL: 300, // 5 minutes

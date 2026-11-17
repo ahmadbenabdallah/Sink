@@ -7,7 +7,9 @@
         "blog": "블로그",
         "twitter": "트위터",
         "mastodon": "마스토돈",
-        "github": "GitHub"
+        "github": "GitHub",
+        "linkedin": "LinkedIn",
+        "website": "웹사이트"
       }
     },
     "header": {
