@@ -7,7 +7,10 @@
         "blog": "部落格",
         "twitter": "Twitter",
         "mastodon": "Mastodon",
-        "github": "GitHub"
+        "github": "GitHub",
+        "linkedin": "LinkedIn",
+        "website": "網站",
+        "source": "原始碼 (GitHub)"
       }
     },
     "header": {

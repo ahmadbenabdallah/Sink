@@ -1,29 +1,11 @@
 <script setup lang="ts">
-import { ExternalLink, Menu, Star } from '@lucide/vue'
-import NumberFlow from '@number-flow/vue'
-import { GitHubIcon, TelegramIcon, XIcon } from 'vue3-simple-icons'
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-} from '@/components/ui/navigation-menu'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet'
+import { Globe } from '@lucide/vue'
+import { GitHubIcon } from 'vue3-simple-icons'
 
-const mobileMenuOpen = shallowRef(false)
-const { title, documentation, telegram, twitter, github } = useAppConfig()
-const { rawStats } = useGithubStats()
+// The 404 page passes the new name; the other pages keep the site title.
+defineProps<{ brand?: string }>()
 
-function closeMobileMenu() {
-  mobileMenuOpen.value = false
-}
+const { title, linkedin, website, source } = useAppConfig()
 </script>
 
 <template>
@@ -57,173 +39,16 @@ function closeMobileMenu() {
           >
             <NuxtLink
               to="/"
-              :title="title"
-              :aria-label="$t('layouts.links.home_aria_label')"
-              class="flex items-center space-x-2"
+              class="text-xl font-black"
             >
-              <span class="flex size-8 items-center justify-center rounded-full">
-                <img
-                  src="/sink.png"
-                  :alt="`${title} Logo`"
-                  width="32"
-                  height="32"
-                  class="size-full rounded-full"
-                >
-              </span>
-              <span class="text-xl font-black">{{ title }}</span>
+              {{ brand ?? title }}
             </NuxtLink>
 
-            <div
-              class="
-                hidden items-center gap-6
-                lg:flex
-              "
-            >
-              <NavigationMenu :viewport="false">
-                <NavigationMenuList>
-                  <NavigationMenuItem>
-                    <NavigationMenuLink as-child>
-                      <a
-                        :href="documentation"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        :aria-label="$t('layouts.links.documentation_aria_label')"
-                      >
-                        {{ $t('layouts.links.documentation') }}
-                        <ExternalLink class="size-3.5" aria-hidden="true" />
-                      </a>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                  <NavigationMenuItem>
-                    <NavigationMenuLink as-child>
-                      <a
-                        href="/_docs/scalar"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {{ $t('layouts.links.api_reference') }}
-                      </a>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                </NavigationMenuList>
-              </NavigationMenu>
-
-              <Button as-child variant="outline">
-                <a
-                  :href="github"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  :title="$t('layouts.footer.social.github')"
-                  :aria-label="$t('layouts.links.github_aria_label')"
-                  class="flex items-center gap-1.5"
-                >
-                  <GitHubIcon class="size-4" aria-hidden="true" />
-                  <Star class="size-3" aria-hidden="true" />
-                  <NumberFlow class="tabular-nums" :value="rawStats.stars" />
-                </a>
-              </Button>
+            <!-- ponytail: docs, API reference and GitHub stars hidden for now; git history has them. -->
+            <div class="flex items-center gap-3">
               <SwitchLanguage />
               <SwitchTheme />
             </div>
-
-            <Sheet v-model:open="mobileMenuOpen">
-              <SheetTrigger as-child>
-                <button
-                  type="button"
-                  :aria-label="$t('layouts.header.toggle_menu_aria_label')"
-                  class="
-                    -mr-2 flex size-11 touch-manipulation items-center
-                    justify-center rounded-xl
-                    hover:bg-muted
-                    focus-visible:ring-2 focus-visible:ring-ring
-                    lg:hidden
-                  "
-                >
-                  <Menu class="size-6" aria-hidden="true" />
-                </button>
-              </SheetTrigger>
-              <SheetContent
-                side="right"
-                class="
-                  overscroll-contain p-0
-                  **:data-[slot=sheet-close]:top-[calc(1rem+env(safe-area-inset-top))]
-                  **:data-[slot=sheet-close]:right-2
-                  **:data-[slot=sheet-close]:size-11
-                  lg:hidden
-                "
-              >
-                <SheetHeader class="sr-only">
-                  <SheetTitle>
-                    {{ $t('layouts.header.toggle_menu_aria_label') }}
-                  </SheetTitle>
-                  <SheetDescription>
-                    {{ $t('layouts.links.resources_aria_label') }}
-                  </SheetDescription>
-                </SheetHeader>
-
-                <div
-                  class="
-                    flex h-full flex-col gap-8 overflow-y-auto
-                    overscroll-contain px-6
-                    pt-[calc(4.5rem+env(safe-area-inset-top))]
-                    pb-[calc(1.5rem+env(safe-area-inset-bottom))]
-                  "
-                >
-                  <nav class="flex flex-col gap-1">
-                    <a
-                      :href="documentation"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      :aria-label="$t('layouts.links.documentation_aria_label')"
-                      class="
-                        flex min-h-11 items-center justify-between gap-2
-                        rounded-xl px-3 text-sm font-medium
-                        text-muted-foreground transition-colors
-                        hover:bg-muted hover:text-foreground
-                      "
-                      @click="closeMobileMenu"
-                    >
-                      {{ $t('layouts.links.documentation') }}
-                      <ExternalLink class="size-3.5" aria-hidden="true" />
-                    </a>
-                    <a
-                      href="/_docs/scalar"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="
-                        flex min-h-11 items-center rounded-xl px-3 text-sm
-                        font-medium text-muted-foreground transition-colors
-                        hover:bg-muted hover:text-foreground
-                      "
-                      @click="closeMobileMenu"
-                    >
-                      {{ $t('layouts.links.api_reference') }}
-                    </a>
-                  </nav>
-
-                  <div class="mt-auto flex flex-col items-stretch gap-4">
-                    <Button as-child variant="outline">
-                      <a
-                        :href="github"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        :title="$t('layouts.footer.social.github')"
-                        :aria-label="$t('layouts.links.github_aria_label')"
-                        class="flex items-center gap-1.5"
-                      >
-                        <GitHubIcon class="size-4" aria-hidden="true" />
-                        <Star class="size-3" aria-hidden="true" />
-                        <NumberFlow class="tabular-nums" :value="rawStats.stars" />
-                      </a>
-                    </Button>
-                    <div class="flex items-center justify-center gap-3">
-                      <SwitchLanguage />
-                      <SwitchTheme />
-                    </div>
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
           </div>
         </div>
       </div>
@@ -253,74 +78,47 @@ function closeMobileMenu() {
         >
           <NuxtLink
             to="/"
-            :title="title"
-            :aria-label="$t('layouts.links.home_aria_label')"
-            class="block size-fit"
+            class="text-xl font-black"
           >
-            <div class="flex items-center space-x-2">
-              <span
-                class="flex size-8 items-center justify-center rounded-full"
-              >
-                <img
-                  src="/sink.png"
-                  :alt="`${title} Logo`"
-                  width="32"
-                  height="32"
-                  class="size-full rounded-full"
-                >
-              </span>
-              <span class="text-xl font-black">{{ title }}</span>
-            </div>
+            {{ brand ?? title }}
           </NuxtLink>
 
           <nav
             :aria-label="$t('layouts.links.resources_aria_label')"
             class="flex flex-wrap justify-center gap-2 text-sm"
           >
-            <Button
-              v-if="twitter"
-              as-child
-              variant="ghost"
-              size="icon"
-            >
+            <Button as-child variant="ghost" size="icon">
               <a
-                :href="twitter"
+                :href="linkedin"
                 target="_blank"
                 rel="noopener noreferrer"
-                :title="$t('layouts.footer.social.twitter')"
-                :aria-label="$t('layouts.footer.social.twitter')"
+                :title="$t('layouts.footer.social.linkedin')"
+                :aria-label="$t('layouts.footer.social.linkedin')"
               >
-                <XIcon aria-hidden="true" />
+                <!-- LinkedIn's logo; the icon packs dropped brand logos. -->
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.125 2.062 2.062 0 0 1 0 4.125zM7.119 20.452H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                </svg>
               </a>
             </Button>
-            <Button
-              v-if="telegram"
-              as-child
-              variant="ghost"
-              size="icon"
-            >
+            <Button as-child variant="ghost" size="icon">
               <a
-                :href="telegram"
+                :href="website"
                 target="_blank"
                 rel="noopener noreferrer"
-                :title="$t('layouts.footer.social.telegram')"
-                :aria-label="$t('layouts.footer.social.telegram')"
+                :title="$t('layouts.footer.social.website')"
+                :aria-label="$t('layouts.footer.social.website')"
               >
-                <TelegramIcon aria-hidden="true" />
+                <Globe aria-hidden="true" />
               </a>
             </Button>
-            <Button
-              v-if="github"
-              as-child
-              variant="ghost"
-              size="icon"
-            >
+            <Button as-child variant="ghost" size="icon">
               <a
-                :href="github"
+                :href="source"
                 target="_blank"
                 rel="noopener noreferrer"
-                :title="$t('layouts.footer.social.github')"
-                :aria-label="$t('layouts.footer.social.github')"
+                :title="$t('layouts.footer.social.source')"
+                :aria-label="$t('layouts.footer.social.source')"
               >
                 <GitHubIcon aria-hidden="true" />
               </a>

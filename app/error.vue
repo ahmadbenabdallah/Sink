@@ -8,7 +8,8 @@ defineProps<{
 </script>
 
 <template>
-  <NuxtLayout name="default">
+  <!-- ponytail: the new name shows here only for now; rename `title` in app.config to use it everywhere. -->
+  <NuxtLayout name="default" brand="Shorteer">
     <section
       class="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-16"
     >
