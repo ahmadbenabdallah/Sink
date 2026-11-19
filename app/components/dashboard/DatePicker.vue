@@ -24,7 +24,11 @@ function onPresetChange(value: string | number | bigint | Record<string, any> | 
         {{ shortDate(analysisStore.dateRange.startAt, locale) }} - {{ shortDate(analysisStore.dateRange.endAt, locale) }}
       </div>
     </SelectTrigger>
-    <SelectContent>
+    <!--
+      Below the button, not item-aligned: after a custom date no item is
+      selected, and item-aligned then places the list off screen.
+    -->
+    <SelectContent position="popper">
       <SelectItem value="today">
         {{ $t('dashboard.date_picker.today') }}
       </SelectItem>
