@@ -112,7 +112,8 @@ function updateCustomDateRange(value: DateRange) {
                 {{ dateRangeLabel }}
               </div>
             </SelectTrigger>
-            <SelectContent>
+            <!-- Popper: item-aligned needs SelectValue, hidden while a custom range shows. -->
+            <SelectContent position="popper">
               <SelectItem value="today">
                 {{ $t('dashboard.date_picker.today') }}
               </SelectItem>
