@@ -25,8 +25,8 @@ function onPresetChange(value: string | number | bigint | Record<string, any> | 
       </div>
     </SelectTrigger>
     <!--
-      Below the button, not item-aligned: after a custom date no item is
-      selected, and item-aligned then places the list off screen.
+      Popper, not item-aligned: item-aligned places the list from SelectValue,
+      which is hidden while a custom range shows, and leaves it off screen.
     -->
     <SelectContent position="popper">
       <SelectItem value="today">
