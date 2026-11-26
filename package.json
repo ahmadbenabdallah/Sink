@@ -79,7 +79,7 @@
     "lint-staged": "^17.6.0",
     "nanoid": "^5.1.16",
     "nitropack": "^2.13.6",
-    "nuxt": "^4.6.4",
+    "nuxt": "^4.7.0",
     "pinia": "^3.0.4",
     "qr-code-styling": "^1.9.2",
     "reka-ui": "^2.11.0",
